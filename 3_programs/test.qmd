@@ -1,0 +1,78 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+execute: 
+  echo: false
+  warning: false
+  error: false
+---
+
+```{r}
+library(performance)
+library(see)
+library(broom)
+library(broom.helpers)
+library(mice)
+library(broom.mixed)
+library(gt)
+library(GGally)
+library(gtsummary)
+library(kableExtra)
+library(quarto)
+theme_gtsummary_compact()
+source("C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/3_programs/4_functions_AD_gumme.R")
+load("C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/1_intermediate_data/3_data_imputation_AD_gumme.RData")
+```
+
+
+```{r}
+#| label: fig-36
+#| fig-cap: Spearman correlations between continuous covariates
+#| fig-height: 12
+#| fig-width: 13
+#| column: screen-inset-right
+covar_vec_num <- bdd %>% select(all_of(covar_a_imputer)) %>% select(where(is.numeric)) %>% colnames()
+heatmap <- 
+  bdd %>% 
+  select(all_of(covar_vec_num)) %>%
+  rename(
+    "Child age at CBCL test Y2" = ch_age_CBCL_Y2, 
+    "Child age at IQ test Y3" = ch_age_IQ_Y3,
+    "Child age at SRS test Y3" = ch_age_SRS_BRIEFP_Y3, 
+    "Birth weight (Kg)" = po_w_kg,
+    "Birth length (cm)" = po_he, 
+    "Weight Y1 (Kg)" = ch_w_Y1,
+    "Length Y1 (cm)" =  ch_he_Y1, 
+    "Weight Y3 (Kg)" = ch_w_Y3, 
+    "Length Y3 (cm)" = ch_he_Y3,
+    "Maternal age at conception (years)" = mo_age, 
+    "Maternal BMI before preg. (kg/m2)" = mo_bmi_bepr, 
+    "Breastfeeding duration (weeks)" = ch_bf_duration_till48w, 
+    "Gestational duration, completed weeks" = po_gd, 
+    "Learning materials score Y3 (HOME)" = home_learning_y3, 
+    "Language stimulation score Y3 (HOME)" = home_language_y3, 
+    "Academic stimulation score Y3 (HOME)" = home_academic_y3, 
+    "Variety score Y3 (HOME)" = home_variety_y3, 
+    "HOME total score" = home_total_y3, 
+    "Mat. anxiety score T3 preg." = mo_hadanxscore_grt3_imp, 
+    "Mat. depression score T3 preg." = mo_haddepscore_grt3_imp, 
+    "Mat. anxiety and depression score T3 preg." = mo_hadtotscore_grt3_imp, 
+    "Mat. anxiety score Y1" = mo_hadanxscore_y1_imp, 
+    "Mat. depression score Y1" = mo_haddepscore_y1_imp, 
+    "Mat. anxiety and depression score Y1" = mo_hadtotscore_y1_imp, 
+    "Paternal age at child birth (years)" = fa_age, 
+    "Child age at stool collection (weeks)" = ch_feces_age_w_Y1)
+heatmap <- heatmap_cor(heatmap)
+heatmap
+rm(heatmap, covar_vec_num)
+```
+
+
+```{r}
+#| label: fig-63
+#| fig-cap: Directed acyclic graph
+#| column: page-inset-right
+#| out-width: 100%
+knitr::include_graphics("../4_output/gut_microbiota_Y1_neurodev_dag_2023_11_29.png")
+```

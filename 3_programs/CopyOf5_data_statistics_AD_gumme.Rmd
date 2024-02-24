@@ -1,0 +1,2208 @@
+---
+title: "Choix des covariables, construction des modèles, valisation des hypothèses, résultats principaux et de sensibilité"
+author: "Aline Davias"
+date: "2023-11-24"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = FALSE,
+	warning = FALSE)
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Chargement des données
+library(performance)
+library(see)
+library(broom)
+library(broom.helpers)
+library(mice)
+library(broom.mixed)
+library(gt)
+library(GGally)
+library(gtsummary)
+theme_gtsummary_compact()
+load("C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/1_intermediate_data/3_data_imputation_AD_gumme.RData")
+source("C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/3_programs/4_functions_AD_gumme.R")
+```
+
+# Choix du modèle
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+## Vérification covariables
+verif_covar <- tbl_stack(
+  tbls = list(
+    tbl_merge(tbls = list(
+      bdd_final %>% filter(!is.na(ch_feces_rel_p1_Y1)) %>% select(ch_care_main_12m_opt2_2c) %>% tbl_summary(),
+      lm(ch_feces_SpecRich_5000_ASV_Y1 ~ ch_care_main_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+      lm(ch_feces_Shannon_5000_ASV_Y1 ~ ch_care_main_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+      lm(ch_feces_Faith_5000_ASV_Y1 ~ ch_care_main_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+      lm(ch_feces_rel_p1_Y1 ~ ch_care_main_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+      lm(ch_feces_rel_p2_Y1 ~ ch_care_main_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+      lm(ch_feces_rel_p3_Y1 ~ ch_care_main_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+      lm(ch_feces_rel_p4_Y1 ~ ch_care_main_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p()), 
+      tab_spanner = c("", "**Specific Richness**", "**Shannon fiversity**", "**Faith's phylogenetic diversity**", 
+                      "**Phylum Firmictes**", "**Phylum Actinobacteria**", "**Phylum Bacteroidetes**", "**Phylum Proteobacteria**")), 
+    
+   tbl_merge(tbls = list(
+    bdd_final %>% filter(!is.na(ch_feces_rel_p1_Y1)) %>% select(ch_care_main_6m_12m_opt2_2c) %>% tbl_summary(),
+    lm(ch_feces_SpecRich_5000_ASV_Y1 ~ ch_care_main_6m_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_Shannon_5000_ASV_Y1 ~ ch_care_main_6m_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_Faith_5000_ASV_Y1 ~ ch_care_main_6m_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_rel_p1_Y1 ~ ch_care_main_6m_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_rel_p2_Y1 ~ ch_care_main_6m_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_rel_p3_Y1 ~ ch_care_main_6m_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_rel_p4_Y1 ~ ch_care_main_6m_12m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p()),
+    tab_spanner = c("", "**Specific Richness**", "**Shannon fiversity**", "**Faith's phylogenetic diversity**", 
+                    "**Phylum Firmictes**", "**Phylum Actinobacteria**", "**Phylum Bacteroidetes**", "**Phylum Proteobacteria**")),
+  
+  tbl_merge(tbls = list(
+    bdd_final %>% filter(!is.na(ch_feces_rel_p1_Y1)) %>% select(ch_care_main_6m_opt2_2c) %>% tbl_summary(),
+    lm(ch_feces_SpecRich_5000_ASV_Y1 ~ ch_care_main_6m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_Shannon_5000_ASV_Y1 ~ ch_care_main_6m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_Faith_5000_ASV_Y1 ~ ch_care_main_6m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_rel_p1_Y1 ~ ch_care_main_6m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_rel_p2_Y1 ~ ch_care_main_6m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_rel_p3_Y1 ~ ch_care_main_6m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    lm(ch_feces_rel_p4_Y1 ~ ch_care_main_6m_opt2_2c, data = bdd_final) %>% tbl_regression() %>% bold_p(), 
+    tab_spanner = c("", "**Specific Richness**", "**Shannon fiversity**", "**Faith's phylogenetic diversity**", 
+                    "**Phylum Firmictes**", "**Phylum Actinobacteria**", "**Phylum Bacteroidetes**", "**Phylum Proteobacteria**"))))
+
+# Le mode de garde à 6 ou 12 mois ne semble pas être très associé au microbiote intestinal de l'enfant à 1 an. On garde la variable mode de garde 12 mois car c'est celle qui semble la plus logique en terme d'effet à court terme sur le microbiote intestinal
+```
+
+
+## CBCL 2Y
+Pour les outcomes CBCL à 2 ans, on choisit de prendre en compte la variable HOME à 2 ans, mais une analyse de sensibilité sera conduite sans cette variable.
+
+
+### CBCL interne score at 2 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_cbclintscore_y2 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+             var_age = bdd_final_imp$data$ch_age_CBCL_Y2)
+model_1_ch_cbclintscore_y2_pooled <- pool(model_1_ch_cbclintscore_y2)
+#summary(model_1_ch_cbclintscore_y2_pooled)
+
+model_2_ch_cbclintscore_y2 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+             var_age = bdd_final_imp$data$ch_age_CBCL_Y2)
+model_2_ch_cbclintscore_y2_pooled <- pool(model_2_ch_cbclintscore_y2)
+#summary(model_2_ch_cbclintscore_y2_pooled)
+
+tbl_ch_cbclintscore_y2 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_cbclintscore_y2,
+                  var_age = ch_age_CBCL_Y2,  
+                  covar_a_tester =  covar_a_tester, 
+                  model_1 = model_1_ch_cbclintscore_y2, 
+                  model_2 = model_2_ch_cbclintscore_y2)
+
+tbl_ch_cbclintscore_y2
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(
+  var_outcome = bdd_final_imp_1$ch_cbclintscore_y2,
+  var_age = bdd_final_imp_1$ch_age_CBCL_Y2,
+  data = bdd_final_imp_1)
+```
+
+### CBCL externe score at 2 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_cbclextscore_y2 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+             var_age = bdd_final_imp$data$ch_age_CBCL_Y2)
+model_1_ch_cbclextscore_y2_pooled <- pool(model_1_ch_cbclextscore_y2)
+#summary(model_1_ch_cbclextscore_y2_pooled)
+
+model_2_ch_cbclextscore_y2 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+             var_age = bdd_final_imp$data$ch_age_CBCL_Y2)
+model_2_ch_cbclextscore_y2_pooled <- pool(model_2_ch_cbclextscore_y2)
+#summary(model_2_ch_cbclextscore_y2_pooled)
+
+tbl_ch_cbclextscore_y2 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_cbclextscore_y2, 
+                  var_age = ch_age_CBCL_Y2,  
+                  covar_a_tester =  covar_a_tester, 
+                  model_1 = model_1_ch_cbclextscore_y2, 
+                  model_2 = model_2_ch_cbclextscore_y2)
+
+tbl_ch_cbclextscore_y2
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(
+  var_outcome = bdd_final_imp_1$ch_cbclextscore_y2,
+  var_age = bdd_final_imp_1$ch_age_CBCL_Y2,
+  data = bdd_final_imp_1)
+```
+
+## SRS 3Y
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_SRStotal_y3 <-
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_SRStotal_y3,
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_1_ch_SRStotal_y3_pooled <- pool(model_1_ch_SRStotal_y3)
+#summary(model_1_ch_SRStotal_y3_pooled)
+
+model_2_ch_SRStotal_y3 <-
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_SRStotal_y3,
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_2_ch_SRStotal_y3_pooled <- pool(model_2_ch_SRStotal_y3)
+#summary(model_2_ch_SRStotal_y3_pooled)
+
+tbl_ch_SRStotal_y3 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_SRStotal_y3, 
+                  var_age = ch_age_SRS_BRIEFP_Y3,  
+                  covar_a_tester = covar_a_tester, 
+                  model_1 = model_1_ch_SRStotal_y3, 
+                  model_2 = model_2_ch_SRStotal_y3)
+
+tbl_ch_SRStotal_y3
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_SRStotal_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+
+## BRIEF-P Y3
+
+### BRIEF-P inhibit score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_briefpinhibit_y3 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_1_ch_briefpinhibit_y3_pooled <- pool(model_1_ch_briefpinhibit_y3)
+#summary(model_1_ch_briefpinhibit_y3_pooled)
+
+model_2_ch_briefpinhibit_y3 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_2_ch_briefpinhibit_y3_pooled <- pool(model_2_ch_briefpinhibit_y3)
+#summary(model_2_ch_briefpinhibit_y3_pooled)
+
+tbl_ch_briefpinhibit_y3 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_briefpinhibit_y3, 
+                  var_age = ch_age_SRS_BRIEFP_Y3,  
+                  covar_a_tester = covar_a_tester, 
+                  model_1 = model_1_ch_briefpinhibit_y3, 
+                  model_2 = model_2_ch_briefpinhibit_y3)
+
+tbl_ch_briefpinhibit_y3
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+
+### BRIEF-P shift score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_briefpshift_y3 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_1_ch_briefpshift_y3_pooled <- pool(model_1_ch_briefpshift_y3)
+#summary(model_1_ch_briefpshift_y3_pooled)
+
+model_2_ch_briefpshift_y3 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_2_ch_briefpshift_y3_pooled <- pool(model_2_ch_briefpshift_y3)
+#summary(model_2_ch_briefpshift_y3_pooled)
+
+tbl_ch_briefpshift_y3 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_briefpshift_y3, 
+                  var_age = ch_age_SRS_BRIEFP_Y3,  
+                  covar_a_tester = covar_a_tester, 
+                  model_1 = model_1_ch_briefpshift_y3, 
+                  model_2 = model_2_ch_briefpshift_y3)
+
+tbl_ch_briefpshift_y3
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_briefpshift_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+
+### BRIEF-P emotional control score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_briefpemocontrol_y3 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_1_ch_briefpemocontrol_y3_pooled <- pool(model_1_ch_briefpemocontrol_y3)
+#summary(model_1_ch_briefpemocontrol_y3_pooled)
+
+model_2_ch_briefpemocontrol_y3 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_2_ch_briefpemocontrol_y3_pooled <- pool(model_2_ch_briefpemocontrol_y3)
+#summary(model_2_ch_briefpemocontrol_y3_pooled)
+
+tbl_ch_briefpemocontrol_y3 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_briefpemocontrol_y3, 
+                  var_age = ch_age_SRS_BRIEFP_Y3,  
+                  covar_a_tester = covar_a_tester, 
+                  model_1 = model_1_ch_briefpemocontrol_y3, 
+                  model_2 = model_2_ch_briefpemocontrol_y3)
+
+tbl_ch_briefpemocontrol_y3
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+
+### BRIEF-P working memory score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_briefpworkmemo_y3 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_1_ch_briefpworkmemo_y3_pooled <- pool(model_1_ch_briefpworkmemo_y3)
+#summary(model_1_ch_briefpworkmemo_y3_pooled)
+
+model_2_ch_briefpworkmemo_y3 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_2_ch_briefpworkmemo_y3_pooled <- pool(model_2_ch_briefpworkmemo_y3)
+#summary(model_2_ch_briefpworkmemo_y3_pooled)
+
+tbl_ch_briefpworkmemo_y3 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_briefpworkmemo_y3, 
+                  var_age = ch_age_SRS_BRIEFP_Y3,  
+                  covar_a_tester = covar_a_tester,  
+                  model_1 = model_1_ch_briefpworkmemo_y3, 
+                  model_2 = model_2_ch_briefpworkmemo_y3)
+
+tbl_ch_briefpworkmemo_y3
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+
+### BRIEF-P plan/organization score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_briefpplan_y3 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_1_ch_briefpplan_y3_pooled <- pool(model_1_ch_briefpplan_y3)
+#summary(model_1_ch_briefpplan_y3_pooled)
+
+model_2_ch_briefpplan_y3 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+             var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3)
+model_2_ch_briefpplan_y3_pooled <- pool(model_2_ch_briefpplan_y3)
+#summary(model_2_ch_briefpplan_y3_pooled)
+
+tbl_ch_briefpplan_y3 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_briefpplan_y3, 
+                  var_age = ch_age_SRS_BRIEFP_Y3,  
+                  covar_a_tester = covar_a_tester,  
+                  model_1 = model_1_ch_briefpplan_y3, 
+                  model_2 = model_2_ch_briefpplan_y3)
+
+tbl_ch_briefpplan_y3
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_briefpplan_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+
+## IQ Y3
+
+### IQ verbal comprehension score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_verbal_comprehension_IQ_Y3 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+             var_age = bdd_final_imp$data$ch_age_IQ_Y3)
+model_1_ch_verbal_comprehension_IQ_Y3_pooled <- pool(model_1_ch_verbal_comprehension_IQ_Y3)
+#summary(model_1_ch_verbal_comprehension_IQ_Y3_pooled)
+
+model_2_ch_verbal_comprehension_IQ_Y3 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+             var_age = bdd_final_imp$data$ch_age_IQ_Y3)
+model_2_ch_verbal_comprehension_IQ_Y3_pooled <- pool(model_2_ch_verbal_comprehension_IQ_Y3)
+#summary(model_2_ch_verbal_comprehension_IQ_Y3_pooled)
+
+tbl_ch_verbal_comprehension_IQ_Y3 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_verbal_comprehension_IQ_Y3, 
+                  var_age = ch_age_IQ_Y3,  
+                  covar_a_tester = covar_a_tester, 
+                  model_1 = model_1_ch_verbal_comprehension_IQ_Y3, 
+                  model_2 = model_2_ch_verbal_comprehension_IQ_Y3)
+
+tbl_ch_verbal_comprehension_IQ_Y3
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp_1$ch_age_IQ_Y3, 
+               data = bdd_final_imp_1)
+```
+
+
+### IQ visuospacial score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_visuospatiale_IQ_Y3 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+             var_age = bdd_final_imp$data$ch_age_IQ_Y3)
+model_1_ch_visuospatiale_IQ_Y3_pooled <- pool(model_1_ch_visuospatiale_IQ_Y3)
+#summary(model_1_ch_visuospatiale_IQ_Y3_pooled)
+
+model_2_ch_visuospatiale_IQ_Y3 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+             var_age = bdd_final_imp$data$ch_age_IQ_Y3)
+model_2_ch_visuospatiale_IQ_Y3_pooled <- pool(model_2_ch_visuospatiale_IQ_Y3)
+#summary(model_2_ch_visuospatiale_IQ_Y3_pooled)
+
+tbl_ch_visuospatiale_IQ_Y3 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_visuospatiale_IQ_Y3, 
+                  var_age = ch_age_IQ_Y3,  
+                  covar_a_tester = covar_a_tester, 
+                  model_1 = model_1_ch_visuospatiale_IQ_Y3, 
+                  model_2 = model_2_ch_visuospatiale_IQ_Y3)
+
+tbl_ch_visuospatiale_IQ_Y3
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp_1$ch_age_IQ_Y3, 
+               data = bdd_final_imp_1)
+```
+
+
+### IQ work memory score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_work_memory_IQ_Y3 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+             var_age = bdd_final_imp$data$ch_age_IQ_Y3)
+model_1_ch_work_memory_IQ_Y3_pooled <- pool(model_1_ch_work_memory_IQ_Y3)
+#summary(model_1_ch_work_memory_IQ_Y3_pooled)
+
+model_2_ch_work_memory_IQ_Y3 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+             var_age = bdd_final_imp$data$ch_age_IQ_Y3)
+model_2_ch_work_memory_IQ_Y3_pooled <- pool(model_2_ch_work_memory_IQ_Y3)
+#summary(model_2_ch_work_memory_IQ_Y3_pooled)
+
+tbl_ch_work_memory_IQ_Y3 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_work_memory_IQ_Y3, 
+                  var_age = ch_age_IQ_Y3,  
+                  covar_a_tester = covar_a_tester,  
+                  model_1 = model_1_ch_work_memory_IQ_Y3, 
+                  model_2 = model_2_ch_work_memory_IQ_Y3)
+
+tbl_ch_work_memory_IQ_Y3
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp_1$ch_age_IQ_Y3, 
+               data = bdd_final_imp_1)
+```
+
+
+### IQ total score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+model_1_ch_total_IQ_Y3 <- 
+  model_Y3_1(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+             var_age = bdd_final_imp$data$ch_age_IQ_Y3)
+model_1_ch_total_IQ_Y3_pooled <- pool(model_1_ch_total_IQ_Y3)
+#summary(model_1_ch_total_IQ_Y3_pooled)
+
+model_2_ch_total_IQ_Y3 <- 
+  model_Y3_2(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3,
+             var_age = bdd_final_imp$data$ch_age_IQ_Y3)
+model_2_ch_total_IQ_Y3_pooled <- pool(model_2_ch_total_IQ_Y3)
+#summary(model_2_ch_total_IQ_Y3_pooled)
+
+tbl_ch_total_IQ_Y3 <- 
+  tbl_model_covar(data = bdd_final, 
+                  var_outcome = ch_total_IQ_Y3, 
+                  var_age = ch_age_IQ_Y3,  
+                  covar_a_tester = covar_a_tester,  
+                  model_1 = model_1_ch_total_IQ_Y3, 
+                  model_2 = model_2_ch_total_IQ_Y3)
+
+tbl_ch_total_IQ_Y3
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp_1$ch_age_IQ_Y3, 
+               data = bdd_final_imp_1)
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+rm(
+  # tbl_ch_cbclintscore_y2,
+  # tbl_ch_cbclextscore_y2,
+  # tbl_ch_SRStotal_y3,
+  # tbl_ch_briefpinhibit_y3,
+  # tbl_ch_briefpshift_y3,
+  # tbl_ch_briefpemocontrol_y3,
+  # tbl_ch_briefpworkmemo_y3,
+  # tbl_ch_briefpplan_y3,
+  # tbl_ch_verbal_comprehension_IQ_Y3,
+  # tbl_ch_visuospatiale_IQ_Y3,
+  # tbl_ch_work_memory_IQ_Y3,
+  # tbl_ch_total_IQ_Y3, 
+  covar_a_imputer, 
+  covar_a_tester,
+  covar_vec_model_1,
+  covar_vec_model_2, 
+
+  #model_1_ch_cbclintscore_y2, 
+  model_1_ch_cbclintscore_y2_pooled, model_2_ch_cbclintscore_y2, model_2_ch_cbclintscore_y2_pooled, 
+  
+  #model_1_ch_cbclextscore_y2, 
+  model_1_ch_cbclextscore_y2_pooled, model_2_ch_cbclextscore_y2, model_2_ch_cbclextscore_y2_pooled, 
+  
+  #model_1_ch_SRStotal_y3, 
+  model_1_ch_SRStotal_y3_pooled, model_2_ch_SRStotal_y3, model_2_ch_SRStotal_y3_pooled,
+  
+  #model_1_ch_briefpinhibit_y3, 
+  model_1_ch_briefpinhibit_y3_pooled, model_2_ch_briefpinhibit_y3, model_2_ch_briefpinhibit_y3_pooled,
+  
+  #model_1_ch_briefpshift_y3, 
+  model_1_ch_briefpshift_y3_pooled, model_2_ch_briefpshift_y3, model_2_ch_briefpshift_y3_pooled,
+  
+  #model_1_ch_briefpemocontrol_y3, 
+  model_1_ch_briefpemocontrol_y3_pooled, model_2_ch_briefpemocontrol_y3, model_2_ch_briefpemocontrol_y3_pooled,
+  
+  #model_1_ch_briefpworkmemo_y3, 
+  model_1_ch_briefpworkmemo_y3_pooled, model_2_ch_briefpworkmemo_y3, model_2_ch_briefpworkmemo_y3_pooled, 
+  
+  #model_1_ch_briefpplan_y3, 
+  model_1_ch_briefpplan_y3_pooled, model_2_ch_briefpplan_y3, model_2_ch_briefpplan_y3_pooled, 
+  
+  #model_1_ch_verbal_comprehension_IQ_Y3, 
+  model_1_ch_verbal_comprehension_IQ_Y3_pooled, model_2_ch_verbal_comprehension_IQ_Y3, model_2_ch_verbal_comprehension_IQ_Y3_pooled, 
+  
+  #model_1_ch_visuospatiale_IQ_Y3, 
+  model_1_ch_visuospatiale_IQ_Y3_pooled, model_2_ch_visuospatiale_IQ_Y3, model_2_ch_visuospatiale_IQ_Y3_pooled,
+  
+  #model_1_ch_work_memory_IQ_Y3, 
+  model_1_ch_work_memory_IQ_Y3_pooled, model_2_ch_work_memory_IQ_Y3, model_2_ch_work_memory_IQ_Y3_pooled, 
+  
+  #model_1_ch_total_IQ_Y3, 
+  model_1_ch_total_IQ_Y3_pooled,  model_2_ch_total_IQ_Y3, model_2_ch_total_IQ_Y3_pooled)
+```
+
+```{r}
+table_1 <- bdd %>%
+  mutate(to_include = ifelse(!is.na(ch_feces_rel_p1_Y1), "Included", "Excluded")) %>%
+  mutate(to_include = fct_relevel(to_include, "Included", "Excluded")) %>%
+  select(all_of(covar_vec_model_final), 
+         to_include) %>%
+  tbl_summary(
+    missing = "no", 
+    type = list(ch_antibio_Y1_2cat ~ "categorical", 
+                mo_tob_gr_anyt_yn_n2 ~ "categorical",        
+                ch_tabacco_passive_up_to_Y1 ~ "categorical", 
+                ch_care_main_12m_opt2_2c ~ "categorical", 
+                home_total_y3 ~ "continuous"), 
+    by = "to_include", 
+    label = list(ch_care_main_12m_opt2_2c ~ "Main mode of child care at 12 months"), 
+    digits = list(all_continuous() ~ c(0, 0, 0), 
+                  all_categorical() ~ c(0, 0))) %>%
+    bold_labels()  %>%
+  add_p(pvalue_fun = scales::label_pvalue(accuracy = .01, decimal.mark = ".")) %>%
+  bold_p()
+```
+
+# Résultats principaux
+
+## CBCL 2Y
+
+### CBCL interne score at 2 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_cbclintscore_y2 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+            microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+            microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+            microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+            microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+            microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+            microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+            microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+            microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+            microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclintscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+            microbiote_name = "Genera Escherichia and Shigella"))) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child CBCL interne score at 2 years", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_cbclintscore_y2
+```
+
+### CBCL externe score at 2 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_cbclextscore_y2 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+            microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+            microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+            microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+            microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+            microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+            microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+            microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+            microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+            microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_cbclextscore_y2, 
+            var_age = bdd_final_imp$data$ch_age_CBCL_Y2, 
+            var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+            microbiote_name = "Genera Escherichia and Shigella"))) %>% 
+  as_gt() %>%
+  tab_spanner(label = "Child CBCL externe score at 2 years", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_cbclextscore_y2
+```
+
+## SRS 3Y
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_SRStotal_y3 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_SRStotal_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+               microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_SRStotal_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+               microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_SRStotal_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+               microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_SRStotal_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+               microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_SRStotal_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+               microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_SRStotal_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+               microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_SRStotal_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+               microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_SRStotal_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+               microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_SRStotal_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+               microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_SRStotal_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+               microbiote_name = "Genera Escherichia and Shigella"))) %>% 
+  as_gt() %>%
+  tab_spanner(label = "Child SRS total score at 3 years", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_SRStotal_y3
+```
+
+## BRIEF-P 3Y
+
+### BRIEF-P inhibit score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_briefpinhibit_y3 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+               microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+               microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+               microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+               microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+               microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+               microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+               microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+               microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+               microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+               microbiote_name = "Genera Escherichia and Shigella"))) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child inhibition score at 3 years (BRIEF-P)", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_briefpinhibit_y3
+```
+
+### BRIEF-P shift score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_briefpshift_y3 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+               microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+               microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+               microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+               microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+               microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+               microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+               microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+               microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+               microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpshift_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+               microbiote_name = "Genera Escherichia and Shigella")))%>%
+  as_gt() %>%
+  tab_spanner(label = "Child shift score at 3 years (BRIEF-P)", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_briefpshift_y3
+```
+
+### BRIEF-P emotional control score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_briefpemocontrol_y3 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+               microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+               microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+               microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+               microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+               microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+               microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+               microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+               microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+               microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+               microbiote_name = "Genera Escherichia and Shigella")))%>%
+  as_gt() %>%
+  tab_spanner(label = "Child emotional control score at 3 years (BRIEF-P)", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_briefpemocontrol_y3 
+```
+
+### BRIEF-P working memory score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_briefpworkmemo_y3 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+               microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+               microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+               microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+               microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+               microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+               microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+               microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+               microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+               microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+               microbiote_name = "Genera Escherichia and Shigella")))%>%
+  as_gt() %>%
+  tab_spanner(label = "Child working memory score at 3 years (BRIEF-P)", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_briefpworkmemo_y3
+```
+
+### BRIEF-P plan/organization score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_briefpplan_y3 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+               microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+               microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+               microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+               microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+               microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+               microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+               microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+               microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+               microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_briefpplan_y3, 
+               var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+               microbiote_name = "Genera Escherichia and Shigella")))%>%
+  as_gt() %>%
+  tab_spanner(label = "Child plan/organization score at 3 years (BRIEF-P)", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_briefpplan_y3
+```
+
+## IQ Y3
+
+### IQ verbal comprehension score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_verbal_comprehension_IQ_Y3 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+               microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+               microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+               microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+               microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+               microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+               microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+               microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+               microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+               microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+               microbiote_name = "Genera Escherichia and Shigella")))%>%
+  as_gt() %>%
+  tab_spanner(label = "Child verbal comprehension score at 3 years (IQ test)", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_verbal_comprehension_IQ_Y3
+```
+
+### IQ visuospacial score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_visuospatiale_IQ_Y3 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+               microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+               microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+               microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+               microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+               microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+               microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+               microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+               microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+               microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+               microbiote_name = "Genera Escherichia and Shigella")))%>%
+  as_gt() %>%
+  tab_spanner(label = "Child visuospatiale score at 3 years (IQ test)", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_visuospatiale_IQ_Y3
+```
+
+### IQ work memory score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_work_memory_IQ_Y3 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+               microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+               microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+               microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+               microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+               microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+               microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+               microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+               microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+               microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+               microbiote_name = "Genera Escherichia and Shigella")))%>%
+  as_gt() %>%
+  tab_spanner(label = "Child work memory score at 3 years (IQ test)", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_work_memory_IQ_Y3
+```
+
+### IQ total score at 3 years
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+results_ch_total_IQ_Y3 <- 
+  tbl_stack(
+    tbls = list(
+      model(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1, 
+               microbiote_name = "Specific richness"), 
+      model(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1, 
+               microbiote_name = "Shannon diversity"), 
+      model(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1, 
+               microbiote_name = "Phylum Firmicutes"), 
+      model(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1, 
+               microbiote_name = "Phylum Actinobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1, 
+               microbiote_name = "Phylum Bacteroidetes"), 
+      model(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1, 
+               microbiote_name = "Phylum Proteobacteria"), 
+      model(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1, 
+               microbiote_name = "Genus Bifidobacterium"), 
+      model(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1, 
+               microbiote_name = "Genus Bacteroides"), 
+      model(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1, 
+               microbiote_name = "Genus Blautia"), 
+      model(var_outcome = bdd_final_imp$data$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp$data$ch_age_IQ_Y3, 
+               var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1, 
+               microbiote_name = "Genera Escherichia and Shigella")))%>%
+  as_gt() %>%
+  tab_spanner(label = "Child total IQ score at 3 years", 
+              columns = c(stat_n, estimate, ci, p.value))
+
+results_ch_total_IQ_Y3
+```
+
+# Analyses supplémentaires 
+## Effets des covariables sur les outcomes 
+```{r}
+results_ch_cbclintscore_y2_sup_covar <- 
+  tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_cbclintscore_y2,
+    var_age = ch_age_CBCL_Y2,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_cbclintscore_y2)
+
+results_ch_cbclextscore_y2_sup_covar <- 
+  tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_cbclextscore_y2,
+    var_age = ch_age_CBCL_Y2,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_cbclextscore_y2)
+
+results_ch_SRStotal_y3_sup_covar <- 
+    tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_SRStotal_y3,
+    var_age = ch_age_SRS_BRIEFP_Y3,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_SRStotal_y3)
+  
+results_ch_briefpinhibit_y3_sup_covar <- 
+    tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_briefpinhibit_y3,
+    var_age = ch_age_SRS_BRIEFP_Y3,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_briefpinhibit_y3)
+
+results_ch_briefpshift_y3_sup_covar <- 
+    tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_briefpshift_y3,
+    var_age = ch_age_SRS_BRIEFP_Y3,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_briefpshift_y3)
+    
+results_ch_briefpemocontrol_y3_sup_covar <- 
+    tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_briefpemocontrol_y3,
+    var_age = ch_age_SRS_BRIEFP_Y3,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_briefpemocontrol_y3)
+
+results_ch_briefpworkmemo_y3_sup_covar <- 
+    tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_briefpworkmemo_y3,
+    var_age = ch_age_SRS_BRIEFP_Y3,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_briefpworkmemo_y3)
+
+results_ch_briefpplan_y3_sup_covar <- 
+    tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_briefpplan_y3,
+    var_age = ch_age_SRS_BRIEFP_Y3,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_briefpplan_y3)
+
+results_ch_verbal_comprehension_IQ_y3_sup_covar <- 
+    tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_verbal_comprehension_IQ_Y3,
+    var_age = ch_age_IQ_Y3,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_verbal_comprehension_IQ_Y3)
+
+results_ch_visuospatiale_IQ_y3_sup_covar <- 
+    tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_visuospatiale_IQ_Y3,
+    var_age = ch_age_IQ_Y3,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_visuospatiale_IQ_Y3)
+
+results_ch_work_memory_IQ_y3_sup_covar <- 
+    tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_work_memory_IQ_Y3,
+    var_age = ch_age_IQ_Y3,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_work_memory_IQ_Y3)
+
+results_ch_total_IQ_y3_sup_covar <- 
+    tbl_model_final(
+    data = bdd_final, 
+    var_outcome = ch_total_IQ_Y3,
+    var_age = ch_age_IQ_Y3,  
+    covar_a_tester =  covar_vec_model_final, 
+    model_1 = model_1_ch_total_IQ_Y3)
+
+rm(model_1_ch_cbclintscore_y2, 
+   model_1_ch_cbclextscore_y2, 
+   model_1_ch_SRStotal_y3, 
+   model_1_ch_briefpinhibit_y3, 
+   model_1_ch_briefpshift_y3, 
+   model_1_ch_briefpemocontrol_y3, 
+   model_1_ch_briefpworkmemo_y3, 
+   model_1_ch_briefpplan_y3, 
+   model_1_ch_verbal_comprehension_IQ_Y3, 
+   model_1_ch_visuospatiale_IQ_Y3, 
+   model_1_ch_work_memory_IQ_Y3, 
+   model_1_ch_total_IQ_Y3)
+```
+
+## Analyse de sensibilité - Effet du choix du seuil de raréfaction 
+### CBCL interne score at 2 years
+```{r}
+results_ch_cbclintscore_y2_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+        var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+    ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_cbclintscore_y2,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_cbclintscore_y2,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+        var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_cbclintscore_y2,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_cbclintscore_y2,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child CBCL interne score at 2 years",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### CBCL externe score at 2 years
+```{r}
+results_ch_cbclextscore_y2_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+        var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_cbclextscore_y2,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_cbclextscore_y2,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+        var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_cbclextscore_y2,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_cbclextscore_y2,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_CBCL_Y2,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child CBCL externe score at 2 years",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### SRS 3Y
+```{r}
+results_ch_SRStotal_y3_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_SRStotal_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_SRStotal_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_SRStotal_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_SRStotal_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_SRStotal_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_SRStotal_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child SRS total score at 3 years",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### BRIEF-P inhibit score at 3 years
+```{r}
+results_ch_briefpinhibit_y3_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpinhibit_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpinhibit_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_briefpinhibit_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpinhibit_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpinhibit_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child inhibition score at 3 years (BRIEF-P)",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### BRIEF-P shift score at 3 years
+```{r}
+results_ch_briefpshift_y3_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_briefpshift_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpshift_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpshift_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_briefpshift_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpshift_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpshift_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child shift score at 3 years (BRIEF-P)",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### BRIEF-P emotional control score at 3 years
+```{r}
+results_ch_briefpemocontrol_y3_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpemocontrol_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpemocontrol_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_briefpemocontrol_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpemocontrol_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpemocontrol_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child emotional control score at 3 years (BRIEF-P)",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### BRIEF-P working memory score at 3 years
+```{r}
+results_ch_briefpworkmemo_y3_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpworkmemo_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpworkmemo_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_briefpworkmemo_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpworkmemo_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpworkmemo_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child working memory score at 3 years (BRIEF-P)",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### BRIEF-P plan/organization score at 3 years
+```{r}
+results_ch_briefpplan_y3_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_briefpplan_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpplan_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpplan_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_briefpplan_y3,
+        var_age = bdd_final_imp$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpplan_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_briefpplan_y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_SRS_BRIEFP_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child plan/organization score at 3 years (BRIEF-P)",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### IQ verbal comprehension score at 3 years
+```{r}
+results_ch_verbal_comprehension_IQ_Y3_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3,
+        var_age = bdd_final_imp$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_verbal_comprehension_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_verbal_comprehension_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_verbal_comprehension_IQ_Y3,
+        var_age = bdd_final_imp$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_verbal_comprehension_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_verbal_comprehension_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child verbal comprehension score at 3 years (IQ test)",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### IQ visuospacial score at 3 years 
+```{r}
+results_ch_visuospatiale_IQ_Y3_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3,
+        var_age = bdd_final_imp$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_visuospatiale_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_visuospatiale_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_visuospatiale_IQ_Y3,
+        var_age = bdd_final_imp$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_visuospatiale_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_visuospatiale_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child visuospatiale score at 3 years (IQ test)",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### IQ work memory score at 3 years
+```{r}
+results_ch_work_memory_IQ_Y3_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3,
+        var_age = bdd_final_imp$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_work_memory_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_work_memory_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_work_memory_IQ_Y3,
+        var_age = bdd_final_imp$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_work_memory_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_work_memory_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child work memory score at 3 years (IQ test)",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+### IQ total score at 3 years
+```{r}
+results_ch_total_IQ_Y3_sensi_seuil <-
+  tbl_stack(
+    tbls = list(
+      model(
+        var_outcome = bdd_final_imp$data$ch_total_IQ_Y3,
+        var_age = bdd_final_imp$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_total_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_5000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_total_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_SpecRich_10000_ASV_Y1,
+        microbiote_name = "Specific richness (threshold 10000 reads, n=339)"
+      ),
+      
+      model(
+        var_outcome = bdd_final_imp$data$ch_total_IQ_Y3,
+        var_age = bdd_final_imp$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=350, main analysis)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_total_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_5000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 5000 reads, n=339)"
+      ),
+      model_sensi_seuil(
+        var_outcome = bdd_final_imp_sensi_seuil$data$ch_total_IQ_Y3,
+        var_age = bdd_final_imp_sensi_seuil$data$ch_age_IQ_Y3,
+        var_microbiote = bdd_final_imp_sensi_seuil$data$ch_feces_Shannon_10000_ASV_Y1,
+        microbiote_name = "Shannon diversity (threshold 10000 reads, n=339)"
+      )
+    )
+  ) %>%
+  as_gt() %>%
+  tab_spanner(label = "Child total IQ score at 3 years",
+              columns = c(stat_n, estimate, ci, p.value))
+```
+
+## Analyse de sensibilité - Effet de la covariable HOME 3Y dans le modèle CBCL 2Y
+### CBCL interne score at 2 years
+```{r}
+results_ch_cbclintscore_y2_sensi_home <-
+  tbl_merge(
+    tbls = list(
+      results_ch_cbclintscore_y2_main =
+        tbl_stack(
+          tbls = list(
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+              microbiote_name = "Specific richness"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+              microbiote_name = "Shannon diversity"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1,
+              microbiote_name = "Phylum Firmicutes"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1,
+              microbiote_name = "Phylum Actinobacteria"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1,
+              microbiote_name = "Phylum Bacteroidetes"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1,
+              microbiote_name = "Phylum Proteobacteria"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1,
+              microbiote_name = "Genus Bifidobacterium"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1,
+              microbiote_name = "Genus Bacteroides"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1,
+              microbiote_name = "Genus Blautia"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1,
+              microbiote_name = "Genera Escherichia and Shigella"
+            )
+          )
+        ),
+      
+      results_ch_cbclintscore_y2_sensi =
+        tbl_stack(
+          tbls = list(
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+              microbiote_name = "Specific richness"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+              microbiote_name = "Shannon diversity"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1,
+              microbiote_name = "Phylum Firmicutes"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1,
+              microbiote_name = "Phylum Actinobacteria"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1,
+              microbiote_name = "Phylum Bacteroidetes"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1,
+              microbiote_name = "Phylum Proteobacteria"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1,
+              microbiote_name = "Genus Bifidobacterium"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1,
+              microbiote_name = "Genus Bacteroides"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1,
+              microbiote_name = "Genus Blautia"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclintscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1,
+              microbiote_name = "Genera Escherichia and Shigella"
+            )
+          )
+        )
+    ),
+    tab_spanner = c(
+      "**Child CBCL interne score at 2 years \n adjusted for HOME variable at 3 years (main analysis)**",
+      "**Child CBCL interne score at 2 years \n not adjusted for HOME variable at 3 years**"
+    )
+  )
+```
+
+### CBCL externe score at 2 years
+```{r}
+results_ch_cbclextscore_y2_sensi_home <-
+  tbl_merge(
+    tbls = list(
+      results_ch_cbclextscore_y2_main =
+        tbl_stack(
+          tbls = list(
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+              microbiote_name = "Specific richness"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+              microbiote_name = "Shannon diversity"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1,
+              microbiote_name = "Phylum Firmicutes"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1,
+              microbiote_name = "Phylum Actinobacteria"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1,
+              microbiote_name = "Phylum Bacteroidetes"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1,
+              microbiote_name = "Phylum Proteobacteria"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1,
+              microbiote_name = "Genus Bifidobacterium"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1,
+              microbiote_name = "Genus Bacteroides"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1,
+              microbiote_name = "Genus Blautia"
+            ),
+            model(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1,
+              microbiote_name = "Genera Escherichia and Shigella"
+            )
+          )
+        ),
+      results_ch_cbclextscore_y2_sensi =
+        tbl_stack(
+          tbls = list(
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_SpecRich_5000_ASV_Y1,
+              microbiote_name = "Specific richness"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_Shannon_5000_ASV_Y1,
+              microbiote_name = "Shannon diversity"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p1_Y1,
+              microbiote_name = "Phylum Firmicutes"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p2_Y1,
+              microbiote_name = "Phylum Actinobacteria"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p3_Y1,
+              microbiote_name = "Phylum Bacteroidetes"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_p4_Y1,
+              microbiote_name = "Phylum Proteobacteria"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g1_Y1,
+              microbiote_name = "Genus Bifidobacterium"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g2_Y1,
+              microbiote_name = "Genus Bacteroides"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g3_Y1,
+              microbiote_name = "Genus Blautia"
+            ),
+            model_sensi_home(
+              var_outcome = bdd_final_imp$data$ch_cbclextscore_y2,
+              var_age = bdd_final_imp$data$ch_age_CBCL_Y2,
+              var_microbiote = bdd_final_imp$data$ch_feces_rel_g4_Y1,
+              microbiote_name = "Genera Escherichia and Shigella"
+            )
+          )
+        )
+    ),
+    tab_spanner = c(
+      "**Child CBCL externe score at 2 years \n adjusted for HOME variable at 3 years (main analysis)**",
+      "**Child CBCL externe score at 2 years \n not adjusted for HOME variable at 3 years**"
+    )
+  )
+
+```
+
+## Dichotomisation des outcomes 
+```{r}
+
+```
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+# Export ----
+save(list = ls(),
+     file = "C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/1_intermediate_data/5_data_statistics_AD_gumme.RData")
+
+```

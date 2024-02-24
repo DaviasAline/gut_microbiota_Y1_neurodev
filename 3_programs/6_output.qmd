@@ -1,0 +1,2525 @@
+---
+title: "Gut microbiota and neurodevelopement analysis"
+author: "Aline Davias"
+date: "29 novembre 2023"
+format: html
+fig-width: 8
+fig-height: 2
+fig-cap-location: top
+tbl-cap-location: top
+toc: true
+toc-depth: 5
+toc-title: Contents
+toc-location: left
+execute: 
+  echo: false
+  warning: false
+  error: false
+theme:
+  light: flatly
+  dark: darkly
+max-width: 6000px
+editor: visual
+self-contained: true
+document:
+  float: left
+---
+
+```{r}
+library(performance)
+library(see)
+library(broom)
+library(broom.helpers)
+library(mice)
+library(broom.mixed)
+library(gt)
+library(GGally)
+library(gtsummary)
+library(kableExtra)
+library(quarto)
+theme_gtsummary_compact()
+source("C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/3_programs/4_functions_AD_gumme.R")
+load("C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/1_intermediate_data/3_data_imputation_AD_gumme.RData")
+```
+
+# Part 1: Data description
+
+## Outcomes
+
+```{r}
+#| label: tbl-1
+#| tbl-cap: Neurodeveloppement variables description
+#| column: page-inset-right
+neuro_descrip_num <- descrip_num(data = bdd, vars = neuro_vec)
+
+# Appliquer le test de Shapiro-Wilk à chaque variable et stocker les résultats dans une liste
+neuro_shapiro <- lapply(bdd[, neuro_vec], function(variable) shapiro.test(variable))
+
+# Convertir les résultats en data frame
+neuro_shapiro <- data.frame(
+  variable = colnames(bdd[, neuro_vec]),
+  W_statistic_shapiro = sapply(neuro_shapiro, function(x) x$statistic),
+  p_value_shapiro = sapply(neuro_shapiro, function(x) x$p.value)) 
+rownames(neuro_shapiro) <- NULL
+
+neuro_descrip <- left_join(neuro_descrip_num, neuro_shapiro, by = "variable") %>%
+  select(-variable) %>%
+  mutate(p_value_shapiro = ifelse(p_value_shapiro<0.001, "<0.001", format(p_value_shapiro, 2)),
+         W_statistic_shapiro = as.numeric(W_statistic_shapiro),
+         W_statistic_shapiro =  round(W_statistic_shapiro, 1), 
+         W_statistic_shapiro = as.character(W_statistic_shapiro))%>% 
+  kable(format = "html", 
+        booktabs = TRUE) %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 8, full_width = F)
+neuro_descrip
+
+rm(neuro_descrip_num, neuro_shapiro, neuro_descrip)
+# boxplot(data = bdd, vars = neuro_vec, ncol = 4L)
+# densityplot(data = bdd, vars = neuro_vec, ncol = 4L)
+# qqplot(data = bdd, vars = neuro_vec, ncol = 4L)
+#bdd %>% select(all_of(neuro_vec), ch_feces_rel_p1_Y1) %>% md.pattern()
+```
+
+```{r}
+#| label: fig-1
+#| fig-cap: Spearman correlations between neurodeveloppment variables
+#| fig-width: 13
+#| fig-height: 13
+#| column: page-inset-right
+heatmap <- 
+  bdd %>% 
+  select(all_of(neuro_vec)) %>%
+  rename("CBCL interne score Y2" = ch_cbclintscore_y2, 
+         "CBCL externe score Y2" = ch_cbclextscore_y2, 
+         "Social awareness score (SRS Y3)" = ch_socawar_y3,
+         "Social cognition score (SRS Y3)" = ch_soccog_y3,
+         "Social communication score (SRS Y3)" = ch_soccom_y3,
+         "Social motivation score (SRS Y3)" = ch_socmot_y3,
+         "Restricted interests/repetitive behavior score (SRS Y3)" = ch_RRB_y3,
+         "SRS total score (SRS Y3)" = ch_SRStotal_y3,
+         "Inhibition score (BRIEF-P Y3)" = ch_briefpinhibit_y3,
+         "Shift score at 3 years (BRIEF-P Y3)" = ch_briefpshift_y3,
+         "Emotional control score (BRIEF-P Y3)" = ch_briefpemocontrol_y3,
+         "Working memory score (BRIEF-P Y3)" = ch_briefpworkmemo_y3,
+         "Plan/organization score (BRIEF-P Y3)" = ch_briefpplan_y3,
+         "Verbal comprehension score (IQ Y3)" = ch_verbal_comprehension_IQ_Y3,
+         "Visuospatiale score (IQ Y3)" = ch_visuospatiale_IQ_Y3,
+         "Work memory score (IQ Y3)" = ch_work_memory_IQ_Y3,
+         "Total IQ score Y3" = ch_total_IQ_Y3)
+heatmap <- heatmap_cor(heatmap)
+heatmap
+rm(heatmap)
+```
+
+### CBCL Y2
+
+#### Interne score Y2
+
+```{r}
+#| label: fig-2
+#| fig-cap: Distribution of CBCL interne score Y2 (n = 417)
+verif_distrib(data= bdd, var = ch_cbclintscore_y2)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_cbclintscore_y2) %>% 
+  filter(ch_cbclintscore_y2 %in% boxplot.stats(ch_cbclintscore_y2)$out) %>% 
+  arrange(ch_cbclintscore_y2) %>%
+  kable(format = "html", 
+        booktabs = TRUE, 
+        caption = "Outliers values of child interne score at 2 years variable (CBCL)") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 8)
+table
+rm(table)
+```
+
+#### Externe score Y2
+
+```{r}
+#| label: fig-3
+#| fig-cap: Distribution of CBCL externe score Y2 (n = 416)
+verif_distrib(data= bdd, var = ch_cbclextscore_y2)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_cbclextscore_y2) %>% 
+  filter(ch_cbclextscore_y2 %in% boxplot.stats(ch_cbclextscore_y2)$out) %>% 
+  arrange(ch_cbclextscore_y2) %>%
+  kable(format = "html", 
+        booktabs = TRUE) %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 8)
+table
+rm(table)
+```
+
+### SRS Y3
+
+#### Social awareness score Y3
+
+```{r}
+#| label: fig-4
+#| fig-cap: Distribution of social awareness score Y3 (SRS, n = 407)
+verif_distrib(data= bdd, var = ch_socawar_y3)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_socawar_y3) %>%
+  filter(ch_socawar_y3 %in% boxplot.stats(ch_socawar_y3)$out) %>%
+  arrange(ch_socawar_y3) %>%
+  kable(format = "html", 
+        booktabs = TRUE, 
+        caption = "Outliers values of child social awareness score at 3 years (SRS) variable") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Social cognition score Y3
+
+```{r}
+#| label: fig-5
+#| fig-cap: Distribution of social cognition score Y3 (SRS, n = 407)
+verif_distrib(data= bdd, var = ch_soccog_y3)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_soccog_y3) %>%
+  filter(ch_soccog_y3 %in% boxplot.stats(ch_soccog_y3)$out) %>%
+  arrange(ch_soccog_y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child social cognition score at 3 years (SRS) variable") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Social communication score at 3 years
+
+```{r}
+#| label: fig-6
+#| fig-cap: Distribution of social communication score at 3 years (SRS, n = 407)
+verif_distrib(data= bdd, var = ch_soccom_y3)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_soccom_y3) %>%
+  filter(ch_soccom_y3 %in% boxplot.stats(ch_soccom_y3)$out) %>%
+  arrange(ch_soccom_y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child social communication score at 3 years (SRS) variable") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Social motivation score Y3
+
+```{r}
+#| label: fig-7
+#| fig-cap: Distribution of social motivation score Y3 (SRS, n = 407)
+verif_distrib(data= bdd, var = ch_socmot_y3)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_socmot_y3) %>%
+  filter(ch_socmot_y3 %in% boxplot.stats(ch_socmot_y3)$out) %>%
+  arrange(ch_socmot_y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child social motivation score at 3 years (SRS) variable") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Restricted interests and repetitive behavior score Y3
+
+```{r}
+#| label: fig-8
+#| fig-cap: Distribution of restricted interests and repetitive behavior score Y3 (SRS, n = 407)
+verif_distrib(data= bdd, var = ch_RRB_y3)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_RRB_y3) %>%
+  filter(ch_RRB_y3 %in% boxplot.stats(ch_RRB_y3)$out) %>%
+  arrange(ch_RRB_y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child restricted interests and repetitive behavior score at 3 years (SRS) variable") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### SRS total score at 3 years
+
+```{r}
+#| label: fig-9
+#| fig-cap: Distribution of SRS total score at 3 years (SRS, n = 407)
+verif_distrib(data= bdd, var = ch_SRStotal_y3)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_SRStotal_y3) %>%
+  filter(ch_SRStotal_y3 %in% boxplot.stats(ch_SRStotal_y3)$out) %>%
+  arrange(ch_SRStotal_y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child SRS total score at 3 years (SRS) variable") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+### BRIEF-P Y3
+
+#### Inhibition score Y3
+
+```{r}
+#| label: fig-10
+#| fig-cap: Distribution of inhibition score Y3 (BRIEF-P, n = 405)
+verif_distrib(data= bdd, var = ch_briefpinhibit_y3)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_briefpinhibit_y3) %>%
+  filter(ch_briefpinhibit_y3 %in% boxplot.stats(ch_briefpinhibit_y3)$out) %>%
+  arrange(ch_briefpinhibit_y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child inhibition score at 3 years (BRIEF-P) variable") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Shift score Y3
+
+```{r}
+#| label: fig-11
+#| fig-cap: Distribution of shift score Y3 (BRIEF-P, n = 414)
+verif_distrib(data= bdd, var = ch_briefpshift_y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_briefpshift_y3) %>%
+  filter(ch_briefpshift_y3 %in% boxplot.stats(ch_briefpshift_y3)$out) %>%
+  arrange(ch_briefpshift_y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child shift score at 3 years (BRIEF-P) variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Emotional control score Y3
+
+```{r}
+#| label: fig-12
+#| fig-cap: Distribution of emotional control score Y3 (BRIEF-P, n = 414)
+verif_distrib(data= bdd, var = ch_briefpemocontrol_y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_briefpemocontrol_y3) %>%
+  filter(ch_briefpemocontrol_y3 %in% boxplot.stats(ch_briefpemocontrol_y3)$out) %>%
+  arrange(ch_briefpemocontrol_y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child emotional control score at 3 years (BRIEF-P) variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Working memory score Y3
+
+```{r}
+#| label: fig-13
+#| fig-cap: Distribution of working memory score Y3 (BRIEF-P, n = 406)
+verif_distrib(data= bdd, var = ch_briefpworkmemo_y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_briefpworkmemo_y3) %>%
+  filter(ch_briefpworkmemo_y3 %in% boxplot.stats(ch_briefpworkmemo_y3)$out) %>%
+  arrange(ch_briefpworkmemo_y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child working memory score at 3 years (BRIEF-P) variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Plan/organization score Y3
+
+```{r}
+#| label: fig-14
+#| fig-cap: Distribution of plan/organization score Y3 (BRIEF-P, n = 411)
+verif_distrib(data= bdd, var = ch_briefpplan_y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_briefpplan_y3) %>%
+  filter(ch_briefpplan_y3 %in% boxplot.stats(ch_briefpplan_y3)$out) %>%
+  arrange(ch_briefpplan_y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child plan/organization score at 3 years (BRIEF-P) variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+### IQ Y3
+
+#### Verbal comprehension score Y3
+
+```{r}
+#| label: fig-15
+#| fig-cap: Distribution of verbal comprehension score Y3 (IQ, n = 381)
+verif_distrib(data= bdd, var = ch_verbal_comprehension_IQ_Y3)
+# table <- bdd %>% 
+#   select(ident, ch_verbal_comprehension_IQ_Y3) %>%
+#   filter(ch_verbal_comprehension_IQ_Y3 %in% boxplot.stats(ch_verbal_comprehension_IQ_Y3)$out) %>%
+#   arrange(ch_verbal_comprehension_IQ_Y3) %>%
+#   kable(format = "html", booktable = TRUE, caption = "Outliers values of  variable") %>%   
+#   kable_styling(latex_options = c("HOLD_position", "scale_down"), font_size = 9)
+# table
+```
+
+Verbal comprehension score Y3 variable doesn't have any outliers.
+
+#### Visuospatiale score Y3
+
+```{r}
+#| label: fig-16
+#| fig-cap: Distribution of visuospatiale score Y3 (IQ, n = 382)
+verif_distrib(data= bdd, var = ch_visuospatiale_IQ_Y3)
+# table <- bdd %>% 
+#   select(ident, ch_visuospatiale_IQ_Y3) %>%
+#   filter(ch_visuospatiale_IQ_Y3 %in% boxplot.stats(ch_visuospatiale_IQ_Y3)$out) %>%
+#   arrange(ch_visuospatiale_IQ_Y3) %>%
+#   kable(format = "html", booktable = TRUE, caption = "Outliers values of  variable") %>%   
+#   kable_styling(latex_options = c("HOLD_position", "scale_down"), font_size = 9)
+# table
+```
+
+Visuospatiale score at 3 years (IQ test) doesn't have any outliers.
+
+#### Work memory score Y3
+
+```{r}
+#| label: fig-17
+#| fig-cap: Distribution of work memory score Y3 (IQ, n = 380)
+verif_distrib(data= bdd, var = ch_work_memory_IQ_Y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_work_memory_IQ_Y3) %>%
+  filter(ch_work_memory_IQ_Y3 %in% boxplot.stats(ch_work_memory_IQ_Y3)$out) %>%
+  arrange(ch_work_memory_IQ_Y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of work memory score at 3 years (IQ test) variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Total IQ score Y3
+
+```{r}
+#| label: fig-18
+#| fig-cap: Distribution of total IQ score Y3 (IQ, n = 381)
+verif_distrib(data= bdd, var = ch_total_IQ_Y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_total_IQ_Y3) %>%
+  filter(ch_total_IQ_Y3 %in% boxplot.stats(ch_total_IQ_Y3)$out) %>%
+  arrange(ch_total_IQ_Y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of total IQ score at 3 years variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 7)
+table
+rm(table)
+```
+
+## Predictors
+
+```{r}
+#| label: tbl-2
+#| tbl-cap: Gut microbiota variables description at one year
+#| column: page-inset-right
+microbiote_descrip_num <- descrip_num(data = bdd, 
+                                      vars = microbiote_vec)
+
+# Appliquer le test de Shapiro-Wilk à chaque variable et stocker les résultats dans une liste
+microbiote_shapiro <- lapply(bdd[, microbiote_vec], function(variable) shapiro.test(variable))
+
+# Convertir les résultats en data frame
+microbiote_shapiro <- data.frame(
+  variable = colnames(bdd[, microbiote_vec]),
+  W_statistic_shapiro = sapply(microbiote_shapiro, function(x) x$statistic),
+  p_value_shapiro = sapply(microbiote_shapiro, function(x) x$p.value)) 
+rownames(microbiote_shapiro) <- NULL
+
+microbiote_descrip <- left_join(microbiote_descrip_num, microbiote_shapiro, by = "variable") %>%
+  select(-variable) %>%
+  mutate(p_value_shapiro = ifelse(p_value_shapiro<0.001, "<0.001", format(p_value_shapiro, 2)), 
+         W_statistic_shapiro = as.numeric(W_statistic_shapiro), 
+         W_statistic_shapiro =  round(W_statistic_shapiro, 1), 
+         W_statistic_shapiro = as.character(W_statistic_shapiro))%>% 
+  kable(format = "html", 
+        booktabs = TRUE) %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 7)
+microbiote_descrip
+```
+
+```{r}
+#| label: tbl-3
+#| tbl-cap: Gut microbiota variables description at one year (log transformed)
+#| column: page-inset-right
+descrip_num(data = bdd, 
+            vars = c("ch_feces_rel_p1_Y1_ln" ,"ch_feces_rel_p2_Y1_ln", "ch_feces_rel_p3_Y1_ln", "ch_feces_rel_p4_Y1_ln", 
+                     "ch_feces_rel_g1_Y1_ln" ,"ch_feces_rel_g2_Y1_ln", "ch_feces_rel_g3_Y1_ln", "ch_feces_rel_g4_Y1_ln")) %>%
+  select(-variable) %>%
+  kable(format = "html", 
+        booktabs = TRUE) %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 7)
+```
+
+```{r}
+#| label: tbl-4
+#| tbl-cap: visualization of -inf values after log transformation
+#| column: page-inset-right
+bdd %>%
+  select(ident, 
+         "ch_feces_rel_p3_Y1_ln", "ch_feces_rel_p4_Y1_ln", 
+         "ch_feces_rel_g2_Y1_ln", "ch_feces_rel_g3_Y1_ln", "ch_feces_rel_g4_Y1_ln") %>%
+  filter(ch_feces_rel_p3_Y1_ln == "-Inf" | ch_feces_rel_p4_Y1_ln == "-Inf" |
+         ch_feces_rel_g2_Y1_ln == "-Inf" | ch_feces_rel_g3_Y1_ln == "-Inf" | ch_feces_rel_g4_Y1_ln == "-Inf") %>%
+  kable(format = "html", 
+        booktabs = TRUE) %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+rm(microbiote_descrip_num, microbiote_shapiro, microbiote_descrip)
+```
+
+```{r}
+#| label: fig-19
+#| fig-cap: Spearman correlations between gut microbiota variables (n=350)
+#| fig-width: 7
+#| fig-height: 7
+heatmap <- 
+  bdd %>% 
+  select(all_of(microbiote_vec)) %>%
+  select(-ch_feces_Faith_5000_ASV_Y1) %>%
+  rename(
+    "Specific richness Y1" = ch_feces_SpecRich_5000_ASV_Y1,
+    "Shannon diversity Y1" = ch_feces_Shannon_5000_ASV_Y1,
+    "Phylum Firmicutes Y1" = ch_feces_rel_p1_Y1, 
+    "Phylum Actinobacteria Y1" = ch_feces_rel_p2_Y1, 
+    "Phylum Bacteroidetes Y1" = ch_feces_rel_p3_Y1,
+    "Phylum Proteobacteria Y1" = ch_feces_rel_p4_Y1,
+    "Genus Bifidobacterium Y1" = ch_feces_rel_g1_Y1, 
+    "Genus Bacteroides Y1" = ch_feces_rel_g2_Y1,
+    "Genus Blautia Y1" = ch_feces_rel_g3_Y1,
+    "Genera Escherichia and Shigella Y1" = ch_feces_rel_g4_Y1)
+heatmap <- heatmap_cor(heatmap)
+heatmap
+rm(heatmap)
+```
+
+### Alpha diversity
+
+#### Specific richness
+
+```{r}
+#| label: fig-20
+#| fig-cap: Distribution of the specific richness Y1 (n=350)
+verif_distrib(data= bdd, var = ch_feces_SpecRich_5000_ASV_Y1)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_feces_SpecRich_5000_ASV_Y1) %>% 
+  filter(ch_feces_SpecRich_5000_ASV_Y1 %in% boxplot.stats(ch_feces_SpecRich_5000_ASV_Y1)$out) %>% 
+  arrange(ch_feces_SpecRich_5000_ASV_Y1) %>%
+  kable(format = "html", 
+        booktabs = TRUE, 
+        caption = "Outliers values of Specific richness variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Shannon diversity
+
+```{r}
+#| label: fig-21
+#| fig-cap: Distribution of the Shannon diversity Y1 (n=350)
+verif_distrib(data= bdd, var = ch_feces_Shannon_5000_ASV_Y1)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_feces_Shannon_5000_ASV_Y1) %>% 
+  filter(ch_feces_Shannon_5000_ASV_Y1 %in% boxplot.stats(ch_feces_Shannon_5000_ASV_Y1)$out) %>% 
+  arrange(ch_feces_Shannon_5000_ASV_Y1) %>%
+  kable(format = "html", 
+        booktabs = TRUE, 
+        caption = "Outliers values of Shannon diversity variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Faith's phylogenetic diversity
+
+```{r}
+#| label: fig-22
+#| fig-cap: Distribution of the Faith's phylogenetic diversity Y1 (n=350)
+verif_distrib(data= bdd, var = ch_feces_Faith_5000_ASV_Y1)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_feces_Faith_5000_ASV_Y1) %>% 
+  filter(ch_feces_Faith_5000_ASV_Y1 %in% boxplot.stats(ch_feces_Faith_5000_ASV_Y1)$out) %>% 
+  arrange(ch_feces_Faith_5000_ASV_Y1) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of Faith's phylogenetic diversity variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+### Taxonomy
+
+#### Phylum Firmicutes relative abundance Y1
+
+```{r}
+#| label: fig-23
+#| fig-cap: Distribution of the relative abundance of phylum Firmicutes Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_p1_Y1)
+# table <- bdd %>% 
+#   select(ident, ch_feces_rel_p1_Y1) %>% 
+#   filter(ch_feces_rel_p1_Y1 %in% boxplot.stats(ch_feces_rel_p1_Y1)$out) %>% 
+#   arrange(ch_feces_rel_p1_Y1) %>%
+#   kable(format = "html", booktable = TRUE, caption = "Outliers values of  variable") %>%   
+#   kable_styling(latex_options = c("HOLD_position", "scale_down"), font_size = 9)
+# table
+```
+
+Phylum Firmicutes variable at one year doesn't have any outliers.
+
+#### Phylum Actinobacteria Y1
+
+```{r}
+#| label: fig-24
+#| fig-cap: Distribution of the relative abundance of phylum Actinobacteria Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_p2_Y1)
+# bdd %>%
+#   select(ident, ch_feces_rel_p2_Y1) %>%
+#   filter(ch_feces_rel_p2_Y1 %in% boxplot.stats(ch_feces_rel_p2_Y1)$out) %>%
+#   arrange(ch_feces_rel_p2_Y1) %>%
+#   kable(format = "html", booktable = TRUE, caption = "Outliers values of  variable") %>%   
+#   kable_styling(latex_options = c("HOLD_position", "scale_down"), font_size = 9)
+# table
+```
+
+Phylum Actinobacteria variable at one year doesn't have any outliers.
+
+#### Phylum Bacteroidetes Y1
+
+```{r}
+#| label: fig-25
+#| fig-cap: Distribution of the relative abundance of phylum Bacteroidetes Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_p3_Y1)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_feces_rel_p3_Y1) %>% 
+  filter(ch_feces_rel_p3_Y1 %in% boxplot.stats(ch_feces_rel_p3_Y1)$out) %>% 
+  arrange(ch_feces_rel_p3_Y1) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of phylum Bacteroidetes variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+```{r}
+#| label: fig-26
+#| fig-cap: Distribution of the relative abundance of ln(phylum Bacteroidetes) Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_p3_Y1_ln)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_feces_rel_p3_Y1_ln) %>% 
+  filter(ch_feces_rel_p3_Y1_ln %in% boxplot.stats(ch_feces_rel_p3_Y1_ln)$out) %>% 
+  arrange(ch_feces_rel_p3_Y1_ln) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of phylum Bacteroidetes variable (ln)") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Phylum Proteobacteria Y1
+
+```{r}
+#| label: fig-27
+#| fig-cap: Distribution of the relative abundance of phylum Proteobacteria Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_p4_Y1)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_feces_rel_p4_Y1) %>% 
+  filter(ch_feces_rel_p4_Y1 %in% boxplot.stats(ch_feces_rel_p4_Y1)$out) %>% 
+  arrange(ch_feces_rel_p4_Y1) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of phylum Proteobacteria variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+```{r}
+#| label: fig-28
+#| fig-cap: Distribution of the relative abundance of ln(phylum Proteobacteria) Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_p4_Y1_ln)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_feces_rel_p4_Y1_ln) %>% 
+  filter(ch_feces_rel_p4_Y1_ln %in% boxplot.stats(ch_feces_rel_p4_Y1_ln)$out) %>% 
+  arrange(ch_feces_rel_p4_Y1_ln) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of phylum Proteobacteria variable (ln)") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Genus Bifidobacterium Y1
+
+```{r}
+#| label: fig-29
+#| fig-cap: Distribution of the relative abundance of genus Bifidobacterium Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_g1_Y1)
+# table <- bdd %>% 
+#   select(ident, ch_feces_rel_g1_Y1) %>% 
+#   filter(ch_feces_rel_g1_Y1 %in% boxplot.stats(ch_feces_rel_g1_Y1)$out) %>% 
+#   arrange(ch_feces_rel_g1_Y1) %>%
+#   kable(format = "html", booktable = TRUE, caption = "Outliers values of  variable") %>%   
+#   kable_styling(latex_options = c("HOLD_position", "scale_down"), font_size = 9)
+# table
+```
+
+Genus Bifidobacterium variable at one year doesn't have any outliers.
+
+#### Genus Bacteroides Y1
+
+```{r}
+#| label: fig-30
+#| fig-cap: Distribution of the relative abundance of genus Bacteroides Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_g2_Y1)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_feces_rel_g2_Y1) %>% 
+  filter(ch_feces_rel_g2_Y1 %in% boxplot.stats(ch_feces_rel_g2_Y1)$out) %>% 
+  arrange(ch_feces_rel_g2_Y1) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of genus Bacteroides variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+```{r}
+#| label: fig-31
+#| fig-cap: Distribution of the relative abundance of ln(genus Bacteroides) Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_g2_Y1_ln)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_feces_rel_g2_Y1_ln) %>% 
+  filter(ch_feces_rel_g2_Y1_ln %in% boxplot.stats(ch_feces_rel_g2_Y1_ln)$out) %>% 
+  arrange(ch_feces_rel_g2_Y1_ln) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of genus Bacteroides variable (ln)") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Genus Blautia Y1
+
+```{r}
+#| label: fig-32
+#| fig-cap: Distribution of the relative abundance of genus Blautia Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_g3_Y1)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_feces_rel_g3_Y1) %>% 
+  filter(ch_feces_rel_g3_Y1 %in% boxplot.stats(ch_feces_rel_g3_Y1)$out) %>% 
+  arrange(ch_feces_rel_g3_Y1) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of genus Blautia variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+```{r}
+#| label: fig-33
+#| fig-cap: Distribution of the relative abundance of ln(genus Blautia) Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_g3_Y1_ln)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_feces_rel_g3_Y1_ln) %>% 
+  filter(ch_feces_rel_g3_Y1_ln %in% boxplot.stats(ch_feces_rel_g3_Y1_ln)$out) %>% 
+  arrange(ch_feces_rel_g3_Y1_ln) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of genus Blautia variable (ln)") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Genera Escherichia and Shigella Y1
+
+```{r}
+#| label: fig-34
+#| fig-cap: Distribution of the relative abundance of genera Escherichia and Shigella Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_g4_Y1)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_feces_rel_g4_Y1) %>% 
+  filter(ch_feces_rel_g4_Y1 %in% boxplot.stats(ch_feces_rel_g4_Y1)$out) %>% 
+  arrange(ch_feces_rel_g4_Y1) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of genera Escherichia and Shigella variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+```{r}
+#| label: fig-35
+#| fig-cap: Distribution of the relative abundance of ln(genera Escherichia and Shigella) Y1 (n=356)
+verif_distrib(data= bdd, var = ch_feces_rel_g4_Y1_ln)
+```
+
+```{r}
+table <- bdd %>%
+  select(ident, ch_feces_rel_g4_Y1_ln) %>% 
+  filter(ch_feces_rel_g4_Y1_ln %in% boxplot.stats(ch_feces_rel_g4_Y1_ln)$out) %>% 
+  arrange(ch_feces_rel_g4_Y1_ln) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of genera Escherichia and Shigella variable (ln)") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+## Covariates
+
+### Overview of the potential covariates
+
+484 correspond a la taille d'échantillon total de SEPAGES.
+
+356 correspond à la taille d'échantillon selon les données de microbiote disponibles.
+
+Les effectifs finaux après prise en conmpte des données de neurodeveloppement varient selon la variable de neurodeveloppement et sont visibles dans le flowchart Part 3.
+
+```{r}
+#| label: tbl-5
+#| tbl-cap: Overview of the potential covariates (distribution and missing data)
+#| column: page-inset-right
+tbl_1 <- bdd %>% 
+  select(all_of(covar_a_imputer)) %>% 
+  tbl_summary(type = list(mo_tob_gr_anyt_yn_n2 ~ "categorical", 
+                          Mo_ETS_anyT_yn1_opt ~ "categorical", 
+                          ch_ETS_12m_opt36m ~ "categorical", 
+                          ch_tabacco_total_Y1 ~ "categorical",
+                          ch_tabacco_passive_up_to_Y1 ~ "categorical",
+                          ch_antibio_Y1_2cat ~ "categorical", 
+                          home_learning_y3 ~ "continuous", 
+                          home_language_y3 ~ "continuous",
+                          home_academic_y3 ~ "continuous",
+                          home_variety_y3 ~ "continuous",
+                          home_total_y3 ~ "continuous"), 
+              missing = "no") %>%
+  bold_labels()
+tbl_2 <- bdd %>% select(all_of(covar_a_imputer)) %>% 
+  tbl_summary(missing = "no", 
+                statistic = list(all_continuous() ~ "{N_miss}/{N_obs} ({p_miss}%)",
+                                 all_categorical() ~ "{N_miss}/{N_obs} ({p_miss}%)"), 
+                type = list(mo_tob_gr_anyt_yn_n2 ~ "categorical", 
+                            Mo_ETS_anyT_yn1_opt ~ "categorical", 
+                            ch_ETS_12m_opt36m ~ "categorical", 
+                            ch_tabacco_total_Y1 ~ "categorical",
+                            ch_tabacco_passive_up_to_Y1 ~ "categorical",
+                            ch_antibio_Y1_2cat ~ "categorical", 
+                            home_learning_y3 ~ "continuous",
+                            home_language_y3 ~ "continuous",
+                            home_academic_y3 ~ "continuous",
+                            home_variety_y3 ~ "continuous",
+                            home_total_y3 = "continuous")) %>%
+  bold_labels()
+
+tbl_3 <- bdd %>% 
+  filter(!is.na(ch_feces_rel_p1_Y1)) %>%
+  select(all_of(covar_a_imputer)) %>% 
+  tbl_summary(type = list(mo_tob_gr_anyt_yn_n2 ~ "categorical", 
+                          Mo_ETS_anyT_yn1_opt ~ "categorical", 
+                          ch_ETS_12m_opt36m ~ "categorical", 
+                          ch_tabacco_total_Y1 ~ "categorical",
+                          ch_tabacco_passive_up_to_Y1 ~ "categorical",
+                          ch_antibio_Y1_2cat ~ "categorical", 
+                          home_learning_y3 ~ "continuous", 
+                          home_language_y3 ~ "continuous",
+                          home_academic_y3 ~ "continuous",
+                          home_variety_y3 ~ "continuous",
+                          home_total_y3 ~ "continuous"), 
+              missing = "no") %>%
+  bold_labels()
+tbl_4 <- bdd %>% 
+  filter(!is.na(ch_feces_rel_p1_Y1)) %>%
+  select(all_of(covar_a_imputer)) %>% 
+  tbl_summary(missing = "no", 
+                statistic = list(all_continuous() ~ "{N_miss}/{N_obs} ({p_miss}%)",
+                                 all_categorical() ~ "{N_miss}/{N_obs} ({p_miss}%)"), 
+                type = list(mo_tob_gr_anyt_yn_n2 ~ "categorical", 
+                            Mo_ETS_anyT_yn1_opt ~ "categorical", 
+                            ch_ETS_12m_opt36m ~ "categorical", 
+                            ch_tabacco_total_Y1 ~ "categorical",
+                            ch_tabacco_passive_up_to_Y1 ~ "categorical",
+                            ch_antibio_Y1_2cat ~ "categorical", 
+                            home_learning_y3 ~ "continuous",
+                            home_language_y3 ~ "continuous",
+                            home_academic_y3 ~ "continuous",
+                            home_variety_y3 ~ "continuous",
+                            home_total_y3 = "continuous")) %>%
+  bold_labels()
+
+tbl_merge(tbls = list(tbl_1, tbl_2, tbl_3, tbl_4), 
+          tab_spanner = c("**Distribution**", "**Missing data**", 
+                          "**Distribution**", "**Missing data**"))
+rm(tbl_1, tbl_2, tbl_3, tbl_4)
+```
+
+### Continuous covariates
+
+```{r}
+#| label: tbl-6
+#| tbl-cap: Description of the continuous covariates
+#| column: page-inset-right
+covar_vec_num <- bdd %>% select(all_of(covar_a_imputer)) %>% select(where(is.numeric)) %>% colnames()
+# boxplot(data = bdd, vars = covar_vec_num, ncol = 4L)
+# densityplot(data = bdd, vars = covar_vec_num, ncol = 4L)
+# qqplot(data = bdd, vars = covar_vec_num, ncol = 4L)
+covar_descrip_num <- descrip_num(data = bdd, vars = covar_vec_num) 
+
+# Appliquer le test de Shapiro-Wilk à chaque variable et stocker les résultats dans une liste
+covar_shapiro <- lapply(bdd[, covar_vec_num], function(variable) shapiro.test(variable))
+
+# Convertir les résultats en data frame
+covar_shapiro <- data.frame(
+  variable = colnames(bdd[, covar_vec_num]),
+  W_statistic_shapiro = sapply(covar_shapiro, function(x) x$statistic),
+  p_value_shapiro = sapply(covar_shapiro, function(x) x$p.value)) 
+rownames(covar_shapiro) <- NULL
+
+covar_descrip <- left_join(covar_descrip_num, covar_shapiro, by = "variable") %>%
+  select(-variable) %>%
+  mutate(p_value_shapiro = ifelse(p_value_shapiro<0.001, "<0.001", format(p_value_shapiro, 2)), 
+         W_statistic_shapiro = as.numeric(W_statistic_shapiro), 
+         W_statistic_shapiro =  round(W_statistic_shapiro, 1), 
+         W_statistic_shapiro = as.character(W_statistic_shapiro))%>%  
+  kable(format = "html", 
+        booktabs = TRUE, 
+        caption = "Description des covariables potentielles") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 7)
+covar_descrip
+rm(covar_descrip_num, covar_shapiro, covar_descrip, covar_vec_num)
+```
+
+```{r}
+#| label: fig-36
+#| fig-cap: Spearman correlations between continuous covariates
+#| fig-height: 11
+#| fig-width: 13
+#| column: screen-inset-right
+covar_vec_num <- bdd %>% select(all_of(covar_a_imputer)) %>% select(where(is.numeric)) %>% colnames()
+heatmap <- 
+  bdd %>% 
+  select(all_of(covar_vec_num)) %>%
+  rename(
+    "Child age at CBCL test Y2" = ch_age_CBCL_Y2, 
+    "Child age at IQ test Y3" = ch_age_IQ_Y3,
+    "Child age at SRS test Y3" = ch_age_SRS_BRIEFP_Y3, 
+    "Birth weight (Kg)" = po_w_kg,
+    "Birth length (cm)" = po_he, 
+    "Weight Y1 (Kg)" = ch_w_Y1,
+    "Length Y1 (cm)" =  ch_he_Y1, 
+    "Weight Y3 (Kg)" = ch_w_Y3, 
+    "Length Y3 (cm)" = ch_he_Y3,
+    "Maternal age at conception (years)" = mo_age, 
+    "Maternal BMI before preg. (kg/m2)" = mo_bmi_bepr, 
+    "Breastfeeding duration (weeks)" = ch_bf_duration_till48w, 
+    "Gestational duration, completed weeks" = po_gd, 
+    "Learning materials score Y3 (HOME)" = home_learning_y3, 
+    "Language stimulation score Y3 (HOME)" = home_language_y3, 
+    "Academic stimulation score Y3 (HOME)" = home_academic_y3, 
+    "Variety score Y3 (HOME)" = home_variety_y3, 
+    "HOME total score" = home_total_y3, 
+    "Mat. anxiety score T3 preg." = mo_hadanxscore_grt3_imp, 
+    "Mat. depression score T3 preg." = mo_haddepscore_grt3_imp, 
+    "Mat. anxiety and depression score T3 preg." = mo_hadtotscore_grt3_imp, 
+    "Mat. anxiety score Y1" = mo_hadanxscore_y1_imp, 
+    "Mat. depression score Y1" = mo_haddepscore_y1_imp, 
+    "Mat. anxiety and depression score Y1" = mo_hadtotscore_y1_imp, 
+    "Paternal age at child birth (years)" = fa_age, 
+    "Child age at stool collection (weeks)" = ch_feces_age_w_Y1)
+heatmap <- heatmap_cor(heatmap)
+heatmap
+rm(heatmap, covar_vec_num)
+```
+
+#### Child age at the CBCL 2 years evaluation
+
+```{r}
+#| label: fig-37
+#| fig-cap: Distribution of child age at the CBCL 2 years evaluation (n = 417/484)
+verif_distrib(data= bdd, var = ch_age_CBCL_Y2)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_age_CBCL_Y2) %>% 
+  filter(ch_age_CBCL_Y2 %in% boxplot.stats(ch_age_CBCL_Y2)$out) %>% 
+  arrange(ch_age_CBCL_Y2) %>%
+  kable(format = "html", 
+        booktabs = TRUE, 
+        caption = "Outliers values of child age at CBCL 2 years test variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Child age at the IQ 3 years evaluation
+
+```{r}
+#| label: fig-38
+#| fig-cap: Distribution of child age at the IQ 3 years evaluation (n = 382/484)
+verif_distrib(data= bdd, var = ch_age_IQ_Y3)
+```
+
+```{r}
+table <- bdd %>% 
+  select(ident, ch_age_IQ_Y3) %>% 
+  filter(ch_age_IQ_Y3 %in% boxplot.stats(ch_age_IQ_Y3)$out) %>% 
+  arrange(ch_age_IQ_Y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child age at IQ 3 years test variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Child age at the SRS and BRIEF-P 3 years evaluation
+
+```{r}
+#| label: fig-39
+#| fig-cap: Distribution of child age at the SRS and BRIEF-P 3 years evaluation (n = 419/484)
+verif_distrib(data= bdd, var = ch_age_SRS_BRIEFP_Y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_age_SRS_BRIEFP_Y3) %>% 
+  filter(ch_age_SRS_BRIEFP_Y3 %in% boxplot.stats(ch_age_SRS_BRIEFP_Y3)$out) %>% 
+  arrange(ch_age_SRS_BRIEFP_Y3) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child age at SRS and BRIEF-P 3 years variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Paternal age at child birth (years)
+
+```{r}
+#| label: fig-40
+#| fig-cap: Distribution of paternal age at child birth (years) (n = 402/484)
+verif_distrib(data= bdd, var = fa_age)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, fa_age) %>% 
+  filter(fa_age %in% boxplot.stats(fa_age)$out) %>% 
+  arrange(fa_age) %>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of paternal age at child birth variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Maternal age at conception (years)
+
+```{r}
+#| label: fig-41
+#| fig-cap: Distribution of maternal age at conception (years) (n = 484/484)
+verif_distrib(data= bdd, var = mo_age)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, mo_age) %>% 
+  filter(mo_age %in% boxplot.stats(mo_age)$out) %>% 
+  arrange(mo_age)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of maternal age during pregnancy variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Maternal BMI before pregnancy (kg/m2)
+
+```{r}
+#| label: fig-42
+#| fig-cap: Distribution of maternal BMI before pregnancy (kg/m2) (n = 480/484)
+verif_distrib(data= bdd, var = mo_bmi_bepr)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, mo_bmi_bepr) %>% 
+  filter(mo_bmi_bepr %in% boxplot.stats(mo_bmi_bepr)$out) %>% 
+  arrange(mo_bmi_bepr)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of maternal BMI before pregnancy variable") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Maternal anxiety score during the third trimester of pregnancy
+
+```{r}
+#| label: fig-43
+#| fig-cap: Distribution of maternal anxiety score during the third trimester of pregnancy (n = 440/484)
+verif_distrib(data= bdd, var = mo_hadanxscore_grt3_imp)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, mo_hadanxscore_grt3_imp) %>% 
+  filter(mo_hadanxscore_grt3_imp %in% boxplot.stats(mo_hadanxscore_grt3_imp)$out) %>% 
+  arrange(mo_hadanxscore_grt3_imp)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of maternal anxiety score T3 variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Maternal depression score during the third trimester of pregnancy
+
+```{r}
+#| label: fig-44
+#| fig-cap: Distribution of maternal depression score during the third trimester of pregnancy (years) (n = 439/484)
+verif_distrib(data= bdd, var = mo_haddepscore_grt3_imp)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, mo_haddepscore_grt3_imp) %>% 
+  filter(mo_haddepscore_grt3_imp %in% boxplot.stats(mo_haddepscore_grt3_imp)$out) %>% 
+  arrange(mo_haddepscore_grt3_imp)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of maternal depression score T3 variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Maternal anxiety and depression score during the third trimester of pregnancy
+
+```{r}
+#| label: fig-45
+#| fig-cap: Distribution of maternal anxiety and depression score during the third trimester of pregnancy (n = 438/484)
+verif_distrib(data= bdd, var = mo_hadtotscore_grt3_imp)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, mo_hadtotscore_grt3_imp) %>% 
+  filter(mo_hadtotscore_grt3_imp %in% boxplot.stats(mo_hadtotscore_grt3_imp)$out) %>% 
+  arrange(mo_hadtotscore_grt3_imp)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of maternal anxiety and depression score T3 variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Maternal anxiety score when child is one year old
+
+```{r}
+#| label: fig-46
+#| fig-cap: Distribution of maternal anxiety score when child is one year old (n = 317/484)
+verif_distrib(data= bdd, var = mo_hadanxscore_y1_imp)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, mo_hadanxscore_y1_imp) %>% 
+  filter(mo_hadanxscore_y1_imp %in% boxplot.stats(mo_hadanxscore_y1_imp)$out) %>% 
+  arrange(mo_hadanxscore_y1_imp)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of maternal anxiety score at 1 year variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Maternal depression score when child is one year old
+
+```{r}
+#| label: fig-47
+#| fig-cap: Distribution of maternal depression score when child is one year old(n = 317/484)
+verif_distrib(data= bdd, var = mo_haddepscore_y1_imp)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, mo_haddepscore_y1_imp) %>% 
+  filter(mo_haddepscore_y1_imp %in% boxplot.stats(mo_haddepscore_y1_imp)$out) %>% 
+  arrange(mo_haddepscore_y1_imp)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of maternal depression score at 1 year variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Maternal anxiety and depression score when child is one year old
+
+```{r}
+#| label: fig-48
+#| fig-cap: Distribution of maternal anxiety and depression score when child is one year old (n = 317/484)
+verif_distrib(data= bdd, var = mo_hadtotscore_y1_imp)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, mo_hadtotscore_y1_imp) %>% 
+  filter(mo_hadtotscore_y1_imp %in% boxplot.stats(mo_hadtotscore_y1_imp)$out) %>% 
+  arrange(mo_hadtotscore_y1_imp)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of maternal anxiety and depression score at 1 year variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Breastfeeding duration (weeks)
+
+```{r}
+#| label: fig-49
+#| fig-cap: Distribution of breastfeeding duration (weeks) (n = 441/484)
+verif_distrib(data= bdd, var = ch_bf_duration_till48w)
+# table <- bdd %>% 
+#   select(ident, ch_bf_duration_till48w) %>% 
+#   filter(ch_bf_duration_till48w %in% boxplot.stats(ch_bf_duration_till48w)$out) %>% 
+#   arrange(ch_bf_duration_till48w)%>%
+#   kable(format = "html", booktable = TRUE, caption = "Outliers values of  variable") %>%   
+#   kable_styling(latex_options = c("HOLD_position", "scale_down"), font_size = 9)
+# table
+```
+
+Breastfeeding duration variable doesn't have outliers.
+
+#### Gestational duration (completed weeks)
+
+```{r}
+#| label: fig-50
+#| fig-cap: Distribution of gestational duration (completed weeks) (n = 480/484)
+verif_distrib(data= bdd, var = po_gd)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, po_gd) %>% 
+  filter(po_gd %in% boxplot.stats(po_gd)$out) %>% 
+  arrange(po_gd)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of gestational age variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Child age at stool collection (weeks)
+
+```{r}
+#| label: fig-51
+#| fig-cap: Distribution of child age at stool collection (weeks) (n = 353/484)
+verif_distrib(data= bdd, var = ch_feces_age_w_Y1)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_feces_age_w_Y1) %>% 
+  filter(ch_feces_age_w_Y1 %in% boxplot.stats(ch_feces_age_w_Y1)$out) %>% 
+  arrange(ch_feces_age_w_Y1)%>%
+  kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child at at stool collection variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Learning materials score at 3 years of age (HOME questionnaire)
+
+```{r}
+#| label: fig-52
+#| fig-cap: Distribution of learning materials score at 3 years of age (n = 377/484)
+verif_distrib(data= bdd, var = home_learning_y3)
+# table <- bdd %>% 
+#   select(ident, home_learning_y3) %>% 
+#   filter(home_learning_y3 %in% boxplot.stats(home_learning_y3)$out) %>% 
+#   arrange(home_learning_y3)%>%
+#   kable(format = "html", booktable = TRUE, caption = "Outliers values of  variable") %>%   
+#   kable_styling(latex_options = c("HOLD_position", "scale_down"), font_size = 9)
+# table
+```
+
+Learning materials score at 3 years of age (HOME questionnaire) variable doesn't have outliers.
+
+#### Language stimulation score at 3 years of age (HOME questionnaire)
+
+```{r}
+#| label: fig-53
+#| fig-cap: Distribution of language stimulation score at 3 years of age (n = 377/484)
+verif_distrib(data= bdd, var = home_language_y3)
+# table <- bdd %>% 
+#   select(ident, home_language_y3) %>% 
+#   filter(home_language_y3 %in% boxplot.stats(home_language_y3)$out) %>% 
+#   arrange(home_language_y3)%>%
+#   kable(format = "html", booktable = TRUE, caption = "Outliers values of  variable") %>%   
+#   kable_styling(latex_options = c("HOLD_position", "scale_down"), font_size = 9)
+# table
+```
+
+Language stimulation score at 3 years of age (HOME questionnaire) variable doesn't have outliers.
+
+#### Academic stimulation score at 3 years of age (HOME questionnaire)
+
+```{r}
+#| label: fig-54
+#| fig-cap: Distribution of academic stimulation score at 3 years of age (n = 377/484)
+verif_distrib(data= bdd, var = home_academic_y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, home_academic_y3) %>% 
+  filter(home_academic_y3 %in% boxplot.stats(home_academic_y3)$out) %>% 
+  arrange(home_academic_y3)%>%
+  kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of home_academic_y3 variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Variety score at 3 years of age (HOME questionnaire)
+
+```{r}
+#| label: fig-55
+#| fig-cap: Distribution of variety score at 3 years of age (n = 377/484)
+verif_distrib(data= bdd, var = home_variety_y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, home_variety_y3) %>% 
+  filter(home_variety_y3 %in% boxplot.stats(home_variety_y3)$out) %>% 
+  arrange(home_variety_y3)%>%
+  kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of home_variety_y3 variable") %>%  
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### HOME questionnaire total score
+
+```{r}
+#| label: fig-56
+#| fig-cap: Distribution of HOME questionnaire total score (n = 377/484)
+verif_distrib(data= bdd, var = home_total_y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, home_total_y3) %>% 
+  filter(home_total_y3 %in% boxplot.stats(home_total_y3)$out) %>% 
+  arrange(home_total_y3)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of home_total_y3 variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Birth weight (Kg)
+
+```{r}
+#| label: fig-57
+#| fig-cap: Distribution of birth weight (Kg) (n = 479/484)
+verif_distrib(data= bdd, var = po_w_kg)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, po_w_kg) %>% 
+  filter(po_w_kg %in% boxplot.stats(po_w_kg)$out) %>% 
+  arrange(po_w_kg)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child weight at birth variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Birth length (cm)
+
+```{r}
+#| label: fig-58
+#| fig-cap: Distribution of birth length (cm) (n = 472/484)
+verif_distrib(data= bdd, var = po_he)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, po_he) %>% 
+  filter(po_he %in% boxplot.stats(po_he)$out) %>% 
+  arrange(po_he)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child length at birth variable") %>% 
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Weight at one year (Kg)
+
+```{r}
+#| label: fig-59
+#| fig-cap: Distribution of weight at one year (Kg) (n = 416/484)
+verif_distrib(data= bdd, var = ch_w_Y1)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_w_Y1) %>% 
+  filter(ch_w_Y1 %in% boxplot.stats(ch_w_Y1)$out) %>% 
+  arrange(ch_w_Y1)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child weight at one year variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Length at one year (cm)
+
+```{r}
+#| label: fig-60
+#| fig-cap: Distribution of length at one year (cm) (n = 404/484)
+verif_distrib(data= bdd, var = ch_he_Y1)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_he_Y1) %>% 
+  filter(ch_he_Y1 %in% boxplot.stats(ch_he_Y1)$out) %>% 
+  arrange(ch_he_Y1)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child length at one year variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Weight at 3 years (Kg)
+
+```{r}
+#| label: fig-61
+#| fig-cap: Distribution of weight at 3 years (Kg) (n = 383/484)
+verif_distrib(data= bdd, var = ch_w_Y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_w_Y3) %>% 
+  filter(ch_w_Y3 %in% boxplot.stats(ch_w_Y3)$out) %>% 
+  arrange(ch_w_Y3)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child weight at 3 years variable") %>%   
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+#### Length at 3 years (cm)
+
+Les enfants avec les ident "27309", "17668" et "17958" ont été passé en données manquantes car les valeurs taille à 3 ans étaient improbables (environ égales à 10 cm)
+
+```{r}
+#| label: fig-62
+#| fig-cap: Distribution of length at 3 years (cm) (n = 381/484)
+verif_distrib(data= bdd, var = ch_he_Y3)
+```
+
+```{r}
+
+table <- bdd %>% 
+  select(ident, ch_he_Y3) %>% 
+  filter(ch_he_Y3 %in% boxplot.stats(ch_he_Y3)$out) %>% 
+  arrange(ch_he_Y3)%>%
+   kable(format = "html",          
+         booktabs = TRUE,          
+         caption = "Outliers values of child length at 3 years variable") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header"), font_size = 9)
+table
+rm(table)
+```
+
+# Part 2: Choice of covariates and their coding
+
+## Directed acyclic graph
+
+```{r}
+#| label: fig-63
+#| fig-cap: Directed acyclic graph
+#| column: page-inset-right
+#| out-width: 100%
+knitr::include_graphics("../4_output/gut_microbiota_Y1_neurodev_dag_2023_11_29.png")
+```
+
+**Ici on teste :**
+
+-   **toutes les covariables potentielles identifiées avec le DAG (Univariates models)**
+-   **1 modèle multivarié en modèle univarié toutes les covariables potentielles (Multivariate model test 1, avant inclusion des variables d'intérêt) :**
+    -   **les covariables de ce modèles sont :**
+        -   var_age (âge de l'enfant lors du test de neurodeveloppement)
+        -   po_w_kg_3cat (poids de l'enfant à la naissance
+        -   po_he_3cat (taille de l'enfant à la naissance
+        -   mo_dipl_2cat (niveau de diplome de la mère)
+        -   mo_age (âge maternel)
+        -   mo_bmi_bepr_3cat (IMC maternel avant la grossesse)
+        -   ch_sex (sexe de l'enfant)
+        -   mo_par_2cat (parité)
+        -   ch_bf_duration_till48w_4cat (durée de la l'allaitement)
+        -   po_gd (durée de la gestation)
+        -   po_delmod (mode d'accouchement
+        -   ch_food_intro_Y1_3cat (période d'introduction de la nourriture solide)
+        -   mo_pets (présence d'animaux)
+        -   ch_antibio_Y1_2cat (prise d'antibiotique entre la naissance et l'âge de 1 an)
+        -   home_total_y3 (score HOME à 3 ans)
+        -   mo_hadtotscore_grt3_imp (score d'anxiété et de dépression de la mère lors du 3ème trimestre de la grossesse)
+        -   mo_tob_gr_anyt_yn_n2 (tabagisme actif de la mère pendant la grossesse)
+        -   ch_tabacco_passive_up_to_Y1 (tabagisme périnatal passif de l'enfant (tabagisme passif de la mère pendant la grossesse + tabagisme passif de l'enfant de la naissance à l'âge de 1 an)
+        -   ch_care_main_12m_opt2_2c (mode de garde principal de l'enfant à l'âge de 1 an)
+    -   La différence avec le deuxième modèle multivarié porte sur la variable mode de garde
+-   **1 modèle multivarié en modèle univarié toutes les covariables potentielles (Multivariate model test 1, avant inclusion des variables d'intérêt) :**
+    -   **les covariables de ce modèles sont :**
+        -   var_age (âge de l'enfant lors du test de neurodeveloppement)
+        -   po_w_kg_3cat (poids de l'enfant à la naissance
+        -   po_he_3cat (taille de l'enfant à la naissance
+        -   mo_dipl_2cat (niveau de diplome de la mère)
+        -   mo_age (âge maternel)
+        -   mo_bmi_bepr_3cat (IMC maternel avant la grossesse)
+        -   ch_sex (sexe de l'enfant)
+        -   mo_par_2cat (parité)
+        -   ch_bf_duration_till48w_4cat (durée de la l'allaitement)
+        -   po_gd (durée de la gestation)
+        -   po_delmod (mode d'accouchement
+        -   ch_food_intro_Y1_3cat (période d'introduction de la nourriture solide)
+        -   mo_pets (présence d'animaux)
+        -   ch_antibio_Y1_2cat (prise d'antibiotique entre la naissance et l'âge de 1 an)
+        -   home_total_y3 (score HOME à 3 ans)
+        -   mo_hadtotscore_grt3_imp (score d'anxiété et de dépression de la mère lors du 3ème trimestre de la grossesse)
+        -   mo_tob_gr_anyt_yn_n2 (tabagisme actif de la mère pendant la grossesse)
+        -   ch_tabacco_passive_up_to_Y1 (tabagisme périnatal passif de l'enfant (tabagisme passif de la mère pendant la grossesse + tabagisme passif de l'enfant de la naissance à l'âge de 1 an)
+        -   ch_care_main_6m_12m_opt2_2c (mode de garde principal de l'enfant jusqu'à l'âge de 1 an)
+    -   La différence avec le premier modèle multivarié porte sur la variable mode de garde
+
+**Tous les outcomes sont en continue, sans transformation.**
+
+**Les variables de microbiote ne sont pas encore inclues dans ces modèles.**
+
+```{r}
+rm(list = ls())
+library(gtsummary)
+library(performance)
+library(see)
+library(broom)
+library(broom.helpers)
+library(mice)
+library(broom.mixed)
+library(gt)
+library(GGally)
+theme_gtsummary_compact()
+source("C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/3_programs/4_functions_AD_gumme.R")
+load("C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/1_intermediate_data/5_data_statistics_AD_gumme.RData")
+```
+
+## CBCL 2Y
+
+### Interne score Y2
+
+```{r}
+#| label: tbl-7
+#| tbl-cap: Influence of maternal and child characteristics on the CBCL interne score at 2 years.
+#| column: screen-inset-right
+tbl_ch_cbclintscore_y2
+```
+
+```{r}
+#| label: fig-64
+#| fig-cap: Multivariate model hypothesis checking (outcome is CBCL interne score Y2, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_cbclintscore_y2, 
+               var_age = bdd_final_imp_1$ch_age_CBCL_Y2, 
+               data = bdd_final_imp_1)
+```
+
+### Externe score Y2
+
+```{r}
+#| label: tbl-8
+#| tbl-cap: Influence of maternal and child characteristics on the CBCL externe score at 2 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_cbclextscore_y2
+```
+
+```{r}
+#| label: fig-65
+#| fig-cap: Multivariate model hypothesis checking (outcome is CBCL externe score Y2, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_cbclextscore_y2, 
+               var_age = bdd_final_imp_1$ch_age_CBCL_Y2, 
+               data = bdd_final_imp_1)
+```
+
+## SRS total score 3Y
+
+```{r}
+#| label: tbl-9
+#| tbl-cap: Influence of maternal and child characteristics on the SRS total score at 3 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_SRStotal_y3
+```
+
+```{r}
+#| label: fig-66
+#| fig-cap: Multivariate model hypothesis checking (outcome is SRS total score Y3, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_SRStotal_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+## BRIEF-P Y3
+
+### Inhibit score Y3
+
+```{r}
+#| label: tbl-10
+#| tbl-cap: Influence of maternal and child characteristics on the BRIEF-P inhibit score at 2 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_briefpinhibit_y3
+```
+
+```{r}
+#| label: fig-67
+#| fig-cap: Multivariate model hypothesis checking (outcome is BRIEF-P inhibit score Y3, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_briefpinhibit_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+### Shift score Y3
+
+```{r}
+#| label: tbl-11
+#| tbl-cap: Influence of maternal and child characteristics on the BRIEF-P shift score at 2 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_briefpshift_y3
+```
+
+```{r}
+#| label: fig-68
+#| fig-cap: Multivariate model hypothesis checking (outcome is BRIEF-P shift score Y3, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_briefpshift_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+### Emotional control score Y3
+
+```{r}
+#| label: tbl-12
+#| tbl-cap: Influence of maternal and child characteristics on the BRIEF-P emotional control score at 2 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_briefpemocontrol_y3
+```
+
+```{r}
+#| label: fig-69
+#| fig-cap: Multivariate model hypothesis checking (outcome is BRIEF-P emotional control score Y3, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_briefpemocontrol_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+### Working memory score Y3
+
+```{r}
+#| label: tbl-13
+#| tbl-cap: Influence of maternal and child characteristics on the BRIEF-P working memory score at 2 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_briefpworkmemo_y3
+```
+
+```{r}
+#| label: fig-70
+#| fig-cap: Multivariate model hypothesis checking (outcome is BRIEF-P working memory score Y3, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_briefpworkmemo_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+### Plan/organization score Y3
+
+```{r}
+#| label: tbl-14
+#| tbl-cap: Influence of maternal and child characteristics on the BRIEF-P plan and organization score at 2 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_briefpplan_y3
+```
+
+```{r}
+#| label: fig-71
+#| fig-cap: Multivariate model hypothesis checking (outcome is BRIEF-P plan and organization score Y3, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_briefpplan_y3, 
+               var_age = bdd_final_imp_1$ch_age_SRS_BRIEFP_Y3, 
+               data = bdd_final_imp_1)
+```
+
+## IQ Y3
+
+### IQ verbal comprehension score Y3
+
+```{r}
+#| label: tbl-15
+#| tbl-cap: Influence of maternal and child characteristics on the IQ verbal comprehension score at 3 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_verbal_comprehension_IQ_Y3
+```
+
+```{r}
+#| label: fig-72
+#| fig-cap: Multivariate model hypothesis checking (outcome is IQ verbal comprehension score Y3, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_verbal_comprehension_IQ_Y3, 
+               var_age = bdd_final_imp_1$ch_age_IQ_Y3, 
+               data = bdd_final_imp_1)
+```
+
+### IQ visuospacial score Y3
+
+```{r}
+#| label: tbl-16
+#| tbl-cap: Influence of maternal and child characteristics on the IQ visuospatial score at 3 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_visuospatiale_IQ_Y3
+```
+
+```{r}
+#| label: fig-73
+#| fig-cap: Multivariate model hypothesis checking (outcome is IQ visuospacial score Y3, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_visuospatiale_IQ_Y3, 
+               var_age = bdd_final_imp_1$ch_age_IQ_Y3, 
+               data = bdd_final_imp_1)
+```
+
+### IQ work memory score Y3
+
+```{r}
+#| label: tbl-17
+#| tbl-cap: Influence of maternal and child characteristics on the IQ work memory score at 3 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_work_memory_IQ_Y3
+```
+
+```{r}
+#| label: fig-74
+#| fig-cap: Multivariate model hypothesis checking (outcome is IQ work memory score Y3, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_work_memory_IQ_Y3, 
+               var_age = bdd_final_imp_1$ch_age_IQ_Y3, 
+               data = bdd_final_imp_1)
+```
+
+### IQ total score Y3
+
+```{r}
+#| label: tbl-18
+#| tbl-cap: Influence of maternal and child characteristics on the IQ total score at 3 years (uni and multivariate models).
+#| column: screen-inset-right
+tbl_ch_total_IQ_Y3
+```
+
+```{r}
+#| label: fig-75
+#| fig-cap: Multivariate model hypothesis checking (outcome is IQ total score Y3, before inclusion of microbiota variables)
+#| column: page-inset-right
+#| fig-width: 9
+#| fig-height: 9
+check_hypothese_model(var_outcome = bdd_final_imp_1$ch_total_IQ_Y3, 
+               var_age = bdd_final_imp_1$ch_age_IQ_Y3, 
+               data = bdd_final_imp_1)
+```
+
+# Part 3: Main analysis
+
+## Final covariates
+
+**Justification du choix des covariables inclues dans le modèle et leur codage :**
+
+-   **Age de l'enfant lors du test de neurodeveloppement :**
+
+    -   **Distribution :** ok (@tbl-6, @fig-37, @fig-38, @fig-39)
+
+    -   **Données manquantes :** CBCL (20/356 (5.6%)), IQ (41/356 (12%)), SRS et BRIEF-P (15/356 (4.2%)) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :** non statistiquement associé avec les outcomes neurodeveloppement sauf un tendance (p\<0.1) pour l'IQ verbal comprenhension @tbl-15)
+
+        \--\> Choix final : les variables sont inclues, selon l'outcome, en continue
+
+-   **Poids et taille de l'enfant à la naissance, à un an ou 3 ans :**
+
+    -   **Distribution :** ok (@tbl-6, @fig-57, @fig-58, @fig-59, @fig-60, @fig-61, @fig-62)
+
+    -   **Corrélations :** les variables sont corrélées (@fig-36)
+
+    -   **Données manquantes :** le poids et la taille à la naissance sont les variables avec le moins de données manquantes (\<2% VS autour de 15-20% pour les autres, @tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   Les relations ne semblent pas linéaires entre le poids et la taille à la naissance et le neurodéveloppement de l'enfant (@tbl-7 à @tbl-18)
+
+    -   Elimination du poids et de la taille à 1, 2 et 3 ans pour respecter la chronologie (le microbiote a été prélevé à un an)
+
+        \--\> Choix final: on choisit les variables poids et taille à la naissance, en catégoriel (3 catégories, po_w_kg_3cat et po_he_3cat)
+
+-   **Age des parents :**
+
+    -   **Distribution :** ok (@tbl-6, @fig-40, @fig-41)
+
+    -   **Corrélations :** les variables âge de la mère à la conception et âge du père à la naissance sont corrélées (@fig-36)
+
+    -   **Données manquantes :** l'âge de la mère n'a aucune donnée manquante contrairement à l'âge du père (17% de NA, @tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   l'âge du père et de la mère sont associés au comportement de l'enfant mais pas au qi les deux variables semblent avoir une relation linéaire les deux variables sont associées dans le même sens
+
+        \--\> Choix final : on choisit la variable âge de la mère, en continu (mo_age)
+
+-   **Niveau d'éducation des parents:**
+
+    -   **Distribution :** ok, catégories équilibrées (@tbl-5)
+
+    -   **Données manquantes :** il y a moins de données manquantes sur la variables mère (0.4% VS 39%, @tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   le niveau d'éducation de la mère est associée à SRS totale et Plan/organization score at 3 years (BRIEF-P) à trois ans
+
+    -   **Choix des catégories :** Ariane et Vicente ont utilisé 2 catégories (≥5 years after graduation VS \<5 years after graduation)
+
+        \--\> Choix final : on choisit la variable éducation de la mère en 2 catégories (mo_dipl_2cat)
+
+-   **IMC de la mère avant la grossesse :**
+
+    -   **Distribution :** beaucoup d'outliers (@tbl-6, @fig-42)
+
+    -   **Données manquantes :** 1/356 (0.3%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   L'IMC de la mère avant la grossesse n'est pas statistiquement associée aux outcomes de neurodeveloppement
+
+        -   La relation ne semble pas linéaire
+
+Choix final : on choisit la variable IMC de la mère avant la grossesse en 3 catégories (mo_bmi_bepr_3cat)
+
+-   **Sexe de l'enfant :**
+
+    -   **Distribution (Male/Female):** ok, catégories équilibrées (@tbl-5)
+
+    -   **Données manquantes :** 0/356 (0%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   Le sexe de l'enfant n'est pas associé aux outcomes de neurodeveloppement
+
+        -   Sauf en univarié pour BRIEF-P inhibit score (Beta : -1.2; CI95%:-2.3, 0.0; p=0.042, female compared to male, @tbl-10)
+
+        -   Sauf en univarié pour IQ verbal comprehension score Y3 (Beta : 2.6; CI95% : 0.0, 5.1; p=0.046, female, compared to male, @tbl-15)
+
+Choix final : on inclut la variable sexe de l'enfant (ch_sex)
+
+-   **Parité :**
+
+    -   **Distribution (None/1 child or more) : ok, catégories équilibrées (@tbl-5)**
+
+    -   **Données manquantes :** 0/356 (0%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   Statistiquement associé avec presque tous les outcomes de neurodeveloppement
+
+        -   Le fait d'avoir déjà eu un enfant ou plus est associé à une diminution des outcomes BRIEF-P, SRS, CBCL et une augmentation du QI
+
+        -   Sauf IQ verbal comprehension score Y3 : sens de l'association innatendu
+
+Choix final : on inclut la variable parité (mo_par_2cat)
+
+-   **Durée de l'allaitement :**
+
+    -   **Distribution :** ok, pas d'outliers (@fig-49, @tbl-6)
+
+    -   **Données manquantes :** 9/356 (2.5%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   La relation entre la durée de l'allaitement et les outcomes de neuroveloppement semble linéaire
+
+Choix final : on inclut la variable catégorielle car pour le microbiote il y a une grosse différenc eattendu entre les enfants allaités des enfants non allaités (ch_bf_duration_till48w_4cat)
+
+-   **Durée de la gestation :**
+
+    -   **Distribution :** ok (@fig-50, @tbl-6)
+
+    -   **Données manquantes :** 0/356 (0%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   La durée de la gestation n'est pas statistiquement associée aux outcomes de neurodeveloppement (car les enfants sont presque tous nés à terme)
+
+Choix final : on inclut la variable en continue (po_gd)
+
+-   **Mode d'accouchement :**
+
+    -   **Distribution (Vaginal delivery / C-section) :** ok (@tbl-5)
+
+    -   **Données manquantes :** 0/356 (0%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   Le mode d'accouchement n'est pas statistiquement associé aux outcomes de neurodeveloppement
+
+Choix final : on inclut la variable en continue (po_delmod)
+
+-   **Période d'introduction de la nourriture solide :**
+
+    -   **Distribution (Between 0 and 6 months old / Between 6 and 12 months old / Not introduced at 12 months old) :** ok (@tbl-5)
+
+    -   **Données manquantes :** 37/356 (10%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18)**
+
+Choix final : on inclut la variable en catégoriel (ch_food_intro_Y1_3cat)
+
+-   **Présence d'animaux de compagnie :**
+
+    -   **Distribution (No / One or more) :** ok (@tbl-5)
+
+    -   **Données manquantes :** 45/356 (13%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   non statistiquement associé
+
+Choix final : on inclut la variable en catégoriel (mo_pets)
+
+-   **Prescription d'antibiotiques entre la naissance et l'âge de 1 an :**
+
+    -   **Distribution (No / Yes) :** ok (@tbl-5)
+
+        -   **Données manquantes :** 1/356 (0.3%) (@tbl-5)
+
+        -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+            -   non statistiquement associé
+
+Choix final : on inclut la variable en catégoriel (ch_antibio_Y1_2cat)
+
+-   **Questionnaires HOME à 3 ans :**
+
+    -   **Corrélations :** les variables HOME sont corrélées entre elles (@fig-36) --\> on choisit la plus générale (home_total_y3)
+
+    -   **Distribution :** continue, ok (@tbl-6, @fig-52, @fig-53, @fig-54, @fig-56)
+
+    -   **Données manquantes :** 43/356 (12%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   HOME questionnaire total score était associé à CBCL externe score Y2, SRS total score Y3, IQ verbal comprehension score Y3, IQ total score Y3
+
+Choix final : on inclut la variable en continue (home_total_y3)
+
+-   **Score d'anxiété et de dépression de la mère, au 3ème trimestre et lorsque l'enfant a l'âge de 1 ans :**
+
+    -   **Corrélations :** les variables sont corrélées entre elles (@fig-36) --\> on choisit la plus générale et la plus loin chronologiquement des variables d'expositions et d'outcomes --\> le score totale d'anxiété et de dépression de la mère au T3
+
+    -   **Distribution :** continue, ok (@tbl-6, @fig-43, @fig-44, @fig-45, @fig-46, @fig-47, @fig-48) **- Données manquantes :** 14/356 (3.9%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   La variable score d'anxiété et de dépression de la mère à T3 est statistiquement associée aux outcomes de neurodeveloppmement (CBCL Y2, SRS Y3, BRIEF-P Y3) mais pas au QI
+
+Choix final : on inclut la variable score totale d'anxiété et de dépression de la mère au T3 (mo_hadtotscore_grt3_imp)
+
+-   **Consomation d'alcool pendant la grossesse :**
+
+    -   la variable est peu précise, peu de femme ont réélement bu pendant la grossesse (@tbl-5, @tbl-6)
+
+Choix final : nous n'incluons pas cette variable dans les modèles
+
+-   **Tabagisme périnatale :**
+
+    -   **3 variables initiales sont disponibles :**
+
+        -   Tabagisme passif de la mère pendant la grossesse (oui/non)
+
+        -   Tabagisme actif de la mère pendant la grossesse (oui/non)
+
+        -   Tabagisme passif de l'enfant de la naissance à un an (oui/non)
+
+    -   **Distribution (No / Yes) :** ok (@tbl-5)
+
+    -   **Données manquantes :** ok (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   non statistiquement associé ou tendance (en univarié)
+
+Choix final : on regroupe en 2 variables catégorielles oui / non
+
+une variable tabagisme périnatale passif (tabagisme passif de la mère pendant la grossesse + tabagisme passif de l'enfant de la naissance à un an (ch_tabacco_passive_up_to_Y1)
+
+une variable tabagisme actif de la mère pendant la grossesse (mo_tob_gr_anyt_yn_n2)
+
+-   **Mode de garde principal de l'enfant à 6 et 12 mois :**
+
+    -   **2 variables sont disponibles :** mode de garde à 6 mois (Collective day care/other), mode de garde à 12 mois (Collective day care/other)
+
+    -   **on teste 2 models :**
+
+        -   un premier où l'on inclut la variable main child care at 12 months (ch_care_main_12m_opt2_2c, Multivariate model test 1)
+
+        -   un deuxième où l'on inclut une variable main child care up to 12 months (ch_care_main_6m_12m_opt2_2c, Multivariate model test 2) : ici tous les enfants qui ont un mode de garde principal collectif à 6 ou 12 mois sont dans la catégorie collective day care
+
+    -   **Distribution :** ok, il n'y a pas une grande différence entre les deux variables (@tbl-5)
+
+    -   **Données manquantes :** 25/356 (7.0%) (@tbl-5)
+
+    -   **Régressions uni et multivariées (@tbl-7 à @tbl-18) :**
+
+        -   La variable main mode of child care at 12 months est associée à une augmentation de BRIEF-P shift score Y3 et à une diminition de IQ total scoreY3 (Collective day care est la catégorie de référence) dans les modèles uni et multivariés
+
+        -   La variable main mode of child care up to 12 months tendait à être associée à une augmentation de BRIEF-P shift score Y3 et à une diminition de IQ total scoreY3 (Collective day care est la catégorie de référence) dans les modèles uni et multivariés
+
+Choix final : on inclut la variable en catégoriel (ch_care_main_12m_opt2_2c)
+
+```{r}
+#| label: tbl-19
+#| tbl-cap: Description final covariates 
+#| column: page-inset-right
+table_1
+```
+
+## Final sample sizes
+
+```{r}
+#| label: fig-76
+#| fig-cap: Flow chart of the participants
+#| column: page-inset-right
+#| out-width: 100%
+knitr::include_graphics("../4_output/Flowchat participants.png")
+```
+
+A rediscuter si on prend un seul effectif commun ?
+
+## CBCL scores Y2
+
+### Interne score Y2
+
+```{r}
+#| label: tbl-20
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the CBCL interne score. 
+#| column: body-outset-left
+results_ch_cbclintscore_y2
+```
+
+### Externe score Y2
+
+```{r}
+#| label: tbl-21
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the CBCL externe score at 2 years. 
+#| column: body-outset-left
+results_ch_cbclextscore_y2
+```
+
+## SRS total score Y3
+
+```{r}
+#| label: tbl-22
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the SRS total score at 3 years. 
+#| column: body-outset-left
+results_ch_SRStotal_y3
+```
+
+## BRIEF-P Y3
+
+### Inhibition score Y3
+
+```{r}
+#| label: tbl-23
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the BRIEF-P inhibition score at 3 years. 
+#| column: body-outset-left
+results_ch_briefpinhibit_y3
+```
+
+### Shift score Y3
+
+```{r}
+#| label: tbl-24
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the BRIEF-P shift score at 3 years. 
+#| column: body-outset-left
+results_ch_briefpshift_y3
+```
+
+### Emotional control score Y3
+
+```{r}
+#| label: tbl-25
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the BRIEF-P emotional control score at 3 years. 
+#| column: body-outset-left
+results_ch_briefpemocontrol_y3
+```
+
+### Working memory score Y3
+
+```{r}
+#| label: tbl-26
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the BRIEF-P working memory score at 3 years. 
+#| column: body-outset-left
+results_ch_briefpworkmemo_y3
+```
+
+### Plan/organization score Y3
+
+```{r}
+#| label: tbl-27
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the BRIEF-P plan and organization score at 3 years. 
+#| column: body-outset-left
+results_ch_briefpplan_y3
+```
+
+## IQ Y3
+
+### Verbal comprehension score Y3
+
+```{r}
+#| label: tbl-28
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the IQ verbal comprehension score at 3 years. 
+#| column: body-outset-left
+results_ch_verbal_comprehension_IQ_Y3
+```
+
+### Visuospatiale score Y3
+
+```{r}
+#| label: tbl-29
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the IQ visuospatiale score at 3 years. 
+#| column: body-outset-left
+results_ch_visuospatiale_IQ_Y3
+```
+
+### Work memory score Y3
+
+```{r}
+#| label: tbl-30
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the IQ work memory score at 3 years. 
+#| column: body-outset-left
+results_ch_work_memory_IQ_Y3
+```
+
+### Total IQ score Y3
+
+```{r}
+#| label: tbl-31
+#| tbl-cap: Adjusted associations between gut microbiota parameters and the IQ total score at 3 years. 
+#| column: body-outset-left
+results_ch_total_IQ_Y3
+```
+
+# Part 4: Additional analysis
+
+## Covariates effects on the outcomes
+
+### CBCL Y2
+
+#### Interne score Y2
+
+```{r}
+#| column: page-inset-right
+results_ch_cbclintscore_y2_sup_covar
+```
+
+#### Externe score Y2
+
+```{r}
+#| column: page-inset-right
+results_ch_cbclextscore_y2_sup_covar 
+```
+
+### SRS total score 3Y
+
+```{r}
+#| column: page-inset-right
+results_ch_SRStotal_y3_sup_covar 
+```
+
+### BRIEF-P Y3
+
+#### Inhibit score Y3
+
+```{r}
+#| column: page-inset-right
+results_ch_briefpinhibit_y3_sup_covar
+```
+
+#### Shift score Y3
+
+```{r}
+#| column: page-inset-right
+results_ch_briefpshift_y3_sup_covar 
+```
+
+#### BRIEF-P emotional control score Y3
+
+```{r}
+#| column: page-inset-right
+results_ch_briefpemocontrol_y3_sup_covar 
+```
+
+#### BRIEF-P working memory score Y3
+
+```{r}
+#| column: page-inset-right
+results_ch_briefpworkmemo_y3_sup_covar 
+```
+
+#### BRIEF-P plan/organization score Y3
+
+```{r}
+#| column: page-inset-right
+results_ch_briefpplan_y3_sup_covar 
+```
+
+### IQ Y3
+
+#### IQ verbal comprehension score Y3
+
+```{r}
+#| column: page-inset-right
+results_ch_verbal_comprehension_IQ_y3_sup_covar 
+```
+
+#### IQ visuospacial score Y3
+
+```{r}
+#| column: page-inset-right
+results_ch_visuospatiale_IQ_y3_sup_covar 
+```
+
+#### IQ work memory score Y3
+
+```{r}
+#| column: page-inset-right
+results_ch_work_memory_IQ_y3_sup_covar 
+```
+
+#### IQ total score Y3
+
+```{r}
+#| column: page-inset-right
+results_ch_total_IQ_y3_sup_covar 
+```
+
+## Sensitivity analyses - rarefaction threshold
+
+### CBCL Y2
+
+#### Interne score Y2
+
+```{r}
+#| column: body-outset-left
+results_ch_cbclintscore_y2_sensi_seuil
+```
+
+#### Externe score Y2
+
+```{r}
+#| column: body-outset-left
+results_ch_cbclextscore_y2_sensi_seuil
+```
+
+### SRS total score 3Y
+
+```{r}
+#| column: body-outset-left
+results_ch_SRStotal_y3_sensi_seuil
+```
+
+### BRIEF-P Y3
+
+#### Inhibit score Y3
+
+```{r}
+#| column: body-outset-left
+results_ch_briefpinhibit_y3_sensi_seuil
+```
+
+#### Shift score Y3
+
+```{r}
+#| column: body-outset-left
+results_ch_briefpshift_y3_sensi_seuil
+```
+
+#### BRIEF-P emotional control score Y3
+
+```{r}
+#| column: body-outset-left
+results_ch_briefpemocontrol_y3_sensi_seuil
+```
+
+#### BRIEF-P working memory score Y3
+
+```{r}
+#| column: body-outset-left
+results_ch_briefpworkmemo_y3_sensi_seuil
+```
+
+#### BRIEF-P plan/organization score Y3
+
+```{r}
+#| column: body-outset-left
+results_ch_briefpplan_y3_sensi_seuil
+```
+
+### IQ Y3
+
+#### IQ verbal comprehension score Y3
+
+```{r}
+#| column: body-outset-left
+results_ch_verbal_comprehension_IQ_Y3_sensi_seuil
+```
+
+#### IQ visuospacial score Y3
+
+```{r}
+#| column: body-outset-left
+results_ch_visuospatiale_IQ_Y3_sensi_seuil
+```
+
+#### IQ work memory score Y3
+
+```{r}
+#| column: body-outset-left
+results_ch_work_memory_IQ_Y3_sensi_seuil
+```
+
+#### IQ total score Y3
+
+```{r}
+#| column: body-outset-left
+results_ch_total_IQ_Y3_sensi_seuil
+```
+
+## Sensitivity analysis - effect of HOME variable
+
+### CBCL Y2
+
+#### Interne score Y2
+
+```{r}
+#| column: page-inset-right
+results_ch_cbclintscore_y2_sensi_home
+```
+
+#### Externe score Y2
+
+```{r}
+#| column: page-inset-right
+results_ch_cbclextscore_y2_sensi_home
+```
