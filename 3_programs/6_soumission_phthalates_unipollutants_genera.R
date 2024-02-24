@@ -210,7 +210,9 @@ for (outcome in outcomes) {
   for (exposure in explanatory) {
     terms <- c(exposure, covariates)
     formula <- reformulate(terms, response = outcome)
-    model <- lm(formula, data = bdd_final_imp_1)
+    #model <- lm(formula, data = bdd_final_imp_1)
+    model <- with(data = bdd_final_imp, 
+                  exp = lm(formula))
     
     tbl <-                                                                      # running linear regression
       tbl_regression(
@@ -268,9 +270,11 @@ for (outcome in names(tbls_by_outcome_multi)) {                                 
   stacked_tbl_multi <- do.call(tbl_stack, list(tbls = tbls_for_this_outcome_multi)) # Empiler les tableaux en un seul tableau
   stacked_tbls_by_outcome_multi[[outcome]] <- stacked_tbl_multi                     # Ajouter le tableau empilé à la liste des tableaux empilés
 }
-
+labels_outcomes <- bdd_final_imp_1 %>%
+  select(all_of(outcomes)) %>%
+  sapply(function(x) attr(x, "label"))
 results_tbl_multi <- tbl_merge(tbls = stacked_tbls_by_outcome_multi,                # Fusionner les tableaux empilés en un seul tableau
-                             tab_spanner = outcomes)
+                             tab_spanner = labels_outcomes)
 
 
 ### Tableau pour générer des figures ----
