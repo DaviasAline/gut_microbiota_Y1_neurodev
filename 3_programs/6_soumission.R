@@ -349,12 +349,138 @@ test <- test %>%
 descrip_covar
 
 ## Table 2: Associations alphadiv and neurodev ----
+alpha_vec <- c("ch_feces_SpecRich_5000_ASV_Y1", "ch_feces_Shannon_5000_ASV_Y1")
+
+# Création d'une liste pour stocker les tableaux par outcome
+prep_table_1 <- vector("list", length(outcomes))
+names(prep_table_1) <- outcomes
+
+# Boucle principale
+for (outcome in outcomes) {
+  # Sélection des covariables appropriées
+  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
+    covariates <- covariates_map$CBCL
+  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
+    covariates <- covariates_map$SRS_BRIEF
+  } else if (outcome %in% c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")) {
+    covariates <- covariates_map$IQ
+  }
+  
+  tbls_for_outcome_multi <- vector("list", length(alpha_vec))
+  names(tbls_for_outcome_multi) <- alpha_vec
+  
+  for (exposure in alpha_vec) {
+    terms <- c(exposure, covariates)
+    formula <- reformulate(terms, response = outcome)
+    model <- lm(formula, data = bdd_final_imp_1)
+    # model <- with(data = bdd_final_imp, 
+    #               exp = lm(formula))
+    
+    tbl <-                                                                      # running linear regression
+      tbl_regression(
+        model, 
+        include = exposure,
+        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+        pvalue_fun = custom_pvalue_fun,
+        exponentiate = FALSE) %>%
+      bold_p() %>%
+      bold_labels() %>%
+      add_global_p(include = exposure, singular.ok = TRUE, keep = TRUE)
+    
+    tbls_for_outcome_multi[[exposure]] <- tbl
+  }
+  prep_table_1[[outcome]] <- tbls_for_outcome_multi
+}
+
+table_1 <- lapply(prep_table_1, function(tbl_list) {
+  tbl_merge(list(tbl_list[[1]], tbl_list[[2]]), 
+            tab_spanner = c("**Specific richness**", "**Shannon diversity**"))})
+
+table_1 <- 
+  tbl_stack(tbls = table_1, 
+            group_header = c("Internalizing CBCL score at 2 years",
+                             "Externalizing CBCL score at 2 years",
+                             "Total SRS score at 3 years",
+                             "Inhibition BRIEF-P score at 3 years",
+                             "Shift BRIEF-P score at 3 years",
+                             "Emotional control BRIEF-P score at 3 years",
+                             "Working memory BRIEF-P score at 3 years",
+                             "Plan and organization BRIEF-P score at 3 years",
+                             "Verbal comprehension IQ score at 3 years",
+                             "Visuospatiale IQ score at 3 years",
+                             "Work memory IQ score at 3 years",
+                             "Total IQ score at 3 years" = "ch_total_IQ_Y3"))
+
 
 
 ## Table 3: Associations betadiv and neurodev ----
 
 
 ## Table 4: Associations phyla and neurodev ----
+phyla_vec <- c("ch_feces_rel_p1_Y1", "ch_feces_rel_p2_Y1", "ch_feces_rel_p3_Y1", "ch_feces_rel_p4_Y1")
+
+# Création d'une liste pour stocker les tableaux par outcome
+prep_table_4 <- vector("list", length(outcomes))
+names(prep_table_4) <- outcomes
+
+# Boucle principale
+for (outcome in outcomes) {
+  # Sélection des covariables appropriées
+  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
+    covariates <- covariates_map$CBCL
+  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
+    covariates <- covariates_map$SRS_BRIEF
+  } else if (outcome %in% c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")) {
+    covariates <- covariates_map$IQ
+  }
+  
+  tbls_for_outcome_multi <- vector("list", length(phyla_vec))
+  names(tbls_for_outcome_multi) <- phyla_vec
+  
+  for (exposure in phyla_vec) {
+    terms <- c(exposure, covariates)
+    formula <- reformulate(terms, response = outcome)
+    model <- lm(formula, data = bdd_final_imp_1)
+    # model <- with(data = bdd_final_imp, 
+    #               exp = lm(formula))
+    
+    tbl <-                                                                      # running linear regression
+      tbl_regression(
+        model, 
+        include = exposure,
+        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+        pvalue_fun = custom_pvalue_fun,
+        exponentiate = FALSE) %>%
+      bold_p() %>%
+      bold_labels() %>%
+      add_global_p(include = exposure, singular.ok = TRUE, keep = TRUE)
+    
+    tbls_for_outcome_multi[[exposure]] <- tbl
+  }
+  prep_table_4[[outcome]] <- tbls_for_outcome_multi
+}
+
+table_4 <- lapply(prep_table_4, function(tbl_list) {
+  tbl_merge(list(tbl_list[[1]], tbl_list[[2]], tbl_list[[3]], tbl_list[[4]]), 
+            tab_spanner = c("**Firmicutes**", "**Actinobacteria**", 
+                            "**Bacteroidetes**", "**Proteobcateria**"))})
+
+table_4 <- 
+  tbl_stack(tbls = table_4, 
+            group_header = c("Internalizing CBCL score at 2 years",
+                             "Externalizing CBCL score at 2 years",
+                             "Total SRS score at 3 years",
+                             "Inhibition BRIEF-P score at 3 years",
+                             "Shift BRIEF-P score at 3 years",
+                             "Emotional control BRIEF-P score at 3 years",
+                             "Working memory BRIEF-P score at 3 years",
+                             "Plan and organization BRIEF-P score at 3 years",
+                             "Verbal comprehension IQ score at 3 years",
+                             "Visuospatiale IQ score at 3 years",
+                             "Work memory IQ score at 3 years",
+                             "Total IQ score at 3 years" = "ch_total_IQ_Y3"))
+
+
 
 
 # Figures ----
@@ -529,7 +655,7 @@ table_S1 <- descrip_num(data = bdd,
                                  "ch_feces_rel_p4_Y1",
                                  genera_linear_complet))
 
-### Table S2: distribution neurodevelopment ----
+### Table S2: Distribution neurodevelopment ----
 table_S2 <- descrip_num(data = bdd, vars = outcomes)
 
 # Additional figures ----
