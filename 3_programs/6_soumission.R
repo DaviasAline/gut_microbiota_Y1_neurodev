@@ -138,38 +138,6 @@ densityplot(data = bdd_final_imp_1, vars = genera_linear[1:23], ncol = 5)
 densityplot(data = bdd_final_imp_1, vars = genera_linear[24:46], ncol = 5)
 
 
-### Heatmap of correlation ----
-cormat_genera <- bdd %>% 
-  select(all_of(genera_linear_complet)) 
-colnames(cormat_genera) <- genera_linear
-cormat_genera <- cormat_genera %>%
-  rename(
-    "Escherichia and Shigella" = Escherichia_Shigella,
-    "Clostridium XlVa" = Clostridium_XlVa, 
-    "Lachnospiracea incertae sedis" = Lachnospiracea_incertae_sedis, 
-    "Clostridium XVIII" = Clostridium_XVIII, 
-    "Clostridium sensu stricto" = Clostridium_sensu_stricto, 
-    "Ruminococcus 2" = Ruminococcus2, 
-    "Clostridium IV" = Clostridium_IV, 
-    "Erysipelotrichaceae incertae sedis" = Erysipelotrichaceae_incertae_sedis, 
-    "Saccharibacteria genera incertae sedis" = Saccharibacteria_genera_incertae_sedis)
-
-cormat_genera <- cor(cormat_genera, 
-                           use = "pairwise.complete.obs", 
-                           method = "pearson")
-
-corrplot(cormat_genera, 
-         method = 'color', 
-         type = "lower", 
-         tl.col = 'black', 
-         tl.srt = 45, 
-         # addCoef.col = "black",
-         # number.cex = 0.5,
-         # number.digits = 1,
-         tl.cex = 0.6,
-         col = rev(COL2(diverging = "RdYlBu")))
-
-
 # Calcul du nombre de tests effectifs pour la correction pour comp multiple (FWER) ----
 test_expo_taxa <- bdd_final_imp_1 %>%
   filter(!is.na(ch_feces_rel_p1_Y1)) %>%
@@ -614,6 +582,7 @@ table_S1 <- descrip_num(data = bdd,
                                  "ch_feces_rel_p3_Y1",
                                  "ch_feces_rel_p4_Y1",
                                  genera_linear_complet))
+write.xlsx(table_S1, file = "4_output/Table_S1.xlsx")
 
 ### Table S2: Distribution neurodevelopment ----
 table_S2 <- descrip_num(data = bdd_final, vars = outcomes)
@@ -621,16 +590,54 @@ write.xlsx(table_S2, file = "4_output/Table_S2.xlsx")
 
 ### Table S3: Effects of the covariates on the outcomes ----
 model_covars <- function(var_outcome, var_age, covars, data) {
+  
+  effectif <- data %>%                   # Création d'une colonne effectif
+    filter(!is.na({{var_outcome}}))%>%
+    select(all_of({{covars}}), 
+           {{var_age}}) %>%
+    tbl_summary(
+      missing = "no", 
+      type = list(ch_antibio_Y1_2cat ~ "categorical", 
+                  home_total_y3 ~ "continuous"), 
+      statistic = all_continuous() ~ "{N_nonmiss}") %>%
+    bold_labels()
+  
+  tbl_model_univ <- data %>%                      # Création des colonnes modèle simple 
+    select(
+      {{var_outcome}}, 
+      {{var_age}},
+      all_of({{covars}})) %>%
+    
+    tbl_uvregression(
+      method = lm ,
+      y = {{var_outcome}},
+      formula = "{y} ~ {x}", 
+      hide_n = TRUE, 
+      estimate_fun = scales::label_number(accuracy = .1, decimal.mark = "."),
+      pvalue_fun = scales::label_pvalue(accuracy = .001, decimal.mark = ".")) %>%
+    add_global_p() %>%
+    bold_labels() %>%
+    bold_p(t = 0.1)
+  
   variables_explicatives <- c(covars, var_age)
   formule_regr <- as.formula(paste(var_outcome, "~", paste(variables_explicatives, collapse = " + ")))
   modele <- lm(formule_regr, data = data)
-  tableau_resultat <- 
-    tbl_regression(modele, 
-                   estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
-                   pvalue_fun = scales::label_pvalue(accuracy = .001, decimal.mark = ".")) %>%
+  tbl_model_multi <-  tbl_regression(
+    modele, 
+    estimate_fun = scales::label_number(accuracy = .1, decimal.mark = "."),
+    pvalue_fun = scales::label_pvalue(accuracy = .001, decimal.mark = ".")) %>%
+    add_global_p() %>%
     bold_labels() %>%
-    bold_p(t=0.1)
-  return(tableau_resultat)
+    bold_p(t = 0.1)
+  
+  tbl_model <- tbl_merge(
+    tbls = list(effectif, 
+                tbl_model_univ, 
+                tbl_model_multi), 
+    tab_spanner = c("", "**Univariate models**", "**Multivariate model**"))%>%
+    modify_table_body(~.x %>% arrange(row_type == "glance_statistic"))
+  
+  return(tbl_model)
 }
 
 table_S3 <- tbl_merge(
@@ -650,131 +657,142 @@ table_S3 <- tbl_merge(
   tab_spanner = spanner_names)
 
 
-table_S3 <- tbl_merge(
-  tbls = list(
-    results_ch_cbclintscore_y2_sup_covar = 
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_cbclintscore_y2,
-        var_age = ch_age_CBCL_Y2,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_cbclintscore_y2),
-    
-    results_ch_cbclextscore_y2_sup_covar = 
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_cbclextscore_y2,
-        var_age = ch_age_CBCL_Y2,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_cbclextscore_y2),
-    
-    results_ch_SRStotal_y3_sup_covar = 
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_SRStotal_y3,
-        var_age = ch_age_SRS_BRIEFP_Y3,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_SRStotal_y3),
-    
-    results_ch_briefpinhibit_y3_sup_covar =
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_briefpinhibit_y3,
-        var_age = ch_age_SRS_BRIEFP_Y3,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_briefpinhibit_y3),
-    
-    results_ch_briefpshift_y3_sup_covar =
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_briefpshift_y3,
-        var_age = ch_age_SRS_BRIEFP_Y3,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_briefpshift_y3),
-    
-    results_ch_briefpemocontrol_y3_sup_covar =
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_briefpemocontrol_y3,
-        var_age = ch_age_SRS_BRIEFP_Y3,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_briefpemocontrol_y3),
-    
-    results_ch_briefpworkmemo_y3_sup_covar =
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_briefpworkmemo_y3,
-        var_age = ch_age_SRS_BRIEFP_Y3,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_briefpworkmemo_y3),
-    
-    results_ch_briefpplan_y3_sup_covar = 
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_briefpplan_y3,
-        var_age = ch_age_SRS_BRIEFP_Y3,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_briefpplan_y3),
-    
-    results_ch_verbal_comprehension_IQ_y3_sup_covar = 
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_verbal_comprehension_IQ_Y3,
-        var_age = ch_age_IQ_Y3,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_verbal_comprehension_IQ_Y3),
-    
-    results_ch_visuospatiale_IQ_y3_sup_covar = 
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_visuospatiale_IQ_Y3,
-        var_age = ch_age_IQ_Y3,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_visuospatiale_IQ_Y3),
-    
-    results_ch_work_memory_IQ_y3_sup_covar = 
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_work_memory_IQ_Y3,
-        var_age = ch_age_IQ_Y3,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_work_memory_IQ_Y3),
-    
-    results_ch_total_IQ_y3_sup_covar = 
-      tbl_model_final(
-        data = bdd_final, 
-        var_outcome = ch_total_IQ_Y3,
-        var_age = ch_age_IQ_Y3,  
-        covar_a_tester =  covariates, 
-        model_1 = model_1_ch_total_IQ_Y3)),
-  tab_spanner = spanner_names)
-
 
 ## Table S4: Associations genera and neurodev ----
 # Adjusted associations between the 46 most abundant genera in the child gut microbiota at one year and the neurodevelopment (n between X and X).
-stacked_tbls_by_outcome_multi <- vector("list", length(outcomes))            # Création liste pour stocker les tableaux empilés par outcome
-names(stacked_tbls_by_outcome_multi) <- outcomes
-
-for (outcome in names(tbls_by_outcome_multi)) {                                   # Récupérer les tableaux de régression pour cet outcome
-  tbls_for_this_outcome_multi <- tbls_by_outcome_multi[[outcome]]
-  stacked_tbl_multi <- do.call(tbl_stack, list(tbls = tbls_for_this_outcome_multi)) # Empiler les tableaux en un seul tableau
-  stacked_tbls_by_outcome_multi[[outcome]] <- stacked_tbl_multi                     # Ajouter le tableau empilé à la liste des tableaux empilés
-}
-labels_outcomes <- bdd_final_imp_1 %>%
-  select(all_of(outcomes)) %>%
-  sapply(function(x) attr(x, "label"))
-results_tbl_multi <- tbl_merge(tbls = stacked_tbls_by_outcome_multi,                # Fusionner les tableaux empilés en un seul tableau
-                               tab_spanner = labels_outcomes)
-
+table_S4 <- tbl_stack(
+  tbls = lapply(7:52, function(j) {
+    tbl_merge(
+      tbls = lapply(tbls_by_outcome_multi, function(i) i[[j]]),
+      tab_spanner = spanner_names)}))
 
 ## Table S5: Sensitivity analysis - effect of the rarefaction threshold ----
 # Sensitivity analysis - Adjusted associations between the gut microbiota α-diversity at different sequencing depths and the neurodevelopment. 
+
+alpha_vec <- c("ch_feces_SpecRich_5000_ASV_Y1", "ch_feces_SpecRich_10000_ASV_Y1", 
+               "ch_feces_Shannon_5000_ASV_Y1", "ch_feces_Shannon_10000_ASV_Y1")
+table_S5 <- vector("list", length(outcomes))
+names(table_S5) <- outcomes
+
+# Boucle principale
+for (outcome in outcomes) {
+  # Sélection des covariables appropriées
+  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
+    covariates <- covariates_map$CBCL
+  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
+    covariates <- covariates_map$SRS_BRIEF
+  } else if (outcome %in% c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")) {
+    covariates <- covariates_map$IQ
+  }
+  
+  tbls_for_outcome_multi <- vector("list", length(alpha_vec))
+  names(tbls_for_outcome_multi) <- alpha_vec
+  
+  for (exposure in alpha_vec) {                                               # running linear regression
+    terms <- c(exposure, covariates)
+    formula <- reformulate(terms, response = outcome)
+    model <- lm(formula, data = bdd_final_imp_1_sensi_seuil)
+    # model <- with(data = bdd_final_imp, 
+    #               exp = lm(formula))
+    
+    tbl <-                                                                      
+      tbl_regression(
+        model, 
+        include = exposure,
+        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+        pvalue_fun = custom_pvalue_fun,
+        exponentiate = FALSE) %>%
+      bold_p() %>%
+      bold_labels() %>%
+      add_global_p(include = exposure, singular.ok = TRUE, keep = TRUE) %>%
+      add_n()%>%
+      modify_table_body(~.x %>% arrange(row_type == "glance_statistic"))
+    
+    tbls_for_outcome_multi[[exposure]] <- tbl
+  }
+  table_S5[[outcome]] <- tbls_for_outcome_multi
+}
+
+table_S5 <- tbl_stack(
+  tbls = list(
+    tbl_merge(tbls = lapply(tbls_by_outcome_multi, function(x) x[[1]]), tab_spanner = spanner_names),  # analyse principale seuil 5000
+    tbl_merge(tbls = lapply(table_S5, function(x) x[[1]]), tab_spanner = spanner_names),               # analyse de sensibilité seuil 5000 pour n sur seuil 10000
+    tbl_merge(tbls = lapply(table_S5, function(x) x[[2]]), tab_spanner = spanner_names),               # analyse de sensibilité seuil 10000 pour n sur seuil 10000
+    tbl_merge(tbls = lapply(tbls_by_outcome_multi, function(x) x[[2]]), tab_spanner = spanner_names),  # analyse principale
+    tbl_merge(tbls = lapply(table_S5, function(x) x[[3]]), tab_spanner = spanner_names),               # analyse de sensibilité seuil 5000 pour n sur seuil 10000
+    tbl_merge(tbls = lapply(table_S5, function(x) x[[4]]), tab_spanner = spanner_names)))              # analyse de sensibilité seuil 10000 pour n sur seuil 10000
 
 ## Table S6: Sensitivity analysis – effect of the HOME Y3 variable on CBCL Y2 -----
 ## Sensitivity analysis – Effects of the HOME covariate assessed at 3 years on the CBCL outcomes assessed at 2 years.
 
 
 # Additional figures ----
+## Figure S1: DAG ----
+## Direct acyclic graph of the relation between one year child gut microbiota and neurodevelopment. 
+
+## Figure S2: correlations gut microbiota parameters ----
+## xx correlations between gut microbiota parameters (n between X and X). 
+cormat_genera <- bdd %>% 
+  select(all_of(genera_linear_complet)) 
+colnames(cormat_genera) <- genera_linear
+cormat_genera <- cormat_genera %>%
+  rename(
+    "Escherichia and Shigella" = Escherichia_Shigella,
+    "Clostridium XlVa" = Clostridium_XlVa, 
+    "Lachnospiracea incertae sedis" = Lachnospiracea_incertae_sedis, 
+    "Clostridium XVIII" = Clostridium_XVIII, 
+    "Clostridium sensu stricto" = Clostridium_sensu_stricto, 
+    "Ruminococcus 2" = Ruminococcus2, 
+    "Clostridium IV" = Clostridium_IV, 
+    "Erysipelotrichaceae incertae sedis" = Erysipelotrichaceae_incertae_sedis, 
+    "Saccharibacteria genera incertae sedis" = Saccharibacteria_genera_incertae_sedis)
+
+cormat_genera <- cor(cormat_genera, 
+                     use = "pairwise.complete.obs", 
+                     method = "pearson")
+
+plot.new()
+tiff(filename = "4_output/heatmap_cor_genera.tiff", units = "mm", width = 250, height = 250, res = 300)
+corrplot(cormat_genera, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         # addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## Figure S3: correlations gut microbiota and covariates ----
+## xx correlations between gut microbiota parameters and covariates (n between X and X).
+
+## Figure S4: correlations neurodevelopmental ----
+## xx correlations between neurodevelopmental parameters (n between X and X).
+cormat_neuro <- bdd %>% 
+  select(all_of(outcomes)) 
+colnames(cormat_neuro) <- spanner_names
+names(cormat_neuro) <- gsub(" score at 2 years", " Y2", names(cormat_neuro))
+names(cormat_neuro) <- gsub(" score at 3 years", " Y3", names(cormat_neuro))
+
+cormat_neuro <- cor(cormat_neuro, 
+                    use = "pairwise.complete.obs", 
+                    method = "pearson")
+
+plot.new()
+tiff(filename = "4_output/heatmap_cor_neuro.tiff", units = "mm", width = 250, height = 250, res = 300)
+corrplot(cormat_neuro, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         number.cex = 1,
+         number.digits = 1,
+         tl.cex = 1,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
 
 
 # Strongest associations ----
