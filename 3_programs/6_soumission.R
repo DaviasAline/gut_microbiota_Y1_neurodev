@@ -30,7 +30,16 @@ theme_gtsummary_compact()
 # Data and functions loading ----
 load("1_intermediate_data/3_data_imputation_AD_gumme.RData")
 source("3_programs/4_functions_AD_gumme.R")
-taxa_table <- read_csv("0_source_data/taxa_table_ASVbased_Y1_AD_20220504_8.csv")
+rm(table_cor, table_cor_sg, model_Y3_1, model_Y3_2, heatmap_cor, heatmap_cor_pairwise)
+corres <- 
+  taxa_table_Y1 %>% 
+  select(Phyla_corres = ch_feces_phylum_ASVbased_Y1, 
+         Class_corres = ch_feces_class_ASVbased_Y1,
+         Order_corres = ch_feces_order_ASVbased_Y1, 
+         Family_corres = ch_feces_family_ASVbased_Y1,
+         Exposure = ch_feces_genus_ASVbased_Y1) %>%
+  filter(Exposure %in% genera_linear) %>%
+  distinct(Exposure, .keep_all = TRUE)
 
 # Vectors ----
 covariates <- covar_vec_model_final
@@ -56,6 +65,19 @@ genera_linear_complet <- bdd %>%
   filter(!is.na(ch_feces_rel_g1_Y1)) %>%
   select_if(~ sum(. != 0, na.rm = TRUE) / length(.) >= 0.3) %>%
   colnames()
+
+spanner_names <- c("Internalizing CBCL score at 2 years",
+                   "Externalizing CBCL score at 2 years",
+                   "Total SRS score at 3 years",
+                   "Inhibition BRIEF-P score at 3 years",
+                   "Shift BRIEF-P score at 3 years",
+                   "Emotional control BRIEF-P score at 3 years",
+                   "Working memory BRIEF-P score at 3 years",
+                   "Plan and organization BRIEF-P score at 3 years",
+                   "Verbal comprehension IQ score at 3 years",
+                   "Visuospatiale IQ score at 3 years",
+                   "Work memory IQ score at 3 years",
+                   "Total IQ score at 3 years")
 
 # Data description ----
 ## Covariates ----
@@ -148,34 +170,48 @@ corrplot(cormat_genera,
          col = rev(COL2(diverging = "RdYlBu")))
 
 
-# Calcul du nombre de tests ----
+# Calcul du nombre de tests effectifs pour la correction pour comp multiple (FWER) ----
+test_expo_taxa <- bdd_final_imp_1 %>%
+  filter(!is.na(ch_feces_rel_p1_Y1)) %>%
+  select(all_of(explanatory)) %>%
+  select(-"ch_feces_SpecRich_5000_ASV_Y1", -"ch_feces_Shannon_5000_ASV_Y1") 
+test_expo_taxa <- lapply(test_expo_taxa, function(x) { var_lab(x) <- NULL; return(x) })
+test_expo_taxa <- as.data.frame(test_expo_taxa)
+cor_mixed_table_expo_taxa <- cor_mixed(data = test_expo_taxa)
+results_alpha_corrected_expo_taxa <- alpha_corrected(data = test_expo_taxa, alpha = 0.05)
+results_M0_corrected_expo_taxa <- M0_corrected(data = test_expo_taxa, alpha = 0.05)
+results_M0_corrected_expo_taxa
 
+test_expo_outcomes <- bdd_final_imp_1 %>%
+  select(all_of(outcomes))
+test_expo_outcomes <- lapply(test_expo_outcomes, function(x) { var_lab(x) <- NULL; return(x) })
+test_expo_outcomes <- as.data.frame(test_expo_outcomes)
+cor_mixed_table_expo_outcomes <- cor_mixed(data = test_expo_outcomes)
+results_alpha_corrected_expo_outcomes <- alpha_corrected(data = test_expo_outcomes, alpha = 0.05)
+results_M0_corrected_expo_outcomes <- M0_corrected(data = test_expo_outcomes, alpha = 0.05)
+results_M0_corrected_expo_outcomes
 
+## Pour les analyses de diversité, le seuil corrigé est : 0.05/(3*7)
+## Pour les analyses de taxonomie, le seuil corrigé est : 0.05/(33*7)
+rm(test_expo_taxa, test_expo_outcomes, 
+   cor_mixed_table_expo_taxa, cor_mixed_table_expo_outcomes, 
+   results_alpha_corrected_expo_taxa, results_alpha_corrected_expo_outcomes,
+   results_M0_corrected_expo_taxa, results_M0_corrected_expo_outcomes, 
+   cor_mixed, alpha_corrected, M0_corrected)
 
 # Running linear regressions ----
-corres <- 
-  taxa_table %>% 
-  select(Phyla_corres = ch_feces_phylum_ASVbased_Y1, 
-         Class_corres = ch_feces_class_ASVbased_Y1,
-         Order_corres = ch_feces_order_ASVbased_Y1, 
-         Family_corres = ch_feces_family_ASVbased_Y1,
-         Exposure = ch_feces_genus_ASVbased_Y1) %>%
-  filter(Exposure %in% genera_linear) %>%
-  distinct(Exposure, .keep_all = TRUE)
-
-covariates_CBCL <- c("ch_age_CBCL_Y2", covariates)
+## adapation des covariables selon l'outcome
+covariates_CBCL <- c("ch_age_CBCL_Y2", covariates)                    
 covariates_IQ <- c("ch_age_IQ_Y3", covariates)
 covariates_SRS_BRIEF <- c("ch_age_SRS_BRIEFP_Y3", covariates)
 
-## Version multivariée ----
-####### Test ######
 covariates_map <- list(
   CBCL = covariates_CBCL,
   SRS_BRIEF = covariates_SRS_BRIEF,
   IQ = covariates_IQ
 )
 
-# Création d'une liste pour stocker les tableaux par outcome
+## Création d'une liste pour stocker les tableaux par outcome
 tbls_by_outcome_multi <- vector("list", length(outcomes))
 names(tbls_by_outcome_multi) <- outcomes
 
@@ -193,14 +229,14 @@ for (outcome in outcomes) {
   tbls_for_outcome_multi <- vector("list", length(explanatory))
   names(tbls_for_outcome_multi) <- explanatory
   
-  for (exposure in explanatory) {
+  for (exposure in explanatory) {                                               # running linear regression
     terms <- c(exposure, covariates)
     formula <- reformulate(terms, response = outcome)
     model <- lm(formula, data = bdd_final_imp_1)
     # model <- with(data = bdd_final_imp, 
     #               exp = lm(formula))
     
-    tbl <-                                                                      # running linear regression
+    tbl <-                                                                      
       tbl_regression(
         model, 
         include = exposure,
@@ -216,48 +252,47 @@ for (outcome in outcomes) {
   tbls_by_outcome_multi[[outcome]] <- tbls_for_outcome_multi
 }
 
-
-### Tableau pour l'article ----
-stacked_tbls_by_outcome_multi <- vector("list", length(outcomes))            # Création liste pour stocker les tableaux empilés par outcome
-names(stacked_tbls_by_outcome_multi) <- outcomes
-
-for (outcome in names(tbls_by_outcome_multi)) {                                   # Récupérer les tableaux de régression pour cet outcome
-  tbls_for_this_outcome_multi <- tbls_by_outcome_multi[[outcome]]
-  stacked_tbl_multi <- do.call(tbl_stack, list(tbls = tbls_for_this_outcome_multi)) # Empiler les tableaux en un seul tableau
-  stacked_tbls_by_outcome_multi[[outcome]] <- stacked_tbl_multi                     # Ajouter le tableau empilé à la liste des tableaux empilés
-}
-labels_outcomes <- bdd_final_imp_1 %>%
-  select(all_of(outcomes)) %>%
-  sapply(function(x) attr(x, "label"))
-results_tbl_multi <- tbl_merge(tbls = stacked_tbls_by_outcome_multi,                # Fusionner les tableaux empilés en un seul tableau
-                             tab_spanner = labels_outcomes)
-
-
-### Tableau pour générer des figures ----
-table_multi <- tibble()                                                           # Initialisation d'un tibble vide pour stocker les résultats finaux
-for (i in seq_along(tbls_by_outcome_multi)) {                                     # Nom de l'outcome pour cette itération
+table_multi <- tibble()                                                         # Initialisation d'un tibble vide pour stocker les résultats finaux
+for (i in seq_along(tbls_by_outcome_multi)) {                                   # Nom de l'outcome pour cette itération
   outcome_name <- names(tbls_by_outcome_multi)[i]
   
-  for (j in seq_along(tbls_by_outcome_multi[[i]])) {                              # Itération sur chaque tbl_regression dans la liste courante
-    exposure_name <- names(tbls_by_outcome_multi[[i]])[j]                         # Nom de la variable d'exposition pour cette itération
-    tbl_data <- tbls_by_outcome_multi[[i]][[j]] %>%                               # Extraction des données du tableau tbl_regression
+  for (j in seq_along(tbls_by_outcome_multi[[i]])) {                            # Itération sur chaque tbl_regression dans la liste courante
+    exposure_name <- names(tbls_by_outcome_multi[[i]])[j]                       # Nom de la variable d'exposition pour cette itération
+    tbl_data <- tbls_by_outcome_multi[[i]][[j]] %>%                             # Extraction des données du tableau tbl_regression
       as_tibble() %>%
       mutate(Outcome = outcome_name, Exposure = exposure_name)
     
-    table_multi <- bind_rows(table_multi, tbl_data)                                 # Ajout des données extraites au tibble final
+    table_multi <- bind_rows(table_multi, tbl_data)                             # Ajout des données extraites au tibble final
   }
 }
-rm(terms, formula, model, 
-   tbl, tbl_data, tbls_for_this_outcome_multi, 
-   stacked_tbl_multi, tbls_for_outcome_multi,
-   stacked_tbls_by_outcome_multi,
+rm(terms, formula, model,
+   tbl, tbl_data,
+   tbls_for_outcome_multi,
    exposure, exposure_name, i, j, outcome, outcome_name)
+covariates <- c("po_w_kg_3cat",                                                 # redéfinition de covariates sinon il garde une variable age 
+                "po_he_3cat",
+                "mo_dipl_2cat",
+                "mo_age",
+                "mo_bmi_bepr_3cat",
+                "ch_sex",
+                "mo_par_2cat",
+                "ch_bf_duration_till48w_4cat",
+                "po_gd",
+                "po_delmod",
+                "ch_food_intro_Y1_3cat",
+                "mo_pets",
+                "ch_antibio_Y1_2cat",
+                "home_total_y3",              
+                "mo_hadtotscore_grt3_imp",
+                "mo_tob_gr_anyt_yn_n2",
+                "ch_tabacco_passive_up_to_Y1",
+                "ch_care_main_12m_opt2_2c")
 
-test <-                                                                    # Ajout variable de la correspondance en phyla
+table_multi <-                                                                         # Ajout des correspondances taxonomiques 
   left_join(table_multi, corres, by = "Exposure") %>%
   select(Phyla_corres, Class_corres, Order_corres, Family_corres, everything())
 
-test <- test %>%
+table_multi <- table_multi %>%
   select(Outcome, 
          Phyla_corres, Class_corres, Order_corres, Family_corres,
          `Gut microbiota parameters` = Exposure, 
@@ -324,7 +359,10 @@ test <- test %>%
                   "Work memory IQ score at 3 years", "Total IQ score at 3 years"),
     `p-value` = gsub("__", "", `p-value`),
     `p-value` = as.numeric(`p-value`),
-    `q-value` = `p-value`/(29*31), 
+    `q-value` = case_when(
+      `Gut microbiota parameters` == "Specific richness" ~ `p-value`/(3*7),     # correction spéciale analyses de diversité 
+      `Gut microbiota parameters` == "Shannon diversity" ~ `p-value`/(3*7),     # correction spéciale analyses de diversité 
+      .default = `p-value`/(33*7)),                                             # correction spéciale analyses de taxonomie 
     p_value_shape = ifelse(`p-value`<0.05, "p-value<0.05", "p-value≥0.05"),
     q_value_shape = ifelse(`q-value`<0.05, "q-value<0.05", "q-value≥0.05"), 
     sens_beta = ifelse(Beta < 0, "Beta<0", "Beta≥0"), 
@@ -346,146 +384,62 @@ test <- test %>%
 
 # Tables ----
 ## Table 1: Covariables description ----
-descrip_covar
+table_1 <- descrip_covar
+rm(descrip_covar)
 
 ## Table 2: Associations alphadiv and neurodev ----
-alpha_vec <- c("ch_feces_SpecRich_5000_ASV_Y1", "ch_feces_Shannon_5000_ASV_Y1")
+table_2_long <-
+  tbl_stack(tbls =
+              lapply(tbls_by_outcome_multi, function(tbl_list) {
+                tbl_merge(
+                  list(tbl_list[[1]], tbl_list[[2]]),
+                  tab_spanner = c("**Specific richness**", "**Shannon diversity**"))}),
+            group_header = spanner_names)
 
-# Création d'une liste pour stocker les tableaux par outcome
-prep_table_1 <- vector("list", length(outcomes))
-names(prep_table_1) <- outcomes
-
-# Boucle principale
-for (outcome in outcomes) {
-  # Sélection des covariables appropriées
-  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
-    covariates <- covariates_map$CBCL
-  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
-    covariates <- covariates_map$SRS_BRIEF
-  } else if (outcome %in% c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")) {
-    covariates <- covariates_map$IQ
-  }
-  
-  tbls_for_outcome_multi <- vector("list", length(alpha_vec))
-  names(tbls_for_outcome_multi) <- alpha_vec
-  
-  for (exposure in alpha_vec) {
-    terms <- c(exposure, covariates)
-    formula <- reformulate(terms, response = outcome)
-    model <- lm(formula, data = bdd_final_imp_1)
-    # model <- with(data = bdd_final_imp, 
-    #               exp = lm(formula))
-    
-    tbl <-                                                                      # running linear regression
-      tbl_regression(
-        model, 
-        include = exposure,
-        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
-        pvalue_fun = custom_pvalue_fun,
-        exponentiate = FALSE) %>%
-      bold_p() %>%
-      bold_labels() %>%
-      add_global_p(include = exposure, singular.ok = TRUE, keep = TRUE)
-    
-    tbls_for_outcome_multi[[exposure]] <- tbl
-  }
-  prep_table_1[[outcome]] <- tbls_for_outcome_multi
-}
-
-table_1 <- lapply(prep_table_1, function(tbl_list) {
-  tbl_merge(list(tbl_list[[1]], tbl_list[[2]]), 
-            tab_spanner = c("**Specific richness**", "**Shannon diversity**"))})
-
-table_1 <- 
-  tbl_stack(tbls = table_1, 
-            group_header = c("Internalizing CBCL score at 2 years",
-                             "Externalizing CBCL score at 2 years",
-                             "Total SRS score at 3 years",
-                             "Inhibition BRIEF-P score at 3 years",
-                             "Shift BRIEF-P score at 3 years",
-                             "Emotional control BRIEF-P score at 3 years",
-                             "Working memory BRIEF-P score at 3 years",
-                             "Plan and organization BRIEF-P score at 3 years",
-                             "Verbal comprehension IQ score at 3 years",
-                             "Visuospatiale IQ score at 3 years",
-                             "Work memory IQ score at 3 years",
-                             "Total IQ score at 3 years" = "ch_total_IQ_Y3"))
-
+table_2_large <- 
+  tbl_stack(tbls = list(
+    tbl_merge(
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[1]]),
+      tab_spanner = spanner_names),
+    tbl_merge(
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[2]]),
+      tab_spanner = spanner_names)))
 
 
 ## Table 3: Associations betadiv and neurodev ----
 
 
 ## Table 4: Associations phyla and neurodev ----
-phyla_vec <- c("ch_feces_rel_p1_Y1", "ch_feces_rel_p2_Y1", "ch_feces_rel_p3_Y1", "ch_feces_rel_p4_Y1")
+table_4_long <-
+  tbl_stack(tbls =
+              lapply(tbls_by_outcome_multi, function(tbl_list) {
+                tbl_merge(
+                  list(tbl_list[[3]], tbl_list[[4]], tbl_list[[5]], tbl_list[[6]]),
+                  tab_spanner = c("**Firmicutes**", 
+                                  "**Actinobacteria**", 
+                                  "**Bacteroidetes**", 
+                                  "**Proteobcateria**"))}),
+            group_header = spanner_names)
 
-# Création d'une liste pour stocker les tableaux par outcome
-prep_table_4 <- vector("list", length(outcomes))
-names(prep_table_4) <- outcomes
-
-# Boucle principale
-for (outcome in outcomes) {
-  # Sélection des covariables appropriées
-  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
-    covariates <- covariates_map$CBCL
-  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
-    covariates <- covariates_map$SRS_BRIEF
-  } else if (outcome %in% c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")) {
-    covariates <- covariates_map$IQ
-  }
-  
-  tbls_for_outcome_multi <- vector("list", length(phyla_vec))
-  names(tbls_for_outcome_multi) <- phyla_vec
-  
-  for (exposure in phyla_vec) {
-    terms <- c(exposure, covariates)
-    formula <- reformulate(terms, response = outcome)
-    model <- lm(formula, data = bdd_final_imp_1)
-    # model <- with(data = bdd_final_imp, 
-    #               exp = lm(formula))
-    
-    tbl <-                                                                      # running linear regression
-      tbl_regression(
-        model, 
-        include = exposure,
-        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
-        pvalue_fun = custom_pvalue_fun,
-        exponentiate = FALSE) %>%
-      bold_p() %>%
-      bold_labels() %>%
-      add_global_p(include = exposure, singular.ok = TRUE, keep = TRUE)
-    
-    tbls_for_outcome_multi[[exposure]] <- tbl
-  }
-  prep_table_4[[outcome]] <- tbls_for_outcome_multi
-}
-
-table_4 <- lapply(prep_table_4, function(tbl_list) {
-  tbl_merge(list(tbl_list[[1]], tbl_list[[2]], tbl_list[[3]], tbl_list[[4]]), 
-            tab_spanner = c("**Firmicutes**", "**Actinobacteria**", 
-                            "**Bacteroidetes**", "**Proteobcateria**"))})
-
-table_4 <- 
-  tbl_stack(tbls = table_4, 
-            group_header = c("Internalizing CBCL score at 2 years",
-                             "Externalizing CBCL score at 2 years",
-                             "Total SRS score at 3 years",
-                             "Inhibition BRIEF-P score at 3 years",
-                             "Shift BRIEF-P score at 3 years",
-                             "Emotional control BRIEF-P score at 3 years",
-                             "Working memory BRIEF-P score at 3 years",
-                             "Plan and organization BRIEF-P score at 3 years",
-                             "Verbal comprehension IQ score at 3 years",
-                             "Visuospatiale IQ score at 3 years",
-                             "Work memory IQ score at 3 years",
-                             "Total IQ score at 3 years" = "ch_total_IQ_Y3"))
-
-
+table_4_large <- 
+  tbl_stack(tbls = list(
+    tbl_merge(
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[3]]),
+      tab_spanner = spanner_names),
+    tbl_merge(
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[4]]),
+      tab_spanner = spanner_names),
+    tbl_merge(
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[5]]),
+      tab_spanner = spanner_names),
+    tbl_merge(
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[6]]),
+      tab_spanner = spanner_names)))
 
 
 # Figures ----
 ## Fig.1: Forestplot alpha div ----
-forest_plot_alphadiv <- test %>% 
+forest_plot_alphadiv <- table_multi %>% 
   filter(`Gut microbiota parameters` %in% c("Shannon diversity",
                                              "Specific richness")) %>%
   mutate(Beta = as.numeric(Beta), 
@@ -493,10 +447,13 @@ forest_plot_alphadiv <- test %>%
            fct_relevel(Outcome,
                        "Total IQ score at 3 years", "Work memory IQ score at 3 years", 
                        "Visuospatiale IQ score at 3 years","Verbal comprehension IQ score at 3 years", 
-                       "Total SRS score at 3 years","Working memory BRIEF-P score at 3 years",
-                       "Shift BRIEF-P score at 3 years","Plan and organization BRIEF-P score at 3 years",
-                       "Inhibition BRIEF-P score at 3 years","Emotional control BRIEF-P score at 3 years",
-                       "Externalizing CBCL score at 2 years", "Internalizing CBCL score at 2 years")) %>%
+                       "Plan and organization BRIEF-P score at 3 years", "Working memory BRIEF-P score at 3 years",
+                       "Emotional control BRIEF-P score at 3 years","Shift BRIEF-P score at 3 years",
+                       "Inhibition BRIEF-P score at 3 years", "Total SRS score at 3 years",
+                       "Externalizing CBCL score at 2 years", "Internalizing CBCL score at 2 years"), 
+         `Gut microbiota parameters` = 
+           fct_relevel(`Gut microbiota parameters`, 
+                       "Specific richness", "Shannon diversity")) %>%
   ggplot(aes(x = Outcome, 
              y = Beta, 
              min = lower_CI, 
@@ -525,7 +482,7 @@ ggsave("4_output/fig.1 forest_plot_alphadiv.tiff",
        width = 25)
 
 ## Fig.3: Forestplot phyla ----
-forest_plot_phyla <- test %>% 
+forest_plot_phyla <- table_multi %>% 
   filter(`Gut microbiota parameters` %in% c("Firmicutes",
                                             "Actinobacteria", 
                                             "Bacteroidetes", 
@@ -535,10 +492,13 @@ forest_plot_phyla <- test %>%
            fct_relevel(Outcome,
                        "Total IQ score at 3 years", "Work memory IQ score at 3 years", 
                        "Visuospatiale IQ score at 3 years","Verbal comprehension IQ score at 3 years", 
-                       "Total SRS score at 3 years","Working memory BRIEF-P score at 3 years",
-                       "Shift BRIEF-P score at 3 years","Plan and organization BRIEF-P score at 3 years",
-                       "Inhibition BRIEF-P score at 3 years","Emotional control BRIEF-P score at 3 years",
-                       "Externalizing CBCL score at 2 years", "Internalizing CBCL score at 2 years")) %>%
+                       "Plan and organization BRIEF-P score at 3 years", "Working memory BRIEF-P score at 3 years",
+                       "Emotional control BRIEF-P score at 3 years","Shift BRIEF-P score at 3 years",
+                       "Inhibition BRIEF-P score at 3 years", "Total SRS score at 3 years",
+                       "Externalizing CBCL score at 2 years", "Internalizing CBCL score at 2 years"), 
+         `Gut microbiota parameters` =
+           fct_relevel(`Gut microbiota parameters`, 
+                       "Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>%
   ggplot(aes(x = Outcome, 
              y = Beta, 
              min = lower_CI, 
@@ -567,7 +527,7 @@ ggsave("4_output/fig.3 forest_plot_phyla.tiff",
        width = 25)
 
 ## Fig.4: Mahatan plot genera ----
-mahatan_plot <- test  %>%
+mahatan_plot <- table_multi  %>%
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
                                              "Bacteroidetes",
@@ -577,7 +537,7 @@ mahatan_plot <- test  %>%
   ggplot(aes(x = -log10(`p-value`), y = `Gut microbiota parameters`)) +
   geom_point(aes(shape = sens_beta), size = 2) +
   geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = "red") +
-  geom_vline(xintercept = -log10(0.05/(29*31)), linetype = "dashed", color = "blue") +
+  geom_vline(xintercept = -log10(0.05/(33*7)), linetype = "dashed", color = "blue") +
   theme_lucid() +
   labs(x = "-log10(P-value)", 
        y = "Genera", 
@@ -599,7 +559,7 @@ ggsave("4_output/fig.4 manhattan_plot_genera.tiff",
        width = 40)
 
 ## Fig.5: Forestplot final genera ----
-forest_plot_genera <- test %>% 
+forest_plot_genera <- table_multi %>% 
   filter(`p-value`<0.02) %>% 
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
@@ -656,7 +616,163 @@ table_S1 <- descrip_num(data = bdd,
                                  genera_linear_complet))
 
 ### Table S2: Distribution neurodevelopment ----
-table_S2 <- descrip_num(data = bdd, vars = outcomes)
+table_S2 <- descrip_num(data = bdd_final, vars = outcomes)
+write.xlsx(table_S2, file = "4_output/Table_S2.xlsx")
+
+### Table S3: Effects of the covariates on the outcomes ----
+model_covars <- function(var_outcome, var_age, covars, data) {
+  variables_explicatives <- c(covars, var_age)
+  formule_regr <- as.formula(paste(var_outcome, "~", paste(variables_explicatives, collapse = " + ")))
+  modele <- lm(formule_regr, data = data)
+  tableau_resultat <- 
+    tbl_regression(modele, 
+                   estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+                   pvalue_fun = scales::label_pvalue(accuracy = .001, decimal.mark = ".")) %>%
+    bold_labels() %>%
+    bold_p(t=0.1)
+  return(tableau_resultat)
+}
+
+table_S3 <- tbl_merge(
+  tbls = list(
+    model_covars(var_outcome = "ch_cbclintscore_y2", var_age = "ch_age_CBCL_Y2", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_cbclextscore_y2", var_age = "ch_age_CBCL_Y2", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_SRStotal_y3", var_age = "ch_age_SRS_BRIEFP_Y3", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_briefpinhibit_y3", var_age = "ch_age_SRS_BRIEFP_Y3", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_briefpshift_y3", var_age = "ch_age_SRS_BRIEFP_Y3", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_briefpemocontrol_y3", var_age = "ch_age_SRS_BRIEFP_Y3", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_briefpworkmemo_y3", var_age = "ch_age_SRS_BRIEFP_Y3", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_briefpplan_y3", var_age = "ch_age_SRS_BRIEFP_Y3", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_verbal_comprehension_IQ_Y3", var_age = "ch_age_IQ_Y3", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_visuospatiale_IQ_Y3", var_age = "ch_age_IQ_Y3", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_work_memory_IQ_Y3", var_age = "ch_age_IQ_Y3", covars = covariates, data = bdd_final_imp_1), 
+    model_covars(var_outcome = "ch_total_IQ_Y3", var_age = "ch_age_IQ_Y3", covars = covariates, data = bdd_final_imp_1)),
+  tab_spanner = spanner_names)
+
+
+table_S3 <- tbl_merge(
+  tbls = list(
+    results_ch_cbclintscore_y2_sup_covar = 
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_cbclintscore_y2,
+        var_age = ch_age_CBCL_Y2,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_cbclintscore_y2),
+    
+    results_ch_cbclextscore_y2_sup_covar = 
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_cbclextscore_y2,
+        var_age = ch_age_CBCL_Y2,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_cbclextscore_y2),
+    
+    results_ch_SRStotal_y3_sup_covar = 
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_SRStotal_y3,
+        var_age = ch_age_SRS_BRIEFP_Y3,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_SRStotal_y3),
+    
+    results_ch_briefpinhibit_y3_sup_covar =
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_briefpinhibit_y3,
+        var_age = ch_age_SRS_BRIEFP_Y3,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_briefpinhibit_y3),
+    
+    results_ch_briefpshift_y3_sup_covar =
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_briefpshift_y3,
+        var_age = ch_age_SRS_BRIEFP_Y3,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_briefpshift_y3),
+    
+    results_ch_briefpemocontrol_y3_sup_covar =
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_briefpemocontrol_y3,
+        var_age = ch_age_SRS_BRIEFP_Y3,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_briefpemocontrol_y3),
+    
+    results_ch_briefpworkmemo_y3_sup_covar =
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_briefpworkmemo_y3,
+        var_age = ch_age_SRS_BRIEFP_Y3,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_briefpworkmemo_y3),
+    
+    results_ch_briefpplan_y3_sup_covar = 
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_briefpplan_y3,
+        var_age = ch_age_SRS_BRIEFP_Y3,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_briefpplan_y3),
+    
+    results_ch_verbal_comprehension_IQ_y3_sup_covar = 
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_verbal_comprehension_IQ_Y3,
+        var_age = ch_age_IQ_Y3,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_verbal_comprehension_IQ_Y3),
+    
+    results_ch_visuospatiale_IQ_y3_sup_covar = 
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_visuospatiale_IQ_Y3,
+        var_age = ch_age_IQ_Y3,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_visuospatiale_IQ_Y3),
+    
+    results_ch_work_memory_IQ_y3_sup_covar = 
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_work_memory_IQ_Y3,
+        var_age = ch_age_IQ_Y3,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_work_memory_IQ_Y3),
+    
+    results_ch_total_IQ_y3_sup_covar = 
+      tbl_model_final(
+        data = bdd_final, 
+        var_outcome = ch_total_IQ_Y3,
+        var_age = ch_age_IQ_Y3,  
+        covar_a_tester =  covariates, 
+        model_1 = model_1_ch_total_IQ_Y3)),
+  tab_spanner = spanner_names)
+
+
+## Table S4: Associations genera and neurodev ----
+# Adjusted associations between the 46 most abundant genera in the child gut microbiota at one year and the neurodevelopment (n between X and X).
+stacked_tbls_by_outcome_multi <- vector("list", length(outcomes))            # Création liste pour stocker les tableaux empilés par outcome
+names(stacked_tbls_by_outcome_multi) <- outcomes
+
+for (outcome in names(tbls_by_outcome_multi)) {                                   # Récupérer les tableaux de régression pour cet outcome
+  tbls_for_this_outcome_multi <- tbls_by_outcome_multi[[outcome]]
+  stacked_tbl_multi <- do.call(tbl_stack, list(tbls = tbls_for_this_outcome_multi)) # Empiler les tableaux en un seul tableau
+  stacked_tbls_by_outcome_multi[[outcome]] <- stacked_tbl_multi                     # Ajouter le tableau empilé à la liste des tableaux empilés
+}
+labels_outcomes <- bdd_final_imp_1 %>%
+  select(all_of(outcomes)) %>%
+  sapply(function(x) attr(x, "label"))
+results_tbl_multi <- tbl_merge(tbls = stacked_tbls_by_outcome_multi,                # Fusionner les tableaux empilés en un seul tableau
+                               tab_spanner = labels_outcomes)
+
+
+## Table S5: Sensitivity analysis - effect of the rarefaction threshold ----
+# Sensitivity analysis - Adjusted associations between the gut microbiota α-diversity at different sequencing depths and the neurodevelopment. 
+
+## Table S6: Sensitivity analysis – effect of the HOME Y3 variable on CBCL Y2 -----
+## Sensitivity analysis – Effects of the HOME covariate assessed at 3 years on the CBCL outcomes assessed at 2 years.
+
 
 # Additional figures ----
 

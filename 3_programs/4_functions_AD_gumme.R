@@ -1051,6 +1051,37 @@ cor_mixed <- function(data,method="spearman"){
 
 
 # Fonction calcul du seuil de correction pour comparaison multiple ----
+# Fonction pour voir la table de correlation avant de faire la correction pour compararaison multiple selon correlation entre les tests
+cor_mixed <- function(data,method="spearman"){
+  ## Purpose: 2 -  use the function mixedCor from psych to calculate a 
+  #                correlation matrix on mixed type variables (continuous and categorical).
+  #                Note: mixedCor consider categorical variable as ordered factors.
+  ## Inputs: - data: dataframe (not mice) with only the variables to consider 
+  ##                 (mixed type allowed)
+  ## Output: - correlation matrix
+  
+  ## STEP 1 : TYPE OF VARIABLES
+  continuous_var = which(sapply(data, class) == "numeric")
+  names(continuous_var)=NULL
+  # Categorical var
+  categorical_var = which(sapply(data, class) == "factor")
+  #  - 2 levels only
+  binary_var = categorical_var[sapply(data[,categorical_var],nlevels)==2] 
+  binary_var = binary_var[!is.na(binary_var)]
+  names(binary_var)=NULL
+  #  - More than 2 levels (but less than 8)
+  poly_var = categorical_var[(sapply(data[,categorical_var],nlevels)>2 & sapply(data[,categorical_var],nlevels)<8)] %>% na.exclude()
+  names(poly_var)=NULL
+  
+  ## STEP 2 : CORRELATION MATRIX USING MIXEDCOR FUNCTION (FROM PSYCH)
+  # data converted in numeric (necessary)
+  data[,] = lapply(data[,],as.numeric)
+  # Correlation matrix
+  cor = data  %>% 
+    mixedCor(c=continuous_var,p=poly_var,d=binary_var,use="pairwise.complete.obs",method=method)%>% pluck('rho')
+  return(cor)
+}
+
 # Fonction pour voir l'alpha corrigé pour la correction pour comparaison multiple 
 alpha_corrected <- function(data, alpha=0.05) {
   # Purpose: Alpha-risk correction (FWER), inspired from https://www-ncbi-nlm-nih-gov.gate2.inist.fr/pmc/articles/PMC3325408/
@@ -1107,20 +1138,3 @@ M0_corrected <- function(data, alpha=0.05) {
   
 }
 
-# Fonction pour le choix du nombre de décimales
-custom_pvalue_fun <- function(x) {
-  sapply(x, function(p) {
-    if (is.na(p)) {
-      return(NA) # Retourner NA si p est NA
-    } else if (p < 0.001) {
-      # Pour p < 0.001, utiliser la notation scientifique pour afficher toutes les décimales
-      return(format(p, scientific = TRUE))
-    } else if (p >= 0.001 & p < 0.01) {
-      # Pour 0.001 <= p < 0.01, afficher avec 3 décimales
-      return(sprintf("%.3f", p))
-    } else {
-      # Pour p >= 0.01, afficher avec 2 décimales
-      return(sprintf("%.2f", p))
-    }
-  })
-}
