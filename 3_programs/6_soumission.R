@@ -356,12 +356,23 @@ table_1 <- descrip_covar
 rm(descrip_covar)
 
 ## Table 2: Associations alphadiv and neurodev ----
+summary <- bdd_final_imp_1 %>%
+  filter(!is.na(ch_feces_SpecRich_5000_ASV_Y1)) %>%
+  select(all_of(outcomes)) %>%
+  tbl_summary(
+    missing = "no", 
+    statistic = all_continuous() ~ "{N_nonmiss}") %>%
+  bold_labels()
+
 table_2_long <-
   tbl_stack(tbls =
               lapply(tbls_by_outcome_multi, function(tbl_list) {
                 tbl_merge(
-                  list(tbl_list[[1]], tbl_list[[2]]),
-                  tab_spanner = c("**Specific richness**", "**Shannon diversity**"))}),
+                  list(
+                    summary, 
+                    tbl_list[[1]], 
+                    tbl_list[[2]]),
+                  tab_spanner = c("**N**", "**Specific richness**", "**Shannon diversity**"))}),
             group_header = spanner_names)
 
 table_2_large <- 
@@ -373,6 +384,8 @@ table_2_large <-
       tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[2]]),
       tab_spanner = spanner_names)))
 
+table_2 <- list(table_2_long, table_2_large)
+rm(table_2_long, table_2_large)
 
 ## Table 3: Associations betadiv and neurodev ----
 
@@ -404,10 +417,12 @@ table_4_large <-
       tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[6]]),
       tab_spanner = spanner_names)))
 
+table_4 <- list(table_4_long, table_4_large)
+rm(table_4_long, table_4_large)
 
 # Figures ----
 ## Fig.1: Forestplot alpha div ----
-forest_plot_alphadiv <- table_multi %>% 
+figure_1 <- table_multi %>% 
   filter(`Gut microbiota parameters` %in% c("Shannon diversity",
                                              "Specific richness")) %>%
   mutate(Beta = as.numeric(Beta), 
@@ -440,17 +455,20 @@ forest_plot_alphadiv <- table_multi %>%
     legend.box = "vertical", 
     legend.justification = "right") 
 
-forest_plot_alphadiv
+figure_1
 ggsave("4_output/fig.1 forest_plot_alphadiv.tiff", 
-       forest_plot_alphadiv, 
+       figure_1, 
        device = "tiff",
        units = "cm",
        dpi = 300,
        height = 15, 
        width = 25)
 
+## Fig.2: Boxplot beta div ----
+
+
 ## Fig.3: Forestplot phyla ----
-forest_plot_phyla <- table_multi %>% 
+figure_3 <- table_multi %>% 
   filter(`Gut microbiota parameters` %in% c("Firmicutes",
                                             "Actinobacteria", 
                                             "Bacteroidetes", 
@@ -485,9 +503,9 @@ forest_plot_phyla <- table_multi %>%
     legend.box = "vertical", 
     legend.justification = "right") 
 
-forest_plot_phyla
+figure_3
 ggsave("4_output/fig.3 forest_plot_phyla.tiff", 
-       forest_plot_phyla, 
+       figure_3, 
        device = "tiff",
        units = "cm",
        dpi = 300,
@@ -495,7 +513,7 @@ ggsave("4_output/fig.3 forest_plot_phyla.tiff",
        width = 25)
 
 ## Fig.4: Mahatan plot genera ----
-mahatan_plot <- table_multi  %>%
+figure_4 <- table_multi  %>%
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
                                              "Bacteroidetes",
@@ -517,9 +535,9 @@ mahatan_plot <- table_multi  %>%
     legend.box = "vertical", 
     legend.justification = "right", 
     axis.text.y = element_text(face = "italic"))
-mahatan_plot
+figure_4
 ggsave("4_output/fig.4 manhattan_plot_genera.tiff", 
-       mahatan_plot, 
+       figure_4, 
        device = "tiff",
        units = "cm",
        dpi = 300,
@@ -527,7 +545,7 @@ ggsave("4_output/fig.4 manhattan_plot_genera.tiff",
        width = 40)
 
 ## Fig.5: Forestplot final genera ----
-forest_plot_genera <- table_multi %>% 
+figure_5 <- table_multi %>% 
   filter(`p-value`<0.02) %>% 
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
@@ -563,9 +581,9 @@ forest_plot_genera <- table_multi %>%
     legend.justification = "right", 
     axis.text.y = element_text(face = "italic")) 
 
-forest_plot_genera
+figure_5
 ggsave("4_output/fig.5 forest_plot_genera.tiff", 
-       forest_plot_genera, 
+       figure_5, 
        device = "tiff",
        units = "cm",
        dpi = 300,
@@ -640,6 +658,25 @@ model_covars <- function(var_outcome, var_age, covars, data) {
   return(tbl_model)
 }
 
+covariates <- c("po_w_kg_3cat",                                                 # redéfinition de covariates sinon il garde une variable age 
+                "po_he_3cat",
+                "mo_dipl_2cat",
+                "mo_age",
+                "mo_bmi_bepr_3cat",
+                "ch_sex",
+                "mo_par_2cat",
+                "ch_bf_duration_till48w_4cat",
+                "po_gd",
+                "po_delmod",
+                "ch_food_intro_Y1_3cat",
+                "mo_pets",
+                "ch_antibio_Y1_2cat",
+                "home_total_y3",              
+                "mo_hadtotscore_grt3_imp",
+                "mo_tob_gr_anyt_yn_n2",
+                "ch_tabacco_passive_up_to_Y1",
+                "ch_care_main_12m_opt2_2c")
+
 table_S3 <- tbl_merge(
   tbls = list(
     model_covars(var_outcome = "ch_cbclintscore_y2", var_age = "ch_age_CBCL_Y2", covars = covariates, data = bdd_final_imp_1),
@@ -668,7 +705,6 @@ table_S4 <- tbl_stack(
 
 ## Table S5: Sensitivity analysis - effect of the rarefaction threshold ----
 # Sensitivity analysis - Adjusted associations between the gut microbiota α-diversity at different sequencing depths and the neurodevelopment. 
-
 alpha_vec <- c("ch_feces_SpecRich_5000_ASV_Y1", "ch_feces_SpecRich_10000_ASV_Y1", 
                "ch_feces_Shannon_5000_ASV_Y1", "ch_feces_Shannon_10000_ASV_Y1")
 table_S5 <- vector("list", length(outcomes))
@@ -722,6 +758,27 @@ table_S5 <- tbl_stack(
     tbl_merge(tbls = lapply(table_S5, function(x) x[[3]]), tab_spanner = spanner_names),               # analyse de sensibilité seuil 5000 pour n sur seuil 10000
     tbl_merge(tbls = lapply(table_S5, function(x) x[[4]]), tab_spanner = spanner_names)))              # analyse de sensibilité seuil 10000 pour n sur seuil 10000
 
+rm(terms, formula, model, exposure, outcome, alpha_vec, tbl)
+covariates <- c("po_w_kg_3cat",                                                 # redéfinition de covariates sinon il garde une variable age 
+                "po_he_3cat",
+                "mo_dipl_2cat",
+                "mo_age",
+                "mo_bmi_bepr_3cat",
+                "ch_sex",
+                "mo_par_2cat",
+                "ch_bf_duration_till48w_4cat",
+                "po_gd",
+                "po_delmod",
+                "ch_food_intro_Y1_3cat",
+                "mo_pets",
+                "ch_antibio_Y1_2cat",
+                "home_total_y3",              
+                "mo_hadtotscore_grt3_imp",
+                "mo_tob_gr_anyt_yn_n2",
+                "ch_tabacco_passive_up_to_Y1",
+                "ch_care_main_12m_opt2_2c")
+
+
 ## Table S6: Sensitivity analysis – effect of the HOME Y3 variable on CBCL Y2 -----
 ## Sensitivity analysis – Effects of the HOME covariate assessed at 3 years on the CBCL outcomes assessed at 2 years.
 
@@ -732,10 +789,10 @@ table_S5 <- tbl_stack(
 
 ## Figure S2: correlations gut microbiota parameters ----
 ## xx correlations between gut microbiota parameters (n between X and X). 
-cormat_genera <- bdd %>% 
+figure_S2 <- bdd %>% 
   select(all_of(genera_linear_complet)) 
-colnames(cormat_genera) <- genera_linear
-cormat_genera <- cormat_genera %>%
+colnames(figure_S2) <- genera_linear
+figure_S2 <- figure_S2 %>%
   rename(
     "Escherichia and Shigella" = Escherichia_Shigella,
     "Clostridium XlVa" = Clostridium_XlVa, 
@@ -747,13 +804,13 @@ cormat_genera <- cormat_genera %>%
     "Erysipelotrichaceae incertae sedis" = Erysipelotrichaceae_incertae_sedis, 
     "Saccharibacteria genera incertae sedis" = Saccharibacteria_genera_incertae_sedis)
 
-cormat_genera <- cor(cormat_genera, 
+figure_S2 <- cor(figure_S2, 
                      use = "pairwise.complete.obs", 
                      method = "pearson")
 
 plot.new()
-tiff(filename = "4_output/heatmap_cor_genera.tiff", units = "mm", width = 250, height = 250, res = 300)
-corrplot(cormat_genera, 
+tiff(filename = "4_output/Fig.S2 heatmap_cor_genera.tiff", units = "mm", width = 250, height = 250, res = 300)
+corrplot(figure_S2, 
          method = 'color', 
          type = "lower", 
          tl.col = 'black', 
@@ -767,22 +824,71 @@ dev.off()
 
 ## Figure S3: correlations gut microbiota and covariates ----
 ## xx correlations between gut microbiota parameters and covariates (n between X and X).
+figure_S3 <- bdd_final_imp_1 %>%
+  select(all_of(outcomes),
+         po_w_kg, 
+         po_he, 
+         mo_age, 
+         mo_par,
+         mo_bmi_bepr, 
+         po_gd, 
+         home_total_y3, 
+         mo_hadtotscore_grt3_imp) %>%
+  select_if(is.numeric)
+
+figure_S3 <- round(cor(figure_S3,
+                    use = "pairwise.complete.obs",
+                    method = "pearson"), 1)
+
+figure_S3 <- figure_S3 %>%
+  as.data.frame() %>%
+  select(!all_of(outcomes)) %>%
+  t() %>%
+  as.data.frame() %>%
+  select(all_of(outcomes)) %>%
+  as.matrix()
+colnames(figure_S3) <- spanner_names
+
+rownames(figure_S3) <- rownames(figure_S3) %>%
+  str_replace_all(
+    c("po_w_kg" = "Birth weight (kg)",
+      "po_he" = "Birth length (cm)",
+      "mo_age" = "Maternal age before pregnancy",
+      "mo_par" = "Maternal parity",
+      "mo_bmi_bepr" = "Maternal BMI before pregnancy",
+      "po_gd" = "Gestational age (weeks)",
+      "home_total_y3" = "HOME score at 3 years old",
+      "mo_hadtotscore_grt3_imp" = "Maternal anxiety and depression during the third trim. of preg."))
+
+
+tiff(filename = "4_output/Fig.S3 heatmap_cor_neuro_covar.tiff", units = "mm", width = 300, height = 300, res = 300)
+corrplot(figure_S3,
+         method = 'color',
+         tl.col = 'black',
+         tl.srt = 55,
+         addCoef.col = "black",
+         number.cex = 1,
+         tl.cex = 1,
+         number.digits = 1,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
 
 ## Figure S4: correlations neurodevelopmental ----
 ## xx correlations between neurodevelopmental parameters (n between X and X).
-cormat_neuro <- bdd %>% 
+figure_S4 <- bdd %>% 
   select(all_of(outcomes)) 
-colnames(cormat_neuro) <- spanner_names
-names(cormat_neuro) <- gsub(" score at 2 years", " Y2", names(cormat_neuro))
-names(cormat_neuro) <- gsub(" score at 3 years", " Y3", names(cormat_neuro))
+colnames(figure_S4) <- spanner_names
+names(figure_S4) <- gsub(" score at 2 years", " Y2", names(figure_S4))
+names(figure_S4) <- gsub(" score at 3 years", " Y3", names(figure_S4))
 
-cormat_neuro <- cor(cormat_neuro, 
+figure_S4 <- cor(figure_S4, 
                     use = "pairwise.complete.obs", 
                     method = "pearson")
 
 plot.new()
-tiff(filename = "4_output/heatmap_cor_neuro.tiff", units = "mm", width = 250, height = 250, res = 300)
-corrplot(cormat_neuro, 
+tiff(filename = "4_output/Fig.S4 heatmap_cor_neuro.tiff", units = "mm", width = 250, height = 250, res = 300)
+corrplot(figure_S4, 
          method = 'color', 
          type = "lower", 
          tl.col = 'black', 
@@ -794,6 +900,51 @@ corrplot(cormat_neuro,
          col = rev(COL2(diverging = "RdYlBu")))
 dev.off()
 
+
+table_figure_list <- list(
+  table_1, 
+  table_2, 
+  # table_3,   # betadiv à faire
+  table_4, 
+  
+  figure_1, 
+  # table_2,   # betadiv à faire
+  figure_3, 
+  figure_4, 
+  figure_5, 
+  
+  table_S1, 
+  table_S2, 
+  table_S3, 
+  table_S4, 
+  # table_S5,  # sensi HOME CBCL à faire 
+  
+  figure_S2, 
+  figure_S3, 
+  figure_S4)
+
+
+rm(table_1, 
+   table_2, 
+   # table_3,   # betadiv à faire
+   table_4, 
+   
+   figure_1, 
+   # table_2,   # betadiv à faire
+   figure_3, 
+   figure_4, 
+   figure_5, 
+   
+   table_S1, 
+   table_S2, 
+   table_S3, 
+   table_S4, 
+   table_S5,  
+   # table_S6,  # sensi HOME CBCL à faire 
+   
+   figure_S2, 
+   figure_S3, 
+   figure_S4)
 
 # Strongest associations ----
 ## p<0.0035 ----
