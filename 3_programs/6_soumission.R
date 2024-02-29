@@ -41,14 +41,28 @@ corres <-
   filter(Exposure %in% genera_linear) %>%
   distinct(Exposure, .keep_all = TRUE)
 
+bdd_final_imp_1 <- bdd_final_imp_1 %>%
+  mutate(ch_feces_rel_p1_Y1_10 = ch_feces_rel_p1_Y1/10, 
+         ch_feces_rel_p2_Y1_10 = ch_feces_rel_p2_Y1/10, 
+         ch_feces_rel_p3_Y1_10 = ch_feces_rel_p3_Y1/10, 
+         ch_feces_rel_p4_Y1_10 = ch_feces_rel_p4_Y1/10)
+
 # Vectors ----
 covariates <- covar_vec_model_final
-explanatory <- bdd %>% 
-  select(all_of(microbiote_vec)) %>% 
+explanatory <- bdd_final_imp_1 %>% 
+  select(all_of(microbiote_vec), 
+         ch_feces_rel_p1_Y1_10, 
+         ch_feces_rel_p2_Y1_10, 
+         ch_feces_rel_p3_Y1_10, 
+         ch_feces_rel_p4_Y1_10) %>% 
   select(-ch_feces_SpecRich_cmin_ASV_Y1, 
          -ch_feces_Shannon_cmin_ASV_Y1,
          -ch_feces_SpecRich_10000_ASV_Y1, 
-         -ch_feces_Shannon_10000_ASV_Y1) %>%
+         -ch_feces_Shannon_10000_ASV_Y1, 
+         -ch_feces_rel_p1_Y1,
+         -ch_feces_rel_p2_Y1,
+         -ch_feces_rel_p3_Y1,
+         -ch_feces_rel_p4_Y1) %>%
   colnames()
 outcomes <- bdd %>%
   select(all_of(neuro_vec)) %>%
@@ -75,7 +89,7 @@ spanner_names <- c("Internalizing CBCL score at 2 years",
                    "Working memory BRIEF-P score at 3 years",
                    "Plan and organization BRIEF-P score at 3 years",
                    "Verbal comprehension IQ score at 3 years",
-                   "Visuospatiale IQ score at 3 years",
+                   "Visuospatial IQ score at 3 years",
                    "Work memory IQ score at 3 years",
                    "Total IQ score at 3 years")
 
@@ -271,10 +285,10 @@ table_multi <- table_multi %>%
   mutate(
     `Gut microbiota parameters` = 
       fct_recode(`Gut microbiota parameters`, 
-                 "Firmicutes" = "ch_feces_rel_p1_Y1",
-                 "Actinobacteria" = "ch_feces_rel_p2_Y1",
-                 "Bacteroidetes" = "ch_feces_rel_p3_Y1",
-                 "Proteobacteria" = "ch_feces_rel_p4_Y1",
+                 "Firmicutes" = "ch_feces_rel_p1_Y1_10",
+                 "Actinobacteria" = "ch_feces_rel_p2_Y1_10",
+                 "Bacteroidetes" = "ch_feces_rel_p3_Y1_10",
+                 "Proteobacteria" = "ch_feces_rel_p4_Y1_10",
                  "Shannon diversity" = "ch_feces_Shannon_5000_ASV_Y1",
                  "Specific richness" = "ch_feces_SpecRich_5000_ASV_Y1",
                  "Clostridium IV" = "Clostridium_IV",
@@ -352,39 +366,52 @@ table_multi <- table_multi %>%
 
 # Tables ----
 ## Table 1: Covariables description ----
-table_1 <- descrip_covar
-rm(descrip_covar)
+table_1 <- bdd %>% 
+  select(all_of(covariates), 
+         all_of(covar_age), 
+         ch_feces_rel_p1_Y1) %>%
+  mutate(
+    statu = ifelse(!is.na(ch_feces_rel_p1_Y1), "included", "excluded"), 
+    statu = fct_relevel(statu,  "included", "excluded")) %>%
+  select(-ch_feces_rel_p1_Y1) %>%
+  tbl_summary(
+    type = list(all_categorical() ~ "categorical"), 
+    label = list(ch_care_main_12m_opt2_2c ~ "Main mode of child care at 12 months"), 
+    by="statu", 
+    missing = "no", 
+    digits = list(mo_age ~ 0, 
+                  po_gd ~ 0, 
+                  home_total_y3 ~ 0, 
+                  mo_hadtotscore_grt3_imp ~ 0, 
+                  ch_age_CBCL_Y2 ~ 0, 
+                  ch_age_IQ_Y3 ~ 0, 
+                  ch_age_SRS_BRIEFP_Y3 ~ 0)) %>%
+  add_p(pvalue_fun = function(x) formatC(x, format = "f", digits = 3)) %>%
+  bold_labels() %>%
+  add_n()
 
 ## Table 2: Associations alphadiv and neurodev ----
-summary <- bdd_final_imp_1 %>%
-  filter(!is.na(ch_feces_SpecRich_5000_ASV_Y1)) %>%
-  select(all_of(outcomes)) %>%
-  tbl_summary(
-    missing = "no", 
-    statistic = all_continuous() ~ "{N_nonmiss}") %>%
-  bold_labels()
-
 table_2_long <-
   tbl_stack(tbls =
               lapply(tbls_by_outcome_multi, function(tbl_list) {
                 tbl_merge(
                   list(
-                    summary, 
-                    tbl_list[[1]], 
-                    tbl_list[[2]]),
-                  tab_spanner = c("**N**", "**Specific richness**", "**Shannon diversity**"))}),
+                    tbl_list[[1]] %>% add_n(),   # correspond à ch_feces_SpecRich_5000_ASV_Y1
+                    tbl_list[[2]] %>% add_n()),  # correspond àch_feces_Shannon_5000_ASV_Y1
+                  tab_spanner = c("**Specific richness**", "**Shannon diversity**"))}),
             group_header = spanner_names)
 
 table_2_large <- 
   tbl_stack(tbls = list(
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[1]]),
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[1]]),  # correspond à ch_feces_SpecRich_5000_ASV_Y1
       tab_spanner = spanner_names),
-    tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[2]]),
+    tbl_merge( 
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[2]]),  # correspond àch_feces_Shannon_5000_ASV_Y1
       tab_spanner = spanner_names)))
 
-table_2 <- list(table_2_long, table_2_large)
+table_2 <- list(table_2_long = table_2_long, 
+                table_2_large = table_2_large)
 rm(table_2_long, table_2_large)
 
 ## Table 3: Associations betadiv and neurodev ----
@@ -395,29 +422,33 @@ table_4_long <-
   tbl_stack(tbls =
               lapply(tbls_by_outcome_multi, function(tbl_list) {
                 tbl_merge(
-                  list(tbl_list[[3]], tbl_list[[4]], tbl_list[[5]], tbl_list[[6]]),
+                  list(tbl_list[[49]] %>% add_n(),   # correspond à ch_feces_rel_p1_Y1_10 (Firmicutes)
+                       tbl_list[[50]] %>% add_n(),   # correspond à ch_feces_rel_p2_Y1_10 (Actinobacteria)
+                       tbl_list[[51]] %>% add_n(),   # correspond à ch_feces_rel_p3_Y1_10 (Bacteroidetes)
+                       tbl_list[[52]] %>% add_n()),  # correspond à ch_feces_rel_p4_Y1_10 (Proteobacteria)
                   tab_spanner = c("**Firmicutes**", 
                                   "**Actinobacteria**", 
                                   "**Bacteroidetes**", 
-                                  "**Proteobcateria**"))}),
+                                  "**Proteobacteria**"))}),
             group_header = spanner_names)
 
 table_4_large <- 
   tbl_stack(tbls = list(
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[3]]),
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[49]]),  # correspond à ch_feces_rel_p1_Y1_10 (Firmicutes)
       tab_spanner = spanner_names),
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[4]]),
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[50]]),  # correspond à ch_feces_rel_p2_Y1_10 (Actinobacteria)
       tab_spanner = spanner_names),
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[5]]),
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[51]]),  # correspond à ch_feces_rel_p3_Y1_10 (Bacteroidetes)
       tab_spanner = spanner_names),
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[6]]),
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[52]]),  # correspond à ch_feces_rel_p4_Y1_10 (Proteobacteria)
       tab_spanner = spanner_names)))
 
-table_4 <- list(table_4_long, table_4_large)
+table_4 <- list(table_4_long = table_4_long, 
+                table_4_large = table_4_large)
 rm(table_4_long, table_4_large)
 
 # Figures ----
@@ -453,7 +484,8 @@ figure_1 <- table_multi %>%
   theme(
     legend.position = "right",
     legend.box = "vertical", 
-    legend.justification = "right") 
+    legend.justification = "right") +
+  scale_color_manual(values = c("p-value<0.05" = "red", "p-value≥0.05" = "black"))
 
 figure_1
 ggsave("4_output/fig.1 forest_plot_alphadiv.tiff", 
@@ -501,7 +533,8 @@ figure_3 <- table_multi %>%
   theme(
     legend.position = "right",
     legend.box = "vertical", 
-    legend.justification = "right") 
+    legend.justification = "right")  +
+  scale_color_manual(values = c("p-value<0.05" = "red", "p-value≥0.05" = "black"))
 
 figure_3
 ggsave("4_output/fig.3 forest_plot_phyla.tiff", 
@@ -541,7 +574,7 @@ ggsave("4_output/fig.4 manhattan_plot_genera.tiff",
        device = "tiff",
        units = "cm",
        dpi = 300,
-       height = 20, 
+       height = 25, 
        width = 40)
 
 ## Fig.5: Forestplot final genera ----
@@ -587,7 +620,7 @@ ggsave("4_output/fig.5 forest_plot_genera.tiff",
        device = "tiff",
        units = "cm",
        dpi = 300,
-       height = 15, 
+       height = 10, 
        width = 25)
 
 # Additional tables ----
@@ -631,8 +664,8 @@ model_covars <- function(var_outcome, var_age, covars, data) {
       y = {{var_outcome}},
       formula = "{y} ~ {x}", 
       hide_n = TRUE, 
-      estimate_fun = scales::label_number(accuracy = .1, decimal.mark = "."),
-      pvalue_fun = scales::label_pvalue(accuracy = .001, decimal.mark = ".")) %>%
+      estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+      pvalue_fun = custom_pvalue_fun) %>%
     add_global_p() %>%
     bold_labels() %>%
     bold_p(t = 0.1)
@@ -642,8 +675,8 @@ model_covars <- function(var_outcome, var_age, covars, data) {
   modele <- lm(formule_regr, data = data)
   tbl_model_multi <-  tbl_regression(
     modele, 
-    estimate_fun = scales::label_number(accuracy = .1, decimal.mark = "."),
-    pvalue_fun = scales::label_pvalue(accuracy = .001, decimal.mark = ".")) %>%
+    estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+    pvalue_fun = custom_pvalue_fun) %>%
     add_global_p() %>%
     bold_labels() %>%
     bold_p(t = 0.1)
@@ -694,11 +727,10 @@ table_S3 <- tbl_merge(
   tab_spanner = spanner_names)
 
 
-
 ## Table S4: Associations genera and neurodev ----
 # Adjusted associations between the 46 most abundant genera in the child gut microbiota at one year and the neurodevelopment (n between X and X).
 table_S4 <- tbl_stack(
-  tbls = lapply(7:52, function(j) {
+  tbls = lapply(3:48, function(j) {  # tbl 3 à 48 : correspond aux analyses de genres
     tbl_merge(
       tbls = lapply(tbls_by_outcome_multi, function(i) i[[j]]),
       tab_spanner = spanner_names)}))
@@ -749,7 +781,7 @@ for (outcome in outcomes) {
   table_S5[[outcome]] <- tbls_for_outcome_multi
 }
 
-table_S5 <- tbl_stack(
+table_S5_large <- tbl_stack(
   tbls = list(
     tbl_merge(tbls = lapply(tbls_by_outcome_multi, function(x) x[[1]]), tab_spanner = spanner_names),  # analyse principale seuil 5000
     tbl_merge(tbls = lapply(table_S5, function(x) x[[1]]), tab_spanner = spanner_names),               # analyse de sensibilité seuil 5000 pour n sur seuil 10000
@@ -759,7 +791,7 @@ table_S5 <- tbl_stack(
     tbl_merge(tbls = lapply(table_S5, function(x) x[[4]]), tab_spanner = spanner_names)))              # analyse de sensibilité seuil 10000 pour n sur seuil 10000
 
 rm(terms, formula, model, exposure, outcome, alpha_vec, tbl)
-covariates <- c("po_w_kg_3cat",                                                 # redéfinition de covariates sinon il garde une variable age 
+covariates <- c("po_w_kg_3cat",                                                 # redéfinition de covariates sans variable age 
                 "po_he_3cat",
                 "mo_dipl_2cat",
                 "mo_age",
@@ -778,9 +810,102 @@ covariates <- c("po_w_kg_3cat",                                                 
                 "ch_tabacco_passive_up_to_Y1",
                 "ch_care_main_12m_opt2_2c")
 
+merge_tbls_function_rich <- function(index, tbls_by_outcome_multi, table_S5) {
+  tbl_merge(
+    tbls = list(
+      tbls_by_outcome_multi[[index]][[1]] %>% add_n(), # Premier tbl_regression de tbls_by_outcome_multi
+      table_S5[[index]][[1]],              # Premier tbl_regression de table_S5
+      table_S5[[index]][[2]]               # Deuxième tbl_regression de table_S5
+    ), 
+    tab_spanner = c("**Threshold 5,000 (n=350)**","**Threshold 5,000 (n=339)**", "**Threshold 10,000 (n=339)**")
+  )
+}
+
+merge_tbls_function_sha <- function(index, tbls_by_outcome_multi, table_S5) {
+  tbl_merge(
+    tbls = list(
+      tbls_by_outcome_multi[[index]][[2]] %>% add_n(), # Premier tbl_regression de tbls_by_outcome_multi
+      table_S5[[index]][[3]],              # Premier tbl_regression de table_S5
+      table_S5[[index]][[4]]               # Deuxième tbl_regression de table_S5
+    ), 
+    tab_spanner = c("**Threshold 5,000 (n=350)**","**Threshold 5,000 (n=339)**", "**Threshold 10,000 (n=339)**")
+  )
+}
+
+table_S5_long <- 
+  tbl_stack(
+    tbls = c(lapply(1:12, function(index) merge_tbls_function_rich(index, tbls_by_outcome_multi, table_S5)), 
+             lapply(1:12, function(index) merge_tbls_function_sha(index, tbls_by_outcome_multi, table_S5))),
+    group_header = c(spanner_names, spanner_names))
+table_S5 <- list(table_S5_long = table_S5_long, 
+                 table_S5_large = table_S5_large)
+rm(merge_tbls_function_rich, merge_tbls_function_sha, table_S5_large, table_S5_long)
 
 ## Table S6: Sensitivity analysis – effect of the HOME Y3 variable on CBCL Y2 -----
 ## Sensitivity analysis – Effects of the HOME covariate assessed at 3 years on the CBCL outcomes assessed at 2 years.
+covariates_sensi_home <- 
+  bdd_final_imp_1 %>%
+  select(
+    ch_age_CBCL_Y2,
+    all_of(covariates)) %>%
+  select(-home_total_y3) %>%
+  colnames()
+cbcl_vec <- c("ch_cbclintscore_y2", "ch_cbclextscore_y2")
+
+# Initialisation de la liste pour stocker les résultats
+prep_table_S6 <- list()
+
+for (outcome in cbcl_vec) {
+  # Initialisation de la sous-liste pour stocker les résultats pour chaque outcome
+  table_S6_for_outcome <- list()
+  
+  for (explicative in explanatory) {
+    # Construction de la formule
+    formula <- as.formula(paste(outcome, "~", explicative, "+", paste(covariates_sensi_home, collapse = "+")))
+    
+    # Création du modèle de régression linéaire
+    model <- lm(formula, data = bdd_final_imp_1)
+    
+    # Création du tbl_regression sans les covariates_sensi_home
+    tbl <-                                                                      
+      tbl_regression(
+        model, 
+        include = explicative,
+        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+        pvalue_fun = custom_pvalue_fun,
+        exponentiate = FALSE) %>%
+      bold_p() %>%
+      bold_labels() %>%
+      add_n()
+    
+    table_S6_for_outcome[[explicative]] <- tbl        # Stockage du tbl_regression dans la liste
+  }
+  
+  prep_table_S6[[outcome]] <- table_S6_for_outcome    # Stockage des résultats pour chaque outcome
+}
+rm(cbcl_vec, outcome, explicative, formula, model, tbl, table_S6_for_outcome)
+
+
+table_S6 <- list()
+
+for (i in 1:52) {
+  tbl <- tbl_merge(
+    list(
+      tbls_by_outcome_multi[[1]][[i]], # Premier tbl_regression de la première liste de "tbls_by_outcome_multi"
+      prep_table_S6[[1]][[i]], # Premier tbl_regression de la première liste de "table_S6"
+      tbls_by_outcome_multi[[2]][[i]], # Premier tbl_regression de la deuxième liste de "tbls_by_outcome_multi"
+      prep_table_S6[[2]][[i]] # Premier tbl_regression de la deuxième liste de "table_S6"
+    ),
+    tab_spanner = c("**Internalizing CBCL score at 2 years, adjusted for HOME variable (main analysis)**", 
+                    "**Internalizing CBCL score at 2 years, not adjusted for HOME variable**", 
+                    "**Externalizing CBCL score at 2 years, adjusted for HOME variable (main analysis)**", 
+                    "**Externalizing CBCL score at 2 years, not adjusted for HOME variable**")
+  )
+  table_S6[[i]] <- tbl   # Ajout de la table fusionnée à la liste
+}
+table_S6 <- tbl_stack(table_S6)
+
+rm(covariates_sensi_home, i, tbl)
 
 
 # Additional figures ----
@@ -901,195 +1026,175 @@ corrplot(figure_S4,
 dev.off()
 
 
-table_figure_list <- list(
-  table_1, 
-  table_2, 
-  # table_3,   # betadiv à faire
-  table_4, 
-  
-  figure_1, 
-  # table_2,   # betadiv à faire
-  figure_3, 
-  figure_4, 
-  figure_5, 
-  
-  table_S1, 
-  table_S2, 
-  table_S3, 
-  table_S4, 
-  # table_S5,  # sensi HOME CBCL à faire 
-  
-  figure_S2, 
-  figure_S3, 
-  figure_S4)
+# table_figure_list <- list(
+#   table_1, 
+#   table_2, 
+#   # table_3,   # betadiv à faire
+#   table_4, 
+#   
+#   figure_1, 
+#   # table_2,   # betadiv à faire
+#   figure_3, 
+#   figure_4, 
+#   figure_5, 
+#   
+#   table_S1, 
+#   table_S2, 
+#   table_S3, 
+#   table_S4, 
+#   table_S5,   
+#   table_S6,  # sensi HOME CBCL à faire
+#   
+#   figure_S2, 
+#   figure_S3, 
+#   figure_S4)
 
 
-rm(table_1, 
-   table_2, 
-   # table_3,   # betadiv à faire
-   table_4, 
-   
-   figure_1, 
-   # table_2,   # betadiv à faire
-   figure_3, 
-   figure_4, 
-   figure_5, 
-   
-   table_S1, 
-   table_S2, 
-   table_S3, 
-   table_S4, 
-   table_S5,  
-   # table_S6,  # sensi HOME CBCL à faire 
-   
-   figure_S2, 
-   figure_S3, 
-   figure_S4)
 
 # Strongest associations ----
 ## p<0.0035 ----
-
-table_multi %>%
-  filter(is.na(Codage_rec)) %>%
-  filter(`p-value`<0.0035)%>%
-  View()
-
-table_multi %>%
-  filter((Outcome == "Escherichia_Shigella" & Pollutants_Time_window_rec == "Benzophenone 3 M2") |
-           (Outcome == "Clostridium_XlVa" & Pollutants_Time_window_rec == "Benzophenone 3 t2")|
-           (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "Butylparaben Y1") |
-           (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "BPA Y1") | 
-           (Outcome == "Anaerostipes" & Pollutants_Time_window_rec == "Propylparaben t2") |
-           (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Ethylparaben t2") |
-           (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Butylparaben Y1") |
-           (Outcome == "Enterobacter" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
-           (Outcome == "Collinsella" & Pollutants_Time_window_rec == "BPS M2") |
-           (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "BPS M2") |
-           (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "Benzophenone 3 t2") |
-           (Outcome == "Klebsiella" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
-           (Outcome == "Coprococcus" & Pollutants_Time_window_rec == "BPA Y1") |
-           (Outcome == "Lactococcus" & Pollutants_Time_window_rec == "BPA M2") |
-           (Outcome == "Anaerotruncus" & Pollutants_Time_window_rec == "Butylparaben Y1")) %>%
-  View()
-
-
-results_signi <- tbl_merge(
-  tbls = list(
-    tbls_by_outcome_multi$Escherichia_Shigella$ch_OXBE_total_i_cor_M2_ln,
-    tbls_by_outcome_multi$Clostridium_XlVa$mo_OXBE_total_i_cor_t2_ln,
-    tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BUPA_total_cat_Y1,
-    tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BPA_total_i_cor_Y1_ln,
-    tbls_by_outcome_multi$Anaerostipes$mo_PRPA_total_i_cor_t2_ln,
-    tbls_by_outcome_multi$Enterococcus$mo_ETPA_total_i_cor_t2_ln,
-    tbls_by_outcome_multi$Enterococcus$ch_BUPA_total_cat_Y1,
-    tbls_by_outcome_multi$Enterobacter$ch_ETPA_total_i_cor_Y1_ln,
-    tbls_by_outcome_multi$Collinsella$ch_BPS_total_cat_M2_2,
-    tbls_by_outcome_multi$Romboutsia$ch_BPS_total_cat_M2_2,
-    tbls_by_outcome_multi$Romboutsia$mo_OXBE_total_i_cor_t2_ln,
-    tbls_by_outcome_multi$Klebsiella$ch_ETPA_total_i_cor_Y1_ln,
-    tbls_by_outcome_multi$Coprococcus$ch_BPA_total_i_cor_Y1_ln,
-    tbls_by_outcome_multi$Lactococcus$ch_BPA_total_i_cor_M2_ln,
-    tbls_by_outcome_multi$Anaerotruncus$ch_BUPA_total_cat_Y1), 
-  tab_spanner = c("**Escherichia_Shigella**", 
-                  "**Clostridium_XlVa**",
-                  "**Lachnospiracea_incertae_sedis**",
-                  "**Lachnospiracea_incertae_sedis**",
-                  "**Anaerostipes**",
-                  "**Enterococcus**",
-                  "**Enterococcus**",
-                  "**Enterobacter**",
-                  "**Collinsella**",
-                  "**Romboutsia**",
-                  "**Romboutsia**",
-                  "**Klebsiella**",
-                  "**Coprococcus**",
-                  "**Lactococcus**",
-                  "**Anaerotruncus**"))
-
-write_xlsx(
-  x = taxa_table %>%
-    select(-"ch_feces_ASV_ID_Y1", -"ch_feces_domain_ASVbased_Y1", -"ch_feces_TAX_ASVbased_Y1") %>%
-    filter(ch_feces_genus_ASVbased_Y1 %in% c("Escherichia_Shigella", 
-                                             "Clostridium_XlVa",
-                                             "Lachnospiracea_incertae_sedis",
-                                             "Anaerostipes",
-                                             "Enterococcus",
-                                             "Enterobacter",
-                                             "Collinsella",
-                                             "Romboutsia",
-                                             "Klebsiella",
-                                             "Coprococcus",
-                                             "Lactococcus",
-                                             "Anaerotruncus")) %>% 
-    mutate_if(is.character, as.factor) %>%
-    arrange( ch_feces_phylum_ASVbased_Y1, 
-             ch_feces_class_ASVbased_Y1,
-             ch_feces_order_ASVbased_Y1,  
-             ch_feces_family_ASVbased_Y1 ) %>%
-    distinct(), 
-  path = "4_output/taxa manual/correspondnace taxa des principales asso.xlsx")
-
-
-## p<0.001 ----
-table_multi %>%
-  filter(is.na(Codage_rec)) %>%
-  filter(`p-value`<0.001)%>%
-  View()
-
-
-table_multi %>%
-  filter((Outcome == "Escherichia_Shigella" & Pollutants_Time_window_rec == "Benzophenone 3 M2") |
-           (Outcome == "Clostridium_XlVa" & Pollutants_Time_window_rec == "Benzophenone 3 t2")|
-           (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "Butylparaben Y1") |
-           (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "BPA Y1") | 
-           (Outcome == "Anaerostipes" & Pollutants_Time_window_rec == "Propylparaben t2") |
-           (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Ethylparaben t2") |
-           (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Butylparaben Y1") |
-           (Outcome == "Enterobacter" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
-           (Outcome == "Collinsella" & Pollutants_Time_window_rec == "BPS M2") |
-           (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "BPS M2") |
-           (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "Benzophenone 3 t2") |
-           (Outcome == "Klebsiella" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
-           (Outcome == "Coprococcus" & Pollutants_Time_window_rec == "BPA Y1") |
-           (Outcome == "Lactococcus" & Pollutants_Time_window_rec == "BPA M2") |
-           (Outcome == "Anaerotruncus" & Pollutants_Time_window_rec == "Butylparaben Y1")) %>%
-  View()
-
-
-results_signi_0.001 <- tbl_merge(
-  tbls = list(
-    # tbls_by_outcome_multi$Escherichia_Shigella$ch_OXBE_total_i_cor_M2_ln,
-    # tbls_by_outcome_multi$Clostridium_XlVa$mo_OXBE_total_i_cor_t2_ln,
-    tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BUPA_total_cat_Y1,
-    tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BPA_total_i_cor_Y1_ln,
-    # tbls_by_outcome_multi$Anaerostipes$mo_PRPA_total_i_cor_t2_ln,
-    # tbls_by_outcome_multi$Enterococcus$mo_ETPA_total_i_cor_t2_ln,
-    tbls_by_outcome_multi$Enterococcus$ch_BUPA_total_cat_Y1,
-    tbls_by_outcome_multi$Enterobacter$ch_ETPA_total_i_cor_Y1_ln,
-    tbls_by_outcome_multi$Collinsella$ch_BPS_total_cat_M2_2,
-    # tbls_by_outcome_multi$Romboutsia$ch_BPS_total_cat_M2_2,
-    # tbls_by_outcome_multi$Romboutsia$mo_OXBE_total_i_cor_t2_ln,
-    tbls_by_outcome_multi$Klebsiella$ch_ETPA_total_i_cor_Y1_ln,
-    # tbls_by_outcome_multi$Coprococcus$ch_BPA_total_i_cor_Y1_ln,
-    tbls_by_outcome_multi$Lactococcus$ch_BPA_total_i_cor_M2_ln
-    # tbls_by_outcome_multi$Anaerotruncus$ch_BUPA_total_cat_Y1
-  ), 
-  tab_spanner = c(
-    # "**Escherichia_Shigella**", 
-    # "**Clostridium_XlVa**",
-    "**Lachnospiracea_incertae_sedis**",
-    "**Lachnospiracea_incertae_sedis**",
-    # "**Anaerostipes**",
-    # "**Enterococcus**",
-    "**Enterococcus**",
-    "**Enterobacter**",
-    "**Collinsella**",
-    # "**Romboutsia**",
-    # "**Romboutsia**",
-    "**Klebsiella**",
-    # "**Coprococcus**",
-    "**Lactococcus**"
-    # "**Anaerotruncus**"
-  ))
-
-
+# 
+# table_multi %>%
+#   filter(is.na(Codage_rec)) %>%
+#   filter(`p-value`<0.0035)%>%
+#   View()
+# 
+# table_multi %>%
+#   filter((Outcome == "Escherichia_Shigella" & Pollutants_Time_window_rec == "Benzophenone 3 M2") |
+#            (Outcome == "Clostridium_XlVa" & Pollutants_Time_window_rec == "Benzophenone 3 t2")|
+#            (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "Butylparaben Y1") |
+#            (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "BPA Y1") | 
+#            (Outcome == "Anaerostipes" & Pollutants_Time_window_rec == "Propylparaben t2") |
+#            (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Ethylparaben t2") |
+#            (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Butylparaben Y1") |
+#            (Outcome == "Enterobacter" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
+#            (Outcome == "Collinsella" & Pollutants_Time_window_rec == "BPS M2") |
+#            (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "BPS M2") |
+#            (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "Benzophenone 3 t2") |
+#            (Outcome == "Klebsiella" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
+#            (Outcome == "Coprococcus" & Pollutants_Time_window_rec == "BPA Y1") |
+#            (Outcome == "Lactococcus" & Pollutants_Time_window_rec == "BPA M2") |
+#            (Outcome == "Anaerotruncus" & Pollutants_Time_window_rec == "Butylparaben Y1")) %>%
+#   View()
+# 
+# 
+# results_signi <- tbl_merge(
+#   tbls = list(
+#     tbls_by_outcome_multi$Escherichia_Shigella$ch_OXBE_total_i_cor_M2_ln,
+#     tbls_by_outcome_multi$Clostridium_XlVa$mo_OXBE_total_i_cor_t2_ln,
+#     tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BUPA_total_cat_Y1,
+#     tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BPA_total_i_cor_Y1_ln,
+#     tbls_by_outcome_multi$Anaerostipes$mo_PRPA_total_i_cor_t2_ln,
+#     tbls_by_outcome_multi$Enterococcus$mo_ETPA_total_i_cor_t2_ln,
+#     tbls_by_outcome_multi$Enterococcus$ch_BUPA_total_cat_Y1,
+#     tbls_by_outcome_multi$Enterobacter$ch_ETPA_total_i_cor_Y1_ln,
+#     tbls_by_outcome_multi$Collinsella$ch_BPS_total_cat_M2_2,
+#     tbls_by_outcome_multi$Romboutsia$ch_BPS_total_cat_M2_2,
+#     tbls_by_outcome_multi$Romboutsia$mo_OXBE_total_i_cor_t2_ln,
+#     tbls_by_outcome_multi$Klebsiella$ch_ETPA_total_i_cor_Y1_ln,
+#     tbls_by_outcome_multi$Coprococcus$ch_BPA_total_i_cor_Y1_ln,
+#     tbls_by_outcome_multi$Lactococcus$ch_BPA_total_i_cor_M2_ln,
+#     tbls_by_outcome_multi$Anaerotruncus$ch_BUPA_total_cat_Y1), 
+#   tab_spanner = c("**Escherichia_Shigella**", 
+#                   "**Clostridium_XlVa**",
+#                   "**Lachnospiracea_incertae_sedis**",
+#                   "**Lachnospiracea_incertae_sedis**",
+#                   "**Anaerostipes**",
+#                   "**Enterococcus**",
+#                   "**Enterococcus**",
+#                   "**Enterobacter**",
+#                   "**Collinsella**",
+#                   "**Romboutsia**",
+#                   "**Romboutsia**",
+#                   "**Klebsiella**",
+#                   "**Coprococcus**",
+#                   "**Lactococcus**",
+#                   "**Anaerotruncus**"))
+# 
+# write_xlsx(
+#   x = taxa_table %>%
+#     select(-"ch_feces_ASV_ID_Y1", -"ch_feces_domain_ASVbased_Y1", -"ch_feces_TAX_ASVbased_Y1") %>%
+#     filter(ch_feces_genus_ASVbased_Y1 %in% c("Escherichia_Shigella", 
+#                                              "Clostridium_XlVa",
+#                                              "Lachnospiracea_incertae_sedis",
+#                                              "Anaerostipes",
+#                                              "Enterococcus",
+#                                              "Enterobacter",
+#                                              "Collinsella",
+#                                              "Romboutsia",
+#                                              "Klebsiella",
+#                                              "Coprococcus",
+#                                              "Lactococcus",
+#                                              "Anaerotruncus")) %>% 
+#     mutate_if(is.character, as.factor) %>%
+#     arrange( ch_feces_phylum_ASVbased_Y1, 
+#              ch_feces_class_ASVbased_Y1,
+#              ch_feces_order_ASVbased_Y1,  
+#              ch_feces_family_ASVbased_Y1 ) %>%
+#     distinct(), 
+#   path = "4_output/taxa manual/correspondnace taxa des principales asso.xlsx")
+# 
+# 
+# ## p<0.001 ----
+# table_multi %>%
+#   filter(is.na(Codage_rec)) %>%
+#   filter(`p-value`<0.001)%>%
+#   View()
+# 
+# 
+# table_multi %>%
+#   filter((Outcome == "Escherichia_Shigella" & Pollutants_Time_window_rec == "Benzophenone 3 M2") |
+#            (Outcome == "Clostridium_XlVa" & Pollutants_Time_window_rec == "Benzophenone 3 t2")|
+#            (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "Butylparaben Y1") |
+#            (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "BPA Y1") | 
+#            (Outcome == "Anaerostipes" & Pollutants_Time_window_rec == "Propylparaben t2") |
+#            (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Ethylparaben t2") |
+#            (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Butylparaben Y1") |
+#            (Outcome == "Enterobacter" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
+#            (Outcome == "Collinsella" & Pollutants_Time_window_rec == "BPS M2") |
+#            (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "BPS M2") |
+#            (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "Benzophenone 3 t2") |
+#            (Outcome == "Klebsiella" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
+#            (Outcome == "Coprococcus" & Pollutants_Time_window_rec == "BPA Y1") |
+#            (Outcome == "Lactococcus" & Pollutants_Time_window_rec == "BPA M2") |
+#            (Outcome == "Anaerotruncus" & Pollutants_Time_window_rec == "Butylparaben Y1")) %>%
+#   View()
+# 
+# 
+# results_signi_0.001 <- tbl_merge(
+#   tbls = list(
+#     # tbls_by_outcome_multi$Escherichia_Shigella$ch_OXBE_total_i_cor_M2_ln,
+#     # tbls_by_outcome_multi$Clostridium_XlVa$mo_OXBE_total_i_cor_t2_ln,
+#     tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BUPA_total_cat_Y1,
+#     tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BPA_total_i_cor_Y1_ln,
+#     # tbls_by_outcome_multi$Anaerostipes$mo_PRPA_total_i_cor_t2_ln,
+#     # tbls_by_outcome_multi$Enterococcus$mo_ETPA_total_i_cor_t2_ln,
+#     tbls_by_outcome_multi$Enterococcus$ch_BUPA_total_cat_Y1,
+#     tbls_by_outcome_multi$Enterobacter$ch_ETPA_total_i_cor_Y1_ln,
+#     tbls_by_outcome_multi$Collinsella$ch_BPS_total_cat_M2_2,
+#     # tbls_by_outcome_multi$Romboutsia$ch_BPS_total_cat_M2_2,
+#     # tbls_by_outcome_multi$Romboutsia$mo_OXBE_total_i_cor_t2_ln,
+#     tbls_by_outcome_multi$Klebsiella$ch_ETPA_total_i_cor_Y1_ln,
+#     # tbls_by_outcome_multi$Coprococcus$ch_BPA_total_i_cor_Y1_ln,
+#     tbls_by_outcome_multi$Lactococcus$ch_BPA_total_i_cor_M2_ln
+#     # tbls_by_outcome_multi$Anaerotruncus$ch_BUPA_total_cat_Y1
+#   ), 
+#   tab_spanner = c(
+#     # "**Escherichia_Shigella**", 
+#     # "**Clostridium_XlVa**",
+#     "**Lachnospiracea_incertae_sedis**",
+#     "**Lachnospiracea_incertae_sedis**",
+#     # "**Anaerostipes**",
+#     # "**Enterococcus**",
+#     "**Enterococcus**",
+#     "**Enterobacter**",
+#     "**Collinsella**",
+#     # "**Romboutsia**",
+#     # "**Romboutsia**",
+#     "**Klebsiella**",
+#     # "**Coprococcus**",
+#     "**Lactococcus**"
+#     # "**Anaerotruncus**"
+#   ))
+# 
+# 

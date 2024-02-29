@@ -1138,3 +1138,21 @@ M0_corrected <- function(data, alpha=0.05) {
   
 }
 
+
+custom_pvalue_fun <- function(x) {
+  sapply(x, function(p) {
+    if (is.na(p)) {
+      return(NA) # Retourner NA si p est NA
+    } else if (p < 0.001) {
+      # Pour p < 0.001, utiliser la notation scientifique pour afficher toutes les décimales
+      return(format(p, scientific = TRUE))
+    } else if (p >= 0.001 & p < 0.01) {
+      # Pour 0.001 <= p < 0.01, afficher avec 3 décimales
+      return(sprintf("%.3f", p))
+    } else {
+      # Pour p >= 0.01, afficher avec 2 décimales
+      return(sprintf("%.2f", p))
+    }
+  })
+}
+
