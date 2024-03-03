@@ -273,6 +273,7 @@ covariates <- c("po_w_kg_3cat",                                                 
 table_multi <-                                                                         # Ajout des correspondances taxonomiques 
   left_join(table_multi, corres, by = "Exposure") %>%
   select(Phyla_corres, Class_corres, Order_corres, Family_corres, everything())
+rm(corres)
 
 table_multi <- table_multi %>%
   select(Outcome, 
@@ -839,7 +840,7 @@ table_S5_long <-
     group_header = c(spanner_names, spanner_names))
 table_S5 <- list(table_S5_long = table_S5_long, 
                  table_S5_large = table_S5_large)
-rm(merge_tbls_function_rich, merge_tbls_function_sha, table_S5_large, table_S5_long)
+rm(merge_tbls_function_rich, merge_tbls_function_sha, table_S5_large, table_S5_long, tbls_for_outcome_multi)
 
 ## Table S6: Sensitivity analysis – effect of the HOME Y3 variable on CBCL Y2 -----
 ## Sensitivity analysis – Effects of the HOME covariate assessed at 3 years on the CBCL outcomes assessed at 2 years.
@@ -905,7 +906,7 @@ for (i in 1:52) {
 }
 table_S6 <- tbl_stack(table_S6)
 
-rm(covariates_sensi_home, i, tbl)
+rm(covariates_sensi_home, i, tbl, prep_table_S6)
 
 
 # Additional figures ----
@@ -1025,7 +1026,8 @@ corrplot(figure_S4,
          col = rev(COL2(diverging = "RdYlBu")))
 dev.off()
 
-
+# Nettoyage final 
+rm(covariates_CBCL, covariates_IQ, covariates_SRS_BRIEF, covariates_map)
 # table_figure_list <- list(
 #   table_1, 
 #   table_2, 
