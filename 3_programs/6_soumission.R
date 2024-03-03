@@ -416,7 +416,7 @@ table_2 <- list(table_2_long = table_2_long,
 rm(table_2_long, table_2_large)
 
 ## Table 3: Associations betadiv and neurodev ----
-
+# cf code spécifique
 
 ## Table 4: Associations phyla and neurodev ----
 table_4_long <-
@@ -497,11 +497,11 @@ ggsave("4_output/fig.1 forest_plot_alphadiv.tiff",
        height = 15, 
        width = 25)
 
-## Fig.2: Boxplot beta div ----
 
 
-## Fig.3: Forestplot phyla ----
-figure_3 <- table_multi %>% 
+
+## Fig.2: Forestplot phyla ----
+figure_2 <- table_multi %>% 
   filter(`Gut microbiota parameters` %in% c("Firmicutes",
                                             "Actinobacteria", 
                                             "Bacteroidetes", 
@@ -537,17 +537,17 @@ figure_3 <- table_multi %>%
     legend.justification = "right")  +
   scale_color_manual(values = c("p-value<0.05" = "red", "p-value≥0.05" = "black"))
 
-figure_3
-ggsave("4_output/fig.3 forest_plot_phyla.tiff", 
-       figure_3, 
+figure_2
+ggsave("4_output/fig.2 forest_plot_phyla.tiff", 
+       figure_2, 
        device = "tiff",
        units = "cm",
        dpi = 300,
        height = 15, 
        width = 25)
 
-## Fig.4: Mahatan plot genera ----
-figure_4 <- table_multi  %>%
+## Fig.3: Mahatan plot genera ----
+figure_3 <- table_multi  %>%
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
                                              "Bacteroidetes",
@@ -569,17 +569,17 @@ figure_4 <- table_multi  %>%
     legend.box = "vertical", 
     legend.justification = "right", 
     axis.text.y = element_text(face = "italic"))
-figure_4
-ggsave("4_output/fig.4 manhattan_plot_genera.tiff", 
-       figure_4, 
+figure_3
+ggsave("4_output/fig.3 manhattan_plot_genera.tiff", 
+       figure_3, 
        device = "tiff",
        units = "cm",
        dpi = 300,
        height = 25, 
        width = 40)
 
-## Fig.5: Forestplot final genera ----
-figure_5 <- table_multi %>% 
+## Fig.4: Forestplot final genera ----
+figure_4 <- table_multi %>% 
   filter(`p-value`<0.02) %>% 
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
@@ -615,9 +615,9 @@ figure_5 <- table_multi %>%
     legend.justification = "right", 
     axis.text.y = element_text(face = "italic")) 
 
-figure_5
-ggsave("4_output/fig.5 forest_plot_genera.tiff", 
-       figure_5, 
+figure_4
+ggsave("4_output/fig.4 forest_plot_genera.tiff", 
+       figure_4, 
        device = "tiff",
        units = "cm",
        dpi = 300,
@@ -1031,14 +1031,13 @@ rm(covariates_CBCL, covariates_IQ, covariates_SRS_BRIEF, covariates_map)
 # table_figure_list <- list(
 #   table_1, 
 #   table_2, 
-#   # table_3,   # betadiv à faire
+#   # table_3,   
 #   table_4, 
 #   
 #   figure_1, 
-#   # table_2,   # betadiv à faire
+#   figure_2, 
 #   figure_3, 
 #   figure_4, 
-#   figure_5, 
 #   
 #   table_S1, 
 #   table_S2, 
@@ -1054,7 +1053,7 @@ rm(covariates_CBCL, covariates_IQ, covariates_SRS_BRIEF, covariates_map)
 
 
 # Strongest associations ----
-## p<0.0035 ----
+## p<0.0035 
 # 
 # table_multi %>%
 #   filter(is.na(Codage_rec)) %>%
@@ -1137,7 +1136,7 @@ rm(covariates_CBCL, covariates_IQ, covariates_SRS_BRIEF, covariates_map)
 #   path = "4_output/taxa manual/correspondnace taxa des principales asso.xlsx")
 # 
 # 
-# ## p<0.001 ----
+# ## p<0.001 
 # table_multi %>%
 #   filter(is.na(Codage_rec)) %>%
 #   filter(`p-value`<0.001)%>%
