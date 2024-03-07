@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.Rdata
+.httr-oauth
+.DS_Store
+.quarto
+0_source_data
+1_intermediate_data
+4_output
+5_annex
+3_programs/old
+3_programs/help
+3_programs/output html
