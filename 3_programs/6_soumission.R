@@ -88,10 +88,10 @@ spanner_names <- c("Internalizing CBCL score at 2 years",
                    "Emotional control BRIEF-P score at 3 years",
                    "Working memory BRIEF-P score at 3 years",
                    "Plan and organization BRIEF-P score at 3 years",
-                   "Verbal comprehension IQ score at 3 years",
-                   "Visuospatial IQ score at 3 years",
-                   "Work memory IQ score at 3 years",
-                   "Total IQ score at 3 years")
+                   "Verbal comprehension WPPSI score at 3 years",
+                   "Visuospatial WPPSI score at 3 years",
+                   "Work memory WPPSI score at 3 years",
+                   "Total WPPSI score at 3 years")
 
 # Data description ----
 ## Covariates ----
@@ -328,18 +328,18 @@ table_multi <- table_multi %>%
                   "Externalizing CBCL score at 2 years" = "ch_cbclextscore_y2",
                   "Internalizing CBCL score at 2 years" = "ch_cbclintscore_y2",
                   "Total SRS score at 3 years" = "ch_SRStotal_y3",
-                  "Total IQ score at 3 years" = "ch_total_IQ_Y3",
-                  "Verbal comprehension IQ score at 3 years" = "ch_verbal_comprehension_IQ_Y3",
-                  "Visuospatiale IQ score at 3 years" = "ch_visuospatiale_IQ_Y3",
-                  "Work memory IQ score at 3 years" = "ch_work_memory_IQ_Y3"),
+                  "Total WPPSI score at 3 years" = "ch_total_IQ_Y3",
+                  "Verbal comprehension WPPSI score at 3 years" = "ch_verbal_comprehension_IQ_Y3",
+                  "Visuospatiale WPPSI score at 3 years" = "ch_visuospatiale_IQ_Y3",
+                  "Work memory WPPSI score at 3 years" = "ch_work_memory_IQ_Y3"),
     Outcome = 
       fct_relevel(Outcome,
                   "Internalizing CBCL score at 2 years", "Externalizing CBCL score at 2 years",
                   "Emotional control BRIEF-P score at 3 years", "Inhibition BRIEF-P score at 3 years",
                   "Plan and organization BRIEF-P score at 3 years", "Shift BRIEF-P score at 3 years",
                   "Working memory BRIEF-P score at 3 years", "Total SRS score at 3 years",
-                  "Verbal comprehension IQ score at 3 years", "Visuospatiale IQ score at 3 years",
-                  "Work memory IQ score at 3 years", "Total IQ score at 3 years"),
+                  "Verbal comprehension WPPSI score at 3 years", "Visuospatiale WPPSI score at 3 years",
+                  "Work memory WPPSI score at 3 years", "Total WPPSI score at 3 years"),
     `p-value` = gsub("__", "", `p-value`),
     `p-value` = as.numeric(`p-value`),
     `q-value` = case_when(
@@ -460,8 +460,8 @@ figure_1 <- table_multi %>%
   mutate(Beta = as.numeric(Beta), 
          Outcome = 
            fct_relevel(Outcome,
-                       "Total IQ score at 3 years", "Work memory IQ score at 3 years", 
-                       "Visuospatiale IQ score at 3 years","Verbal comprehension IQ score at 3 years", 
+                       "Total WPPSI score at 3 years", "Work memory WPPSI score at 3 years", 
+                       "Visuospatiale WPPSI score at 3 years","Verbal comprehension WPPSI score at 3 years", 
                        "Plan and organization BRIEF-P score at 3 years", "Working memory BRIEF-P score at 3 years",
                        "Emotional control BRIEF-P score at 3 years","Shift BRIEF-P score at 3 years",
                        "Inhibition BRIEF-P score at 3 years", "Total SRS score at 3 years",
@@ -509,8 +509,8 @@ figure_2 <- table_multi %>%
   mutate(Beta = as.numeric(Beta), 
          Outcome = 
            fct_relevel(Outcome,
-                       "Total IQ score at 3 years", "Work memory IQ score at 3 years", 
-                       "Visuospatiale IQ score at 3 years","Verbal comprehension IQ score at 3 years", 
+                       "Total WPPSI score at 3 years", "Work memory WPPSI score at 3 years", 
+                       "Visuospatiale WPPSI score at 3 years","Verbal comprehension WPPSI score at 3 years", 
                        "Plan and organization BRIEF-P score at 3 years", "Working memory BRIEF-P score at 3 years",
                        "Emotional control BRIEF-P score at 3 years","Shift BRIEF-P score at 3 years",
                        "Inhibition BRIEF-P score at 3 years", "Total SRS score at 3 years",
@@ -590,8 +590,8 @@ figure_4 <- table_multi %>%
   mutate(Beta = as.numeric(Beta), 
          Outcome = 
            fct_relevel(Outcome,
-                       "Total IQ score at 3 years", "Work memory IQ score at 3 years", 
-                       "Visuospatiale IQ score at 3 years","Verbal comprehension IQ score at 3 years", 
+                       "Total WPPSI score at 3 years", "Work memory WPPSI score at 3 years", 
+                       "Visuospatiale WPPSI score at 3 years","Verbal comprehension WPPSI score at 3 years", 
                        "Total SRS score at 3 years","Working memory BRIEF-P score at 3 years",
                        "Shift BRIEF-P score at 3 years","Plan and organization BRIEF-P score at 3 years",
                        "Inhibition BRIEF-P score at 3 years","Emotional control BRIEF-P score at 3 years",
@@ -608,10 +608,12 @@ figure_4 <- table_multi %>%
   labs(x = "Neurodevelopement", y = "") +
   theme_lucid() +
   coord_flip()  +
-  guides(color = guide_legend(title = "Genera"))+
+  guides(color = guide_legend(title = "Genera", 
+                              reverse = TRUE))+
   theme(
     legend.position = "right",
     legend.box = "vertical", 
+    legend.text = element_text(face = "italic"),
     legend.justification = "right", 
     axis.text.y = element_text(face = "italic")) 
 
@@ -913,9 +915,99 @@ rm(covariates_sensi_home, i, tbl, prep_table_S6)
 ## Figure S1: DAG ----
 ## Direct acyclic graph of the relation between one year child gut microbiota and neurodevelopment. 
 
-## Figure S2: correlations gut microbiota parameters ----
+## Figure S2: correlations gut microbiota and covariates ----
+## xx correlations between gut microbiota parameters and covariates (n between X and X).
+figure_S2 <- bdd_final_imp_1 %>%
+  select(all_of(outcomes),
+         po_w_kg, 
+         po_he, 
+         mo_age, 
+         mo_par,
+         mo_bmi_bepr, 
+         po_gd, 
+         home_total_y3, 
+         mo_hadtotscore_grt3_imp) %>%
+  select_if(is.numeric)
+
+# permet de savoir les pairwise.complete.obs 
+colSums(!is.na(figure_S2))
+
+figure_S2 <- round(cor(figure_S2,
+                    use = "pairwise.complete.obs",
+                    method = "pearson"), 1)
+
+figure_S2 <- figure_S2 %>%
+  as.data.frame() %>%
+  select(!all_of(outcomes)) %>%
+  t() %>%
+  as.data.frame() %>%
+  select(all_of(outcomes)) %>%
+  as.matrix()
+colnames(figure_S2) <- spanner_names
+colnames(figure_S2) <- gsub(" score at 2 years", " Y2", colnames(figure_S2))
+colnames(figure_S2) <- gsub(" score at 3 years", " Y3", colnames(figure_S2))
+
+rownames(figure_S2) <- rownames(figure_S2) %>%
+  str_replace_all(
+    c("po_w_kg" = "Birth weight (kg)",
+      "po_he" = "Birth length (cm)",
+      "mo_age" = "Maternal age before pregnancy",
+      "mo_par" = "Maternal parity",
+      "mo_bmi_bepr" = "Maternal BMI before pregnancy",
+      "po_gd" = "Gestational age (weeks)",
+      "home_total_y3" = "HOME score at 3 years old",
+      "mo_hadtotscore_grt3_imp" = "Maternal anxiety and depression during the third trim. of preg."))
+
+
+tiff(filename = "4_output/Fig.S2 heatmap_cor_neuro_covar.tiff", units = "mm", width = 300, height = 300, res = 300)
+corrplot(figure_S2,
+         method = 'color',
+         tl.col = 'black',
+         tl.srt = 55,
+         addCoef.col = "black",
+         number.cex = 1,
+         tl.cex = 1,
+         number.digits = 1,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+
+## Figure S3: correlations neurodevelopmental ----
+## xx correlations between neurodevelopmental parameters (n between X and X).
+figure_S3 <- bdd %>% 
+  filter(!is.na(ch_feces_rel_p1_Y1)) %>%
+  select(all_of(outcomes)) 
+colnames(figure_S3) <- spanner_names
+names(figure_S3) <- gsub(" score at 2 years", " Y2", names(figure_S3))
+names(figure_S3) <- gsub(" score at 3 years", " Y3", names(figure_S3))
+
+# permet de savoir les pairwise.complete.obs 
+apply(combn(names(figure_S3), 2), 2, function(x) sum(!is.na(figure_S3[[x[1]]]) & !is.na(figure_S3[[x[2]]])))
+
+
+figure_S3 <- cor(figure_S3, 
+                    use = "pairwise.complete.obs", 
+                    method = "pearson")
+
+plot.new()
+tiff(filename = "4_output/Fig.S3 heatmap_cor_neuro.tiff", units = "mm", width = 250, height = 250, res = 300)
+corrplot(figure_S3, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         number.cex = 1,
+         number.digits = 1,
+         tl.cex = 1,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+
+
+## Figure SX: correlations gut microbiota parameters ----
 ## xx correlations between gut microbiota parameters (n between X and X). 
-figure_S2 <- bdd %>% 
+figure_SX <- bdd %>% 
   select(all_of(genera_linear_complet)) 
 colnames(figure_S2) <- genera_linear
 figure_S2 <- figure_S2 %>%
@@ -930,13 +1022,13 @@ figure_S2 <- figure_S2 %>%
     "Erysipelotrichaceae incertae sedis" = Erysipelotrichaceae_incertae_sedis, 
     "Saccharibacteria genera incertae sedis" = Saccharibacteria_genera_incertae_sedis)
 
-figure_S2 <- cor(figure_S2, 
-                     use = "pairwise.complete.obs", 
-                     method = "pearson")
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
 
 plot.new()
-tiff(filename = "4_output/Fig.S2 heatmap_cor_genera.tiff", units = "mm", width = 250, height = 250, res = 300)
-corrplot(figure_S2, 
+tiff(filename = "4_output/Fig.SX heatmap_cor_genera.tiff", units = "mm", width = 250, height = 250, res = 300)
+corrplot(figure_SX, 
          method = 'color', 
          type = "lower", 
          tl.col = 'black', 
@@ -948,254 +1040,5 @@ corrplot(figure_S2,
          col = rev(COL2(diverging = "RdYlBu")))
 dev.off()
 
-## Figure S3: correlations gut microbiota and covariates ----
-## xx correlations between gut microbiota parameters and covariates (n between X and X).
-figure_S3 <- bdd_final_imp_1 %>%
-  select(all_of(outcomes),
-         po_w_kg, 
-         po_he, 
-         mo_age, 
-         mo_par,
-         mo_bmi_bepr, 
-         po_gd, 
-         home_total_y3, 
-         mo_hadtotscore_grt3_imp) %>%
-  select_if(is.numeric)
 
-figure_S3 <- round(cor(figure_S3,
-                    use = "pairwise.complete.obs",
-                    method = "pearson"), 1)
-
-figure_S3 <- figure_S3 %>%
-  as.data.frame() %>%
-  select(!all_of(outcomes)) %>%
-  t() %>%
-  as.data.frame() %>%
-  select(all_of(outcomes)) %>%
-  as.matrix()
-colnames(figure_S3) <- spanner_names
-
-rownames(figure_S3) <- rownames(figure_S3) %>%
-  str_replace_all(
-    c("po_w_kg" = "Birth weight (kg)",
-      "po_he" = "Birth length (cm)",
-      "mo_age" = "Maternal age before pregnancy",
-      "mo_par" = "Maternal parity",
-      "mo_bmi_bepr" = "Maternal BMI before pregnancy",
-      "po_gd" = "Gestational age (weeks)",
-      "home_total_y3" = "HOME score at 3 years old",
-      "mo_hadtotscore_grt3_imp" = "Maternal anxiety and depression during the third trim. of preg."))
-
-
-tiff(filename = "4_output/Fig.S3 heatmap_cor_neuro_covar.tiff", units = "mm", width = 300, height = 300, res = 300)
-corrplot(figure_S3,
-         method = 'color',
-         tl.col = 'black',
-         tl.srt = 55,
-         addCoef.col = "black",
-         number.cex = 1,
-         tl.cex = 1,
-         number.digits = 1,
-         col = rev(COL2(diverging = "RdYlBu")))
-dev.off()
-
-
-## Figure S4: correlations neurodevelopmental ----
-## xx correlations between neurodevelopmental parameters (n between X and X).
-figure_S4 <- bdd %>% 
-  select(all_of(outcomes)) 
-colnames(figure_S4) <- spanner_names
-names(figure_S4) <- gsub(" score at 2 years", " Y2", names(figure_S4))
-names(figure_S4) <- gsub(" score at 3 years", " Y3", names(figure_S4))
-
-figure_S4 <- cor(figure_S4, 
-                    use = "pairwise.complete.obs", 
-                    method = "pearson")
-
-plot.new()
-tiff(filename = "4_output/Fig.S4 heatmap_cor_neuro.tiff", units = "mm", width = 250, height = 250, res = 300)
-corrplot(figure_S4, 
-         method = 'color', 
-         type = "lower", 
-         tl.col = 'black', 
-         tl.srt = 45, 
-         addCoef.col = "black",
-         number.cex = 1,
-         number.digits = 1,
-         tl.cex = 1,
-         col = rev(COL2(diverging = "RdYlBu")))
-dev.off()
-
-# Nettoyage final 
 rm(covariates_CBCL, covariates_IQ, covariates_SRS_BRIEF, covariates_map)
-# table_figure_list <- list(
-#   table_1, 
-#   table_2, 
-#   # table_3,   
-#   table_4, 
-#   
-#   figure_1, 
-#   figure_2, 
-#   figure_3, 
-#   figure_4, 
-#   
-#   table_S1, 
-#   table_S2, 
-#   table_S3, 
-#   table_S4, 
-#   table_S5,   
-#   table_S6,  # sensi HOME CBCL à faire
-#   
-#   figure_S2, 
-#   figure_S3, 
-#   figure_S4)
-
-
-
-# Strongest associations ----
-## p<0.0035 
-# 
-# table_multi %>%
-#   filter(is.na(Codage_rec)) %>%
-#   filter(`p-value`<0.0035)%>%
-#   View()
-# 
-# table_multi %>%
-#   filter((Outcome == "Escherichia_Shigella" & Pollutants_Time_window_rec == "Benzophenone 3 M2") |
-#            (Outcome == "Clostridium_XlVa" & Pollutants_Time_window_rec == "Benzophenone 3 t2")|
-#            (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "Butylparaben Y1") |
-#            (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "BPA Y1") | 
-#            (Outcome == "Anaerostipes" & Pollutants_Time_window_rec == "Propylparaben t2") |
-#            (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Ethylparaben t2") |
-#            (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Butylparaben Y1") |
-#            (Outcome == "Enterobacter" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
-#            (Outcome == "Collinsella" & Pollutants_Time_window_rec == "BPS M2") |
-#            (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "BPS M2") |
-#            (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "Benzophenone 3 t2") |
-#            (Outcome == "Klebsiella" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
-#            (Outcome == "Coprococcus" & Pollutants_Time_window_rec == "BPA Y1") |
-#            (Outcome == "Lactococcus" & Pollutants_Time_window_rec == "BPA M2") |
-#            (Outcome == "Anaerotruncus" & Pollutants_Time_window_rec == "Butylparaben Y1")) %>%
-#   View()
-# 
-# 
-# results_signi <- tbl_merge(
-#   tbls = list(
-#     tbls_by_outcome_multi$Escherichia_Shigella$ch_OXBE_total_i_cor_M2_ln,
-#     tbls_by_outcome_multi$Clostridium_XlVa$mo_OXBE_total_i_cor_t2_ln,
-#     tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BUPA_total_cat_Y1,
-#     tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BPA_total_i_cor_Y1_ln,
-#     tbls_by_outcome_multi$Anaerostipes$mo_PRPA_total_i_cor_t2_ln,
-#     tbls_by_outcome_multi$Enterococcus$mo_ETPA_total_i_cor_t2_ln,
-#     tbls_by_outcome_multi$Enterococcus$ch_BUPA_total_cat_Y1,
-#     tbls_by_outcome_multi$Enterobacter$ch_ETPA_total_i_cor_Y1_ln,
-#     tbls_by_outcome_multi$Collinsella$ch_BPS_total_cat_M2_2,
-#     tbls_by_outcome_multi$Romboutsia$ch_BPS_total_cat_M2_2,
-#     tbls_by_outcome_multi$Romboutsia$mo_OXBE_total_i_cor_t2_ln,
-#     tbls_by_outcome_multi$Klebsiella$ch_ETPA_total_i_cor_Y1_ln,
-#     tbls_by_outcome_multi$Coprococcus$ch_BPA_total_i_cor_Y1_ln,
-#     tbls_by_outcome_multi$Lactococcus$ch_BPA_total_i_cor_M2_ln,
-#     tbls_by_outcome_multi$Anaerotruncus$ch_BUPA_total_cat_Y1), 
-#   tab_spanner = c("**Escherichia_Shigella**", 
-#                   "**Clostridium_XlVa**",
-#                   "**Lachnospiracea_incertae_sedis**",
-#                   "**Lachnospiracea_incertae_sedis**",
-#                   "**Anaerostipes**",
-#                   "**Enterococcus**",
-#                   "**Enterococcus**",
-#                   "**Enterobacter**",
-#                   "**Collinsella**",
-#                   "**Romboutsia**",
-#                   "**Romboutsia**",
-#                   "**Klebsiella**",
-#                   "**Coprococcus**",
-#                   "**Lactococcus**",
-#                   "**Anaerotruncus**"))
-# 
-# write_xlsx(
-#   x = taxa_table %>%
-#     select(-"ch_feces_ASV_ID_Y1", -"ch_feces_domain_ASVbased_Y1", -"ch_feces_TAX_ASVbased_Y1") %>%
-#     filter(ch_feces_genus_ASVbased_Y1 %in% c("Escherichia_Shigella", 
-#                                              "Clostridium_XlVa",
-#                                              "Lachnospiracea_incertae_sedis",
-#                                              "Anaerostipes",
-#                                              "Enterococcus",
-#                                              "Enterobacter",
-#                                              "Collinsella",
-#                                              "Romboutsia",
-#                                              "Klebsiella",
-#                                              "Coprococcus",
-#                                              "Lactococcus",
-#                                              "Anaerotruncus")) %>% 
-#     mutate_if(is.character, as.factor) %>%
-#     arrange( ch_feces_phylum_ASVbased_Y1, 
-#              ch_feces_class_ASVbased_Y1,
-#              ch_feces_order_ASVbased_Y1,  
-#              ch_feces_family_ASVbased_Y1 ) %>%
-#     distinct(), 
-#   path = "4_output/taxa manual/correspondnace taxa des principales asso.xlsx")
-# 
-# 
-# ## p<0.001 
-# table_multi %>%
-#   filter(is.na(Codage_rec)) %>%
-#   filter(`p-value`<0.001)%>%
-#   View()
-# 
-# 
-# table_multi %>%
-#   filter((Outcome == "Escherichia_Shigella" & Pollutants_Time_window_rec == "Benzophenone 3 M2") |
-#            (Outcome == "Clostridium_XlVa" & Pollutants_Time_window_rec == "Benzophenone 3 t2")|
-#            (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "Butylparaben Y1") |
-#            (Outcome == "Lachnospiracea_incertae_sedis" & Pollutants_Time_window_rec == "BPA Y1") | 
-#            (Outcome == "Anaerostipes" & Pollutants_Time_window_rec == "Propylparaben t2") |
-#            (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Ethylparaben t2") |
-#            (Outcome == "Enterococcus" & Pollutants_Time_window_rec == "Butylparaben Y1") |
-#            (Outcome == "Enterobacter" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
-#            (Outcome == "Collinsella" & Pollutants_Time_window_rec == "BPS M2") |
-#            (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "BPS M2") |
-#            (Outcome == "Romboutsia" & Pollutants_Time_window_rec == "Benzophenone 3 t2") |
-#            (Outcome == "Klebsiella" & Pollutants_Time_window_rec == "Ethylparaben Y1") |
-#            (Outcome == "Coprococcus" & Pollutants_Time_window_rec == "BPA Y1") |
-#            (Outcome == "Lactococcus" & Pollutants_Time_window_rec == "BPA M2") |
-#            (Outcome == "Anaerotruncus" & Pollutants_Time_window_rec == "Butylparaben Y1")) %>%
-#   View()
-# 
-# 
-# results_signi_0.001 <- tbl_merge(
-#   tbls = list(
-#     # tbls_by_outcome_multi$Escherichia_Shigella$ch_OXBE_total_i_cor_M2_ln,
-#     # tbls_by_outcome_multi$Clostridium_XlVa$mo_OXBE_total_i_cor_t2_ln,
-#     tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BUPA_total_cat_Y1,
-#     tbls_by_outcome_multi$Lachnospiracea_incertae_sedis$ch_BPA_total_i_cor_Y1_ln,
-#     # tbls_by_outcome_multi$Anaerostipes$mo_PRPA_total_i_cor_t2_ln,
-#     # tbls_by_outcome_multi$Enterococcus$mo_ETPA_total_i_cor_t2_ln,
-#     tbls_by_outcome_multi$Enterococcus$ch_BUPA_total_cat_Y1,
-#     tbls_by_outcome_multi$Enterobacter$ch_ETPA_total_i_cor_Y1_ln,
-#     tbls_by_outcome_multi$Collinsella$ch_BPS_total_cat_M2_2,
-#     # tbls_by_outcome_multi$Romboutsia$ch_BPS_total_cat_M2_2,
-#     # tbls_by_outcome_multi$Romboutsia$mo_OXBE_total_i_cor_t2_ln,
-#     tbls_by_outcome_multi$Klebsiella$ch_ETPA_total_i_cor_Y1_ln,
-#     # tbls_by_outcome_multi$Coprococcus$ch_BPA_total_i_cor_Y1_ln,
-#     tbls_by_outcome_multi$Lactococcus$ch_BPA_total_i_cor_M2_ln
-#     # tbls_by_outcome_multi$Anaerotruncus$ch_BUPA_total_cat_Y1
-#   ), 
-#   tab_spanner = c(
-#     # "**Escherichia_Shigella**", 
-#     # "**Clostridium_XlVa**",
-#     "**Lachnospiracea_incertae_sedis**",
-#     "**Lachnospiracea_incertae_sedis**",
-#     # "**Anaerostipes**",
-#     # "**Enterococcus**",
-#     "**Enterococcus**",
-#     "**Enterobacter**",
-#     "**Collinsella**",
-#     # "**Romboutsia**",
-#     # "**Romboutsia**",
-#     "**Klebsiella**",
-#     # "**Coprococcus**",
-#     "**Lactococcus**"
-#     # "**Anaerotruncus**"
-#   ))
-# 
-# 
