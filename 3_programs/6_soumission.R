@@ -42,20 +42,30 @@ corres <-
   distinct(Exposure, .keep_all = TRUE)
 
 bdd_final_imp_1 <- bdd_final_imp_1 %>%
-  mutate(ch_feces_rel_p1_Y1_10 = ch_feces_rel_p1_Y1/10, 
-         ch_feces_rel_p2_Y1_10 = ch_feces_rel_p2_Y1/10, 
-         ch_feces_rel_p3_Y1_10 = ch_feces_rel_p3_Y1/10, 
-         ch_feces_rel_p4_Y1_10 = ch_feces_rel_p4_Y1/10)
+  mutate(
+    ch_feces_SpecRich_5000_ASV_Y1_10 = ch_feces_SpecRich_5000_ASV_Y1/10,
+    ch_feces_SpecRich_10000_ASV_Y1_10 = ch_feces_SpecRich_10000_ASV_Y1/10,  # pour analyses de sensibilité
+    ch_feces_rel_p1_Y1_10 = ch_feces_rel_p1_Y1/10, 
+    ch_feces_rel_p2_Y1_10 = ch_feces_rel_p2_Y1/10, 
+    ch_feces_rel_p3_Y1_10 = ch_feces_rel_p3_Y1/10, 
+    ch_feces_rel_p4_Y1_10 = ch_feces_rel_p4_Y1/10)
+
+bdd_final_imp_1_sensi_seuil <- bdd_final_imp_1_sensi_seuil %>%
+  mutate(
+    ch_feces_SpecRich_5000_ASV_Y1_10 = ch_feces_SpecRich_5000_ASV_Y1/10,
+    ch_feces_SpecRich_10000_ASV_Y1_10 = ch_feces_SpecRich_10000_ASV_Y1/10)  # pour analyses de sensibilité
 
 # Vectors ----
 covariates <- covar_vec_model_final
 explanatory <- bdd_final_imp_1 %>% 
   select(all_of(microbiote_vec), 
+         ch_feces_SpecRich_5000_ASV_Y1_10,
          ch_feces_rel_p1_Y1_10, 
          ch_feces_rel_p2_Y1_10, 
          ch_feces_rel_p3_Y1_10, 
          ch_feces_rel_p4_Y1_10) %>% 
-  select(-ch_feces_SpecRich_cmin_ASV_Y1, 
+  select(-ch_feces_SpecRich_5000_ASV_Y1, 
+         -ch_feces_SpecRich_cmin_ASV_Y1, 
          -ch_feces_Shannon_cmin_ASV_Y1,
          -ch_feces_SpecRich_10000_ASV_Y1, 
          -ch_feces_Shannon_10000_ASV_Y1, 
@@ -63,7 +73,15 @@ explanatory <- bdd_final_imp_1 %>%
          -ch_feces_rel_p2_Y1,
          -ch_feces_rel_p3_Y1,
          -ch_feces_rel_p4_Y1) %>%
+  select(ch_feces_SpecRich_5000_ASV_Y1_10, 
+         ch_feces_Shannon_5000_ASV_Y1,
+         ch_feces_rel_p1_Y1_10, 
+         ch_feces_rel_p2_Y1_10, 
+         ch_feces_rel_p3_Y1_10, 
+         ch_feces_rel_p4_Y1_10, 
+         everything()) %>%
   colnames()
+
 outcomes <- bdd %>%
   select(all_of(neuro_vec)) %>%
   select(-ch_socawar_y3,
@@ -291,7 +309,7 @@ table_multi <- table_multi %>%
                  "Bacteroidetes" = "ch_feces_rel_p3_Y1_10",
                  "Proteobacteria" = "ch_feces_rel_p4_Y1_10",
                  "Shannon diversity" = "ch_feces_Shannon_5000_ASV_Y1",
-                 "Specific richness" = "ch_feces_SpecRich_5000_ASV_Y1",
+                 "Specific richness" = "ch_feces_SpecRich_5000_ASV_Y1_10",
                  "Clostridium IV" = "Clostridium_IV",
                   "Clostridium sensu stricto" = "Clostridium_sensu_stricto",
                   "Clostridium XlVa" = "Clostridium_XlVa",
@@ -636,11 +654,11 @@ table_S1 <- descrip_num(data = bdd,
                                  "ch_feces_rel_p3_Y1",
                                  "ch_feces_rel_p4_Y1",
                                  genera_linear_complet))
-write.xlsx(table_S1, file = "4_output/Table_S1.xlsx")
+#write.xlsx(table_S1, file = "4_output/Table_S1.xlsx")
 
 ### Table S2: Distribution neurodevelopment ----
 table_S2 <- descrip_num(data = bdd_final, vars = outcomes)
-write.xlsx(table_S2, file = "4_output/Table_S2.xlsx")
+#write.xlsx(table_S2, file = "4_output/Table_S2.xlsx")
 
 ### Table S3: Effects of the covariates on the outcomes ----
 model_covars <- function(var_outcome, var_age, covars, data) {
@@ -740,7 +758,7 @@ table_S4 <- tbl_stack(
 
 ## Table S5: Sensitivity analysis - effect of the rarefaction threshold ----
 # Sensitivity analysis - Adjusted associations between the gut microbiota α-diversity at different sequencing depths and the neurodevelopment. 
-alpha_vec <- c("ch_feces_SpecRich_5000_ASV_Y1", "ch_feces_SpecRich_10000_ASV_Y1", 
+alpha_vec <- c("ch_feces_SpecRich_5000_ASV_Y1_10", "ch_feces_SpecRich_10000_ASV_Y1_10", 
                "ch_feces_Shannon_5000_ASV_Y1", "ch_feces_Shannon_10000_ASV_Y1")
 table_S5 <- vector("list", length(outcomes))
 names(table_S5) <- outcomes
@@ -915,83 +933,27 @@ rm(covariates_sensi_home, i, tbl, prep_table_S6)
 ## Figure S1: DAG ----
 ## Direct acyclic graph of the relation between one year child gut microbiota and neurodevelopment. 
 
-## Figure S2: correlations gut microbiota and covariates ----
-## xx correlations between gut microbiota parameters and covariates (n between X and X).
-figure_S2 <- bdd_final_imp_1 %>%
-  select(all_of(outcomes),
-         po_w_kg, 
-         po_he, 
-         mo_age, 
-         mo_par,
-         mo_bmi_bepr, 
-         po_gd, 
-         home_total_y3, 
-         mo_hadtotscore_grt3_imp) %>%
-  select_if(is.numeric)
 
-# permet de savoir les pairwise.complete.obs 
-colSums(!is.na(figure_S2))
-
-figure_S2 <- round(cor(figure_S2,
-                    use = "pairwise.complete.obs",
-                    method = "pearson"), 1)
-
-figure_S2 <- figure_S2 %>%
-  as.data.frame() %>%
-  select(!all_of(outcomes)) %>%
-  t() %>%
-  as.data.frame() %>%
-  select(all_of(outcomes)) %>%
-  as.matrix()
-colnames(figure_S2) <- spanner_names
-colnames(figure_S2) <- gsub(" score at 2 years", " Y2", colnames(figure_S2))
-colnames(figure_S2) <- gsub(" score at 3 years", " Y3", colnames(figure_S2))
-
-rownames(figure_S2) <- rownames(figure_S2) %>%
-  str_replace_all(
-    c("po_w_kg" = "Birth weight (kg)",
-      "po_he" = "Birth length (cm)",
-      "mo_age" = "Maternal age before pregnancy",
-      "mo_par" = "Maternal parity",
-      "mo_bmi_bepr" = "Maternal BMI before pregnancy",
-      "po_gd" = "Gestational age (weeks)",
-      "home_total_y3" = "HOME score at 3 years old",
-      "mo_hadtotscore_grt3_imp" = "Maternal anxiety and depression during the third trim. of preg."))
-
-
-tiff(filename = "4_output/Fig.S2 heatmap_cor_neuro_covar.tiff", units = "mm", width = 300, height = 300, res = 300)
-corrplot(figure_S2,
-         method = 'color',
-         tl.col = 'black',
-         tl.srt = 55,
-         addCoef.col = "black",
-         number.cex = 1,
-         tl.cex = 1,
-         number.digits = 1,
-         col = rev(COL2(diverging = "RdYlBu")))
-dev.off()
-
-
-## Figure S3: correlations neurodevelopmental ----
+## Figure S2: correlations neurodevelopmental ----
 ## xx correlations between neurodevelopmental parameters (n between X and X).
-figure_S3 <- bdd %>% 
+figure_S2 <- bdd %>% 
   filter(!is.na(ch_feces_rel_p1_Y1)) %>%
   select(all_of(outcomes)) 
-colnames(figure_S3) <- spanner_names
-names(figure_S3) <- gsub(" score at 2 years", " Y2", names(figure_S3))
-names(figure_S3) <- gsub(" score at 3 years", " Y3", names(figure_S3))
+colnames(figure_S2) <- spanner_names
+names(figure_S2) <- gsub(" score at 2 years", " Y2", names(figure_S2))
+names(figure_S2) <- gsub(" score at 3 years", " Y3", names(figure_S2))
 
 # permet de savoir les pairwise.complete.obs 
-apply(combn(names(figure_S3), 2), 2, function(x) sum(!is.na(figure_S3[[x[1]]]) & !is.na(figure_S3[[x[2]]])))
+apply(combn(names(figure_S2), 2), 2, function(x) sum(!is.na(figure_S2[[x[1]]]) & !is.na(figure_S2[[x[2]]])))
 
 
-figure_S3 <- cor(figure_S3, 
+figure_S2 <- cor(figure_S2, 
                     use = "pairwise.complete.obs", 
                     method = "pearson")
 
 plot.new()
-tiff(filename = "4_output/Fig.S3 heatmap_cor_neuro.tiff", units = "mm", width = 250, height = 250, res = 300)
-corrplot(figure_S3, 
+tiff(filename = "4_output/Fig.S2 heatmap_cor_neuro.tiff", units = "mm", width = 250, height = 250, res = 300)
+corrplot(figure_S2, 
          method = 'color', 
          type = "lower", 
          tl.col = 'black', 
@@ -1037,6 +999,80 @@ corrplot(figure_SX,
          # number.cex = 0.5,
          # number.digits = 1,
          tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+
+
+## Figure SX: correlations gut microbiota and covariates ----
+## xx correlations between gut microbiota parameters and covariates (n between X and X).
+figure_S2 <- bdd_final_imp_1 %>%
+  select(all_of(explanatory),
+         po_w_kg, 
+         po_he, 
+         mo_age, 
+         mo_par,
+         mo_bmi_bepr, 
+         po_gd, 
+         home_total_y3, 
+         mo_hadtotscore_grt3_imp) %>%
+  select_if(is.numeric)
+
+# permet de savoir les pairwise.complete.obs 
+colSums(!is.na(figure_S2))
+
+figure_S2 <- round(cor(figure_S2,
+                       use = "pairwise.complete.obs",
+                       method = "pearson"), 1)
+
+figure_S2 <- figure_S2 %>%
+  as.data.frame() %>%
+  select(all_of(explanatory)) %>%
+  t() %>%
+  as.data.frame() %>%
+  select(!all_of(explanatory)) %>%
+  as.matrix()
+
+colnames(figure_S2) <- colnames(figure_S2) %>%
+  str_replace_all(
+    c("po_w_kg" = "Birth weight (kg)",
+      "po_he" = "Birth length (cm)",
+      "mo_age" = "Mat. age before preg.",
+      "mo_par" = "Mat. parity",
+      "mo_bmi_bepr" = "Mat. BMI before preg.",
+      "po_gd" = "Gestational age (weeks)",
+      "home_total_y3" = "HOME score at 3 years old",
+      "mo_hadtotscore_grt3_imp" = "Mat. anxiety and dep, 3rd trim. of preg."))
+
+
+rownames(figure_S2) <-rownames(figure_S2) %>%
+  str_replace_all(
+    c("ch_feces_SpecRich_5000_ASV_Y1_10" = "Specific richness",
+      "ch_feces_Shannon_5000_ASV_Y1" = "Shannon diversity",
+      "ch_feces_rel_p1_Y1_10" = "Firmicutes",
+      "ch_feces_rel_p2_Y1_10" = "Actinobacteria",
+      "ch_feces_rel_p3_Y1_10" = "Bacteroidetes",
+      "ch_feces_rel_p4_Y1_10" = "Proteobacteria",
+      "Escherichia_Shigella" = "Escherichia and Shigella", 
+      "Clostridium_XlVa" = "Clostridium XlVa",
+      "Lachnospiracea_incertae_sedis" = "Lachnospiracea incertae sedis",
+      "Clostridium_XVIII" = "Clostridium XVIII",
+      "Clostridium_sensu_stricto" = "Clostridium sensu stricto",
+      "Ruminococcus2" = "Ruminococcus 2", 
+      "Clostridium_IV" = "Clostridium IV", 
+      "Erysipelotrichaceae_incertae_sedis" = "Erysipelotrichaceae incertae sedis", 
+      "Saccharibacteria_genera_incertae_sedis" = "Saccharibacteria genera incertae sedis"))
+
+
+tiff(filename = "4_output/Fig.S2 heatmap_cor_neuro_covar.tiff", units = "mm", width = 250, height = 600, res = 300)
+corrplot(figure_S2,
+         method = 'color',
+         tl.col = 'black',
+         tl.srt = 55,
+         addCoef.col = "black",
+         number.cex = 1,
+         tl.cex = 1,
+         number.digits = 1,
          col = rev(COL2(diverging = "RdYlBu")))
 dev.off()
 
