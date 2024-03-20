@@ -633,7 +633,8 @@ figure_4 <- table_multi %>%
     legend.box = "vertical", 
     legend.text = element_text(face = "italic"),
     legend.justification = "right", 
-    axis.text.y = element_text(face = "italic")) 
+    #axis.text.y = element_text(face = "italic")
+    ) 
 
 figure_4
 ggsave("4_output/fig.4 forest_plot_genera.tiff", 
@@ -1078,3 +1079,19 @@ dev.off()
 
 
 rm(covariates_CBCL, covariates_IQ, covariates_SRS_BRIEF, covariates_map)
+
+
+# Vizualisation of the significant results ----
+table_multi %>% 
+  filter(`p-value` <0.02) %>% 
+  filter(`Gut microbiota parameters` != "Proteobacteria") %>% 
+  select(-sens_beta, -p_value_shape, -`q-value`, -q_value_shape) %>% 
+  select(Phyla_corres, Class_corres, Order_corres, Family_corres, `Gut microbiota parameters`, everything()) %>% 
+  arrange(Class_corres, Order_corres, Family_corres) %>% 
+  View()
+
+table_multi %>% 
+  filter(`p-value` <0.05) %>% 
+  filter(`Gut microbiota parameters` %in% c("Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>% 
+  select(`Gut microbiota parameters`, Outcome, Beta, `95% CI`, lower_CI, upper_CI, `p-value`) %>% 
+  View()
