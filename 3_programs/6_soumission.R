@@ -929,6 +929,82 @@ table_S6 <- tbl_stack(table_S6)
 
 rm(covariates_sensi_home, i, tbl, prep_table_S6)
 
+## Table S7: Sensitivity analysis – effect of the age variable on WPSSI Y3 -----
+## Sensitivity analysis – Effects of the age of assessment covariate on the WPSSI outcomes assessed at 3 years.
+
+iq_vec <- c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")
+
+# Initialisation de la liste pour stocker les résultats
+prep_table_S7 <- list()
+
+for (outcome in iq_vec) {
+  # Initialisation de la sous-liste pour stocker les résultats pour chaque outcome
+  table_S7_for_outcome <- list()
+  
+  for (explicative in explanatory) {
+    # Construction de la formule
+    formula <- as.formula(paste(outcome, "~", explicative, "+", paste(covariates, collapse = "+")))
+    
+    # Création du modèle de régression linéaire
+    model <- lm(formula, data = bdd_final_imp_1)
+    
+    # Création du tbl_regression sans les covariates_sensi_home
+    tbl <-                                                                      
+      tbl_regression(
+        model, 
+        include = explicative,
+        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+        pvalue_fun = custom_pvalue_fun,
+        exponentiate = FALSE) %>%
+      bold_p() %>%
+      bold_labels() %>%
+      add_n()
+    
+    table_S7_for_outcome[[explicative]] <- tbl        # Stockage du tbl_regression dans la liste
+  }
+  
+  prep_table_S7[[outcome]] <- table_S7_for_outcome    # Stockage des résultats pour chaque outcome
+}
+rm(iq_vec, outcome, explicative, formula, model, tbl, table_S7_for_outcome)
+
+
+table_S7 <- list()
+
+for (i in 1:52) {
+  tbl <- tbl_merge(
+    list(
+      tbls_by_outcome_multi[[9]][[i]], # neuvième tbl_regression de la première liste de "tbls_by_outcome_multi"
+      prep_table_S7[[1]][[i]], # Premier tbl_regression de la première liste de "table_S7"
+      
+      tbls_by_outcome_multi[[10]][[i]], # dixième tbl_regression de la deuxième liste de "tbls_by_outcome_multi"
+      prep_table_S7[[2]][[i]], # Premier tbl_regression de la deuxième liste de "table_S7"
+      
+      tbls_by_outcome_multi[[11]][[i]], # onzième tbl_regression de la troisième liste de "tbls_by_outcome_multi"
+      prep_table_S7[[3]][[i]], # Premier tbl_regression de la troisième liste de "table_S7"
+      
+      tbls_by_outcome_multi[[12]][[i]], # douzième tbl_regression de la quatrième liste de "tbls_by_outcome_multi"
+      prep_table_S7[[4]][[i]] # Premier tbl_regression de la quatrième liste de "table_S7"
+    ),
+    tab_spanner = c("**Verbal comprehension WPPSI score at 3 years, adjusted for age at neurodevelopmental assessment (main analysis)**", 
+                    "**Verbal comprehension WPPSI score at 3 years, not adjusted for age at neurodevelopmental assessment**", 
+                    
+                    "**Visuospatial WPPSI score at 3 years, adjusted for age at neurodevelopmental assessment (main analysis)**", 
+                    "**Visuospatial WPPSI score at 3 years, not adjusted for age at neurodevelopmental assessment**", 
+                    
+                    "**Work memory WPPSI score at 3 years, adjusted for age at neurodevelopmental assessment (main analysis)**", 
+                    "**Work memory WPPSI score at 3 years, not adjusted for age at neurodevelopmental assessment**", 
+                    
+                    "**Total WPPSI score at 3 years, adjusted for age at neurodevelopmental assessment (main analysis)**", 
+                    "**Total WPPSI score at 3 years, not adjusted for age at neurodevelopmental assessment**")
+  )
+  table_S7[[i]] <- tbl   # Ajout de la table fusionnée à la liste
+}
+table_S7 <- tbl_stack(table_S7)
+
+rm(tbl, prep_table_S7)
+
+
+
 
 # Additional figures ----
 ## Figure S1: DAG ----
