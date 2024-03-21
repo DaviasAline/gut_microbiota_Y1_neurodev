@@ -441,10 +441,10 @@ table_4_long <-
   tbl_stack(tbls =
               lapply(tbls_by_outcome_multi, function(tbl_list) {
                 tbl_merge(
-                  list(tbl_list[[49]] %>% add_n(),   # correspond à ch_feces_rel_p1_Y1_10 (Firmicutes)
-                       tbl_list[[50]] %>% add_n(),   # correspond à ch_feces_rel_p2_Y1_10 (Actinobacteria)
-                       tbl_list[[51]] %>% add_n(),   # correspond à ch_feces_rel_p3_Y1_10 (Bacteroidetes)
-                       tbl_list[[52]] %>% add_n()),  # correspond à ch_feces_rel_p4_Y1_10 (Proteobacteria)
+                  list(tbl_list[[3]] %>% add_n(),   # correspond à ch_feces_rel_p1_Y1_10 (Firmicutes)
+                       tbl_list[[4]] %>% add_n(),   # correspond à ch_feces_rel_p2_Y1_10 (Actinobacteria)
+                       tbl_list[[5]] %>% add_n(),   # correspond à ch_feces_rel_p3_Y1_10 (Bacteroidetes)
+                       tbl_list[[6]] %>% add_n()),  # correspond à ch_feces_rel_p4_Y1_10 (Proteobacteria)
                   tab_spanner = c("**Firmicutes**", 
                                   "**Actinobacteria**", 
                                   "**Bacteroidetes**", 
@@ -454,16 +454,16 @@ table_4_long <-
 table_4_large <- 
   tbl_stack(tbls = list(
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[49]]),  # correspond à ch_feces_rel_p1_Y1_10 (Firmicutes)
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[3]]),  # correspond à ch_feces_rel_p1_Y1_10 (Firmicutes)
       tab_spanner = spanner_names),
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[50]]),  # correspond à ch_feces_rel_p2_Y1_10 (Actinobacteria)
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[4]]),  # correspond à ch_feces_rel_p2_Y1_10 (Actinobacteria)
       tab_spanner = spanner_names),
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[51]]),  # correspond à ch_feces_rel_p3_Y1_10 (Bacteroidetes)
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[5]]),  # correspond à ch_feces_rel_p3_Y1_10 (Bacteroidetes)
       tab_spanner = spanner_names),
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[52]]),  # correspond à ch_feces_rel_p4_Y1_10 (Proteobacteria)
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[6]]),  # correspond à ch_feces_rel_p4_Y1_10 (Proteobacteria)
       tab_spanner = spanner_names)))
 
 table_4 <- list(table_4_long = table_4_long, 
@@ -1003,6 +1003,166 @@ table_S7 <- tbl_stack(table_S7)
 
 rm(tbl, prep_table_S7)
 
+
+## Table S8: Sensitivity analysis – effect of removing the predictors of the exposure -----
+## Sensitivity analysis – Effects of the age of assessment covariate on the WPSSI outcomes assessed at 3 years.
+sensi_covariates <- c("po_w_kg_3cat", 
+                      "po_he_3cat", 
+                      "mo_dipl_2cat", 
+                      "mo_age", 
+                      "mo_bmi_bepr_3cat",
+                      "ch_sex",
+                      "mo_par_2cat",
+                      "ch_bf_duration_till48w_4cat",
+                      "po_gd",
+                      #"po_delmod",
+                      "ch_food_intro_Y1_3cat",
+                      #"mo_pets",
+                      #"ch_antibio_Y1_2cat",
+                      "home_total_y3",
+                      "mo_hadtotscore_grt3_imp",
+                      "mo_tob_gr_anyt_yn_n2",
+                      "ch_tabacco_passive_up_to_Y1",
+                      "ch_care_main_12m_opt2_2c")
+
+sensi_covariates_CBCL <- c("ch_age_CBCL_Y2", sensi_covariates)     
+sensi_ovariates_SRS_BRIEF <- c("ch_age_SRS_BRIEFP_Y3", sensi_covariates)               
+sensi_covariates_IQ <- c("ch_age_IQ_Y3", sensi_covariates)
+
+sensi_covariates_map <- list(
+  CBCL = sensi_covariates_CBCL,
+  SRS_BRIEF = sensi_ovariates_SRS_BRIEF,
+  IQ = sensi_covariates_IQ)
+
+## Création d'une liste pour stocker les tableaux par outcome
+prep_table_S8 <- vector("list", length(outcomes))
+names(prep_table_S8) <- outcomes
+
+# Boucle principale
+for (outcome in outcomes) {
+  # Sélection des covariables appropriées
+  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
+    covariates <- sensi_covariates_map$CBCL
+  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
+    covariates <- sensi_covariates_map$SRS_BRIEF
+  } else if (outcome %in% c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")) {
+    covariates <- sensi_covariates_map$IQ
+  }
+  
+  tbls_for_outcome_multi_sensi <- vector("list", length(explanatory))
+  names(tbls_for_outcome_multi_sensi) <- explanatory
+  
+  for (exposure in explanatory) {                                               # running linear regression
+    terms <- c(exposure, covariates)
+    formula <- reformulate(terms, response = outcome)
+    model <- lm(formula, data = bdd_final_imp_1)
+    
+    tbl <-                                                                      
+      tbl_regression(
+        model, 
+        include = exposure,
+        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+        pvalue_fun = custom_pvalue_fun,
+        exponentiate = FALSE) %>%
+      bold_p() %>%
+      bold_labels() %>%
+      add_global_p(include = exposure, singular.ok = TRUE, keep = TRUE)
+    
+    tbls_for_outcome_multi_sensi[[exposure]] <- tbl
+  }
+  prep_table_S8[[outcome]] <- tbls_for_outcome_multi_sensi
+}
+
+
+
+table_S8 <- list()
+
+for (i in 1:52) {
+  tbl <- tbl_merge(
+    list(
+      tbls_by_outcome_multi[[1]][[i]], 
+      prep_table_S8[[1]][[i]], 
+      
+      tbls_by_outcome_multi[[2]][[i]], 
+      prep_table_S8[[2]][[i]], 
+      
+      tbls_by_outcome_multi[[3]][[i]], 
+      prep_table_S8[[3]][[i]], 
+      
+      tbls_by_outcome_multi[[4]][[i]], 
+      prep_table_S8[[4]][[i]], 
+      
+      tbls_by_outcome_multi[[5]][[i]], 
+      prep_table_S8[[5]][[i]], 
+      
+      tbls_by_outcome_multi[[6]][[i]], 
+      prep_table_S8[[6]][[i]], 
+      
+      tbls_by_outcome_multi[[7]][[i]], 
+      prep_table_S8[[7]][[i]], 
+      
+      tbls_by_outcome_multi[[8]][[i]], 
+      prep_table_S8[[8]][[i]], 
+      
+      tbls_by_outcome_multi[[9]][[i]], 
+      prep_table_S8[[9]][[i]], 
+      
+      tbls_by_outcome_multi[[10]][[i]], 
+      prep_table_S8[[10]][[i]], 
+      
+      tbls_by_outcome_multi[[11]][[i]], 
+      prep_table_S8[[11]][[i]], 
+      
+      tbls_by_outcome_multi[[12]][[i]], 
+      prep_table_S8[[12]][[i]]
+    ),
+    tab_spanner = c("**Internalizing CBCL score at 2 years, main analysis**", 
+                    "**Internalizing CBCL score at 2 years, sensitivity analysis**", 
+                    
+                    "**Externalizing CBCL score at 2 years, main analysis**", 
+                    "**Externalizing CBCL score at 2 years, sensitivity analysis**", 
+                    
+                    "**Total SRS score at 3 years, main analysis**", 
+                    "**Total SRS score at 3 years, sensitivity analysis**", 
+                    
+                    "**Inhibition BRIEF-P score at 3 years, main analysis**",
+                    "**Inhibition BRIEF-P score at 3 years, sensitivity analysis**",
+                    
+                    "**Shift BRIEF-P score at 3 years, main analysis**",
+                    "**Shift BRIEF-P score at 3 years, sensitivity analysis**",
+                    
+                    "**Emotional control BRIEF-P score at 3 years, main analysis**",    
+                    "**Emotional control BRIEF-P score at 3 years, sensitivity analysis**",    
+                    
+                    "**Working memory BRIEF-P score at 3 years, main analysis**",
+                    "**Working memory BRIEF-P score at 3 years, sensitivity analysis**",
+                    
+                    "**Plan and organization BRIEF-P score at 3 years, main analysis**",
+                    "**Plan and organization BRIEF-P score at 3 years, sensitivity analysis**",
+                    
+                    "**Verbal comprehension WPPSI score at 3 years, main analysis**", 
+                    "**Verbal comprehension WPPSI score at 3 years, sensitivity analysis**", 
+                    
+                    "**Visuospatial WPPSI score at 3 years, main analysis**", 
+                    "**Visuospatial WPPSI score at 3 years, sensitivity analysis*", 
+                    
+                    "**Work memory WPPSI score at 3 years, main analysis**", 
+                    "**Work memory WPPSI score at 3 years, sensitivity analysis**", 
+                    
+                    "**Total WPPSI score at 3 years, main analysis**", 
+                    "**Total WPPSI score at 3 years, sensitivity analysis**")
+  )
+  table_S8[[i]] <- tbl   # Ajout de la table fusionnée à la liste
+}
+table_S8 <- tbl_stack(table_S8)
+
+rm(
+  prep_table_S8,
+  terms, formula, model,
+  tbl, tbl_data_sensi,
+  tbls_for_outcome_multi_sensi,
+  exposure, exposure_name, i, j, outcome, outcome_name, 
+  sensi_covariates_CBCL, sensi_covariates_IQ, sensi_ovariates_SRS_BRIEF, sensi_covariates_map)
 
 
 
