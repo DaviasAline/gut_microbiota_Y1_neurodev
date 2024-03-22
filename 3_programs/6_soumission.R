@@ -382,6 +382,34 @@ table_multi <- table_multi %>%
     "p-value", p_value_shape, 
     "q-value", q_value_shape)
 
+table_multi <- table_multi %>%
+  mutate(
+    improved_neuro = 
+      case_when(Outcome %in% c("Verbal comprehension WPPSI score at 3 years",
+                               "Visuospatiale WPPSI score at 3 years", 
+                               "Work memory WPPSI score at 3 years", 
+                               "Total WPPSI score at 3 years") & Beta>0 ~ "Improved neurodevelopmental outcome", 
+                Outcome %in% c("Verbal comprehension WPPSI score at 3 years",
+                               "Visuospatiale WPPSI score at 3 years", 
+                               "Work memory WPPSI score at 3 years", 
+                               "Total WPPSI score at 3 years") & Beta<0 ~ "Altered neurodevelopmental outcome", 
+                Outcome %in% c("Internalizing CBCL score at 2 years", 
+                               "Externalizing CBCL score at 2 years", 
+                               "Total SRS score at 3 years", 
+                               "Inhibition BRIEF-P score at 3 years", 
+                               "Shift BRIEF-P score at 3 years", 
+                               "Emotional control BRIEF-P score at 3 years", 
+                               "Working memory BRIEF-P score at 3 years", 
+                               "Plan and organization BRIEF-P score at 3 years") & Beta>0 ~ "Altered neurodevelopmental outcome",
+                Outcome %in% c("Internalizing CBCL score at 2 years", 
+                               "Externalizing CBCL score at 2 years", 
+                               "Total SRS score at 3 years", 
+                               "Inhibition BRIEF-P score at 3 years", 
+                               "Shift BRIEF-P score at 3 years", 
+                               "Emotional control BRIEF-P score at 3 years", 
+                               "Working memory BRIEF-P score at 3 years", 
+                               "Plan and organization BRIEF-P score at 3 years") & Beta<0 ~ "Improved neurodevelopmental outcome"))
+  
 
 # Tables ----
 ## Table 1: Covariables description ----
@@ -573,7 +601,7 @@ figure_3 <- table_multi  %>%
                                              "Shannon diversity",
                                              "Specific richness")) %>%
   ggplot(aes(x = -log10(`p-value`), y = `Gut microbiota parameters`)) +
-  geom_point(aes(shape = sens_beta), size = 2) +
+  geom_point(aes(shape = improved_neuro), size = 2) +
   geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = "red") +
   geom_vline(xintercept = -log10(0.05/(33*7)), linetype = "dashed", color = "blue") +
   theme_lucid() +
@@ -581,7 +609,7 @@ figure_3 <- table_multi  %>%
        y = "Genera", 
        shape = "") +
   geom_text(aes(label = ifelse(`p-value` < 0.02, as.character(Outcome), "")), hjust = -0.05, vjust = -0.3, angle = 35, size = 3.5) +
-  scale_shape_manual(values = c("Beta<0" = 15, "Beta≥0" = 17)) +# 15: carré plein, 17: triangle plein
+  scale_shape_manual(values = c("Altered neurodevelopmental outcome" = 15, "Improved neurodevelopmental outcome" = 17)) +# 15: carré plein, 17: triangle plein
   theme(
     legend.position = "right",
     legend.box = "vertical", 
