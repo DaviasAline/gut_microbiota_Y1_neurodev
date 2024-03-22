@@ -608,7 +608,7 @@ figure_3 <- table_multi  %>%
   labs(x = "-log10(P-value)", 
        y = "Genera", 
        shape = "") +
-  geom_text(aes(label = ifelse(`p-value` < 0.02, as.character(Outcome), "")), hjust = -0.05, vjust = -0.3, angle = 35, size = 3.5) +
+  geom_text(aes(label = ifelse(`p-value` < 0.02, as.character(Outcome), "")), hjust = -0.05, vjust = -0.3, angle = 40, size = 3.5) +
   scale_shape_manual(values = c("Altered neurodevelopmental outcome" = 15, "Improved neurodevelopmental outcome" = 17)) +# 15: carré plein, 17: triangle plein
   theme(
     legend.position = "right",
@@ -663,6 +663,45 @@ figure_4 <- table_multi %>%
     legend.justification = "right", 
     #axis.text.y = element_text(face = "italic")
     ) 
+
+figure_4 <- table_multi %>% 
+  filter(`p-value`<0.05) %>% 
+  filter(!`Gut microbiota parameters` %in% c("Firmicutes",
+                                             "Actinobacteria",
+                                             "Bacteroidetes",
+                                             "Proteobacteria",
+                                             "Shannon diversity",
+                                             "Specific richness")) %>%
+  mutate(Beta = as.numeric(Beta), 
+         Outcome = 
+           fct_relevel(Outcome,
+                       "Total WPPSI score at 3 years", "Work memory WPPSI score at 3 years", 
+                       "Visuospatiale WPPSI score at 3 years","Verbal comprehension WPPSI score at 3 years", 
+                       "Total SRS score at 3 years","Working memory BRIEF-P score at 3 years",
+                       "Shift BRIEF-P score at 3 years","Plan and organization BRIEF-P score at 3 years",
+                       "Inhibition BRIEF-P score at 3 years","Emotional control BRIEF-P score at 3 years",
+                       "Externalizing CBCL score at 2 years", "Internalizing CBCL score at 2 years")) %>%
+  ggplot(aes(x = Outcome, 
+             y = Beta, 
+             min = lower_CI, 
+             ymax = upper_CI, 
+             color = `Gut microbiota parameters`)) +
+  geom_hline(yintercept = 0, linetype="dashed") +
+  geom_pointrange(
+    position = position_dodge(width = 0.5), 
+    size = 0.4) +
+  labs(x = "Neurodevelopement", y = "") +
+  theme_lucid() +
+  coord_flip()  +
+  guides(color = guide_legend(title = "Genera", 
+                              reverse = TRUE))+
+  theme(
+    legend.position = "right",
+    legend.box = "vertical", 
+    legend.text = element_text(face = "italic"),
+    legend.justification = "right", 
+    #axis.text.y = element_text(face = "italic")
+  ) 
 
 figure_4
 ggsave("4_output/fig.4 forest_plot_genera.tiff", 
@@ -1347,7 +1386,7 @@ rm(covariates_CBCL, covariates_IQ, covariates_SRS_BRIEF, covariates_map)
 
 # Vizualisation of the significant results ----
 table_multi %>% 
-  filter(`p-value` <0.02) %>% 
+  filter(`p-value` <0.05) %>% 
   filter(`Gut microbiota parameters` != "Proteobacteria") %>% 
   select(-sens_beta, -p_value_shape, -`q-value`, -q_value_shape) %>% 
   select(Phyla_corres, Class_corres, Order_corres, Family_corres, `Gut microbiota parameters`, everything()) %>% 
