@@ -30,7 +30,6 @@ theme_gtsummary_compact()
 # Data and functions loading ----
 load("1_intermediate_data/3_data_imputation_AD_gumme.RData")
 source("3_programs/4_functions_AD_gumme.R")
-rm(table_cor, table_cor_sg, model_Y3_1, model_Y3_2, heatmap_cor, heatmap_cor_pairwise)
 corres <- 
   taxa_table_Y1 %>% 
   select(Phyla_corres = ch_feces_phylum_ASVbased_Y1, 
@@ -41,45 +40,13 @@ corres <-
   filter(Exposure %in% genera_linear) %>%
   distinct(Exposure, .keep_all = TRUE)
 
-bdd_final_imp_1 <- bdd_final_imp_1 %>%
-  mutate(
-    ch_feces_SpecRich_5000_ASV_Y1_10 = ch_feces_SpecRich_5000_ASV_Y1/10,
-    ch_feces_SpecRich_10000_ASV_Y1_10 = ch_feces_SpecRich_10000_ASV_Y1/10,  # pour analyses de sensibilité
-    ch_feces_rel_p1_Y1_10 = ch_feces_rel_p1_Y1/10, 
-    ch_feces_rel_p2_Y1_10 = ch_feces_rel_p2_Y1/10, 
-    ch_feces_rel_p3_Y1_10 = ch_feces_rel_p3_Y1/10, 
-    ch_feces_rel_p4_Y1_10 = ch_feces_rel_p4_Y1/10)
-
-bdd_final_imp_1_sensi_seuil <- bdd_final_imp_1_sensi_seuil %>%
-  mutate(
-    ch_feces_SpecRich_5000_ASV_Y1_10 = ch_feces_SpecRich_5000_ASV_Y1/10,
-    ch_feces_SpecRich_10000_ASV_Y1_10 = ch_feces_SpecRich_10000_ASV_Y1/10)  # pour analyses de sensibilité
 
 # Vectors ----
 covariates <- covar_vec_model_final
 explanatory <- bdd_final_imp_1 %>% 
-  select(all_of(microbiote_vec), 
-         ch_feces_SpecRich_5000_ASV_Y1_10,
-         ch_feces_rel_p1_Y1_10, 
-         ch_feces_rel_p2_Y1_10, 
-         ch_feces_rel_p3_Y1_10, 
-         ch_feces_rel_p4_Y1_10) %>% 
-  select(-ch_feces_SpecRich_5000_ASV_Y1, 
-         -ch_feces_SpecRich_cmin_ASV_Y1, 
-         -ch_feces_Shannon_cmin_ASV_Y1,
-         -ch_feces_SpecRich_10000_ASV_Y1, 
-         -ch_feces_Shannon_10000_ASV_Y1, 
-         -ch_feces_rel_p1_Y1,
-         -ch_feces_rel_p2_Y1,
-         -ch_feces_rel_p3_Y1,
-         -ch_feces_rel_p4_Y1) %>%
-  select(ch_feces_SpecRich_5000_ASV_Y1_10, 
-         ch_feces_Shannon_5000_ASV_Y1,
-         ch_feces_rel_p1_Y1_10, 
-         ch_feces_rel_p2_Y1_10, 
-         ch_feces_rel_p3_Y1_10, 
-         ch_feces_rel_p4_Y1_10, 
-         everything()) %>%
+  select(all_of(microbiote_vec)) %>% 
+  select(-ch_feces_SpecRich_10000_ASV_Y1_10, # pour analyses de sensibilité
+         -ch_feces_Shannon_10000_ASV_Y1) %>% # pour analyses de sensibilité) 
   colnames()
 
 outcomes <- bdd %>%
@@ -174,7 +141,7 @@ densityplot(data = bdd_final_imp_1, vars = genera_linear[24:46], ncol = 5)
 test_expo_taxa <- bdd_final_imp_1 %>%
   filter(!is.na(ch_feces_rel_p1_Y1)) %>%
   select(all_of(explanatory)) %>%
-  select(-"ch_feces_SpecRich_5000_ASV_Y1", -"ch_feces_Shannon_5000_ASV_Y1") 
+  select(-"ch_feces_SpecRich_5000_ASV_Y1_10", -"ch_feces_Shannon_5000_ASV_Y1") 
 test_expo_taxa <- lapply(test_expo_taxa, function(x) { var_lab(x) <- NULL; return(x) })
 test_expo_taxa <- as.data.frame(test_expo_taxa)
 cor_mixed_table_expo_taxa <- cor_mixed(data = test_expo_taxa)
@@ -443,7 +410,7 @@ table_2_long <-
               lapply(tbls_by_outcome_multi, function(tbl_list) {
                 tbl_merge(
                   list(
-                    tbl_list[[1]] %>% add_n(),   # correspond à ch_feces_SpecRich_5000_ASV_Y1
+                    tbl_list[[1]] %>% add_n(),   # correspond à ch_feces_SpecRich_5000_ASV_Y1_10
                     tbl_list[[2]] %>% add_n()),  # correspond àch_feces_Shannon_5000_ASV_Y1
                   tab_spanner = c("**Specific richness**", "**Shannon diversity**"))}),
             group_header = spanner_names)
@@ -451,7 +418,7 @@ table_2_long <-
 table_2_large <- 
   tbl_stack(tbls = list(
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[1]]),  # correspond à ch_feces_SpecRich_5000_ASV_Y1
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[1]]),  # correspond à ch_feces_SpecRich_5000_ASV_Y1_10
       tab_spanner = spanner_names),
     tbl_merge( 
       tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[2]]),  # correspond àch_feces_Shannon_5000_ASV_Y1

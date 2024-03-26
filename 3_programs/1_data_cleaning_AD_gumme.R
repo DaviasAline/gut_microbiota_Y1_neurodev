@@ -10,10 +10,11 @@ library(gtsummary)
 library(questionr)
 library(mice)
 library(expss)
+library(labelled)
 
 # Chargement des données ----
-load("C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/1_intermediate_data/0_source_data_reading_AD_gumme.RData")
-taxa_table_Y1 <- read_csv("C:/Users/Aline/OneDrive - etu.univ-grenoble-alpes.fr/Documents/5. R projects/gut_microbiota_Y1_neurodev/0_source_data/taxa_table_ASVbased_Y1_AD_20220504_8.csv")  # ne pas inclure, table de correspondance taxonomique
+load("1_intermediate_data/0_source_data_reading_AD_gumme.RData")
+taxa_table_Y1 <- read_csv("0_source_data/taxa_table_ASVbased_Y1_AD_20220504_8.csv")  # ne pas inclure, table de correspondance taxonomique
 
 # Nettoyage des données ----
 ## Covariates ----
@@ -30,11 +31,18 @@ bdd <- bdd %>%
     mo_birds = mt3eaf1_q01p9,
     mo_rodents = mt3eaf1_q01p13,
     mo_other_pets = mt3eaf1_q01p17, 
-    ch_verbal_comprehension_IQ_Y3 = cy3hax1_q15, 
-    ch_visuospatiale_IQ_Y3 = cy3hax1_q16, 
-    ch_work_memory_IQ_Y3 = cy3hax1_q17, 
-    ch_total_IQ_Y3 = cy3hax1_q18, 
-    ch_date_IQ_Y3 = cy3hax1_q19)
+    
+    ch_WPPSI_verbal_comprehension_Y3 = cy3hax1_q15, 
+    ch_WPPSI_visuospatiale_Y3 = cy3hax1_q16, 
+    ch_WPPSI_work_memory_Y3 = cy3hax1_q17, 
+    ch_WPPSI_total_Y3 = cy3hax1_q18, 
+    
+    ch_age_WPPSI_Y3 = ch_wppsi_age_3y, 
+    ch_WPPSI_verbal_comprehension_cor_Y3 = ch_wppsi_vc_cor_3y, 
+    ch_WPPSI_visuospatiale_cor_Y3 = ch_wppsi_vs_cor_3y, 
+    ch_WPPSI_work_memory_cor_Y3 = ch_wppsi_wm_cor_3y, 
+    ch_WPPSI_total_cor_Y3 = ch_wppsi_iq_cor_3y, 
+    ch_WPPSI_psy_Y3 = ch_wppsi_psy_3y)
 
 
 bdd[, c("fa_ethnicity_2cat",
@@ -51,12 +59,13 @@ bdd[, c("fa_ethnicity_2cat",
         
         "ch_sex",
         "mo_par",
-        "ch_ETS_12m_opt36m",
+        #"ch_ETS_12m_opt36m",
         "po_delmod",
         "ch_food_intro_Y1",
         "mo_pets",
         "ch_feces_RUN_Y1", 
-        "ch_antibio_Y1")] <- lapply(bdd[, c("fa_ethnicity_2cat",
+        "ch_antibio_Y1", 
+        "ch_WPPSI_psy_Y3")] <- lapply(bdd[, c("fa_ethnicity_2cat",
                                        "fa_dipl",
                                        
                                        "mo_ethnicity_2cat",
@@ -70,12 +79,13 @@ bdd[, c("fa_ethnicity_2cat",
                                        
                                        "ch_sex",
                                        "mo_par",
-                                       "ch_ETS_12m_opt36m",
+                                       #"ch_ETS_12m_opt36m",
                                        "po_delmod",
                                        "ch_food_intro_Y1",
                                        "mo_pets",
                                        "ch_feces_RUN_Y1", 
-                                       "ch_antibio_Y1")], as.character)
+                                       "ch_antibio_Y1", 
+                                       "ch_WPPSI_psy_Y3")], as.character)
 bdd[, c("fa_ethnicity_2cat",
         "fa_dipl",
         
@@ -90,12 +100,13 @@ bdd[, c("fa_ethnicity_2cat",
         
         "ch_sex",
         "mo_par",
-        "ch_ETS_12m_opt36m",
+        #"ch_ETS_12m_opt36m",
         "po_delmod",
         "ch_food_intro_Y1",
         "mo_pets",
         "ch_feces_RUN_Y1", 
-        "ch_antibio_Y1")] <- lapply(bdd[, c("fa_ethnicity_2cat",
+        "ch_antibio_Y1", 
+        "ch_WPPSI_psy_Y3")] <- lapply(bdd[, c("fa_ethnicity_2cat",
                                        "fa_dipl",
                                        
                                        "mo_ethnicity_2cat",
@@ -109,21 +120,22 @@ bdd[, c("fa_ethnicity_2cat",
                                        
                                        "ch_sex",
                                        "mo_par",
-                                       "ch_ETS_12m_opt36m",
+                                       #"ch_ETS_12m_opt36m",
                                        "po_delmod",
                                        "ch_food_intro_Y1",
                                        "mo_pets",
                                        "ch_feces_RUN_Y1", 
-                                       "ch_antibio_Y1")], as.factor)
+                                       "ch_antibio_Y1", 
+                                       "ch_WPPSI_psy_Y3")], as.factor)
 
 bdd <- bdd %>%
   mutate(
     mo_tob_gr_anyt_yn_n2 = fct_recode(mo_tob_gr_anyt_yn_n2,            # tabagisme actif de la mère pdt la grossesse
                                       "No" = "0",
                                       "Yes" = "1"), 
-    ch_ETS_12m_opt36m = fct_recode(ch_ETS_12m_opt36m,                  # tabagisme passif de l'enfant 
-                                   "No" = "0",
-                                   "Yes" = "1"), 
+    # ch_ETS_12m_opt36m = fct_recode(ch_ETS_12m_opt36m,                  # tabagisme passif de l'enfant 
+    #                                "No" = "0",
+    #                                "Yes" = "1"), 
     Mo_ETS_anyT_yn1_opt = fct_recode(Mo_ETS_anyT_yn1_opt,              # tabagisme passif de la mère pdt la grossesse
                                      "No" = "0",
                                      "Yes" = "1"), 
@@ -181,7 +193,30 @@ bdd <- bdd %>%
                           "≥5 years after graduation", 
                           "3-4 years after graduation", 
                           "1-2 years after graduation",
-                          "BEP/CAP/Highschool"))
+                          "BEP/CAP/Highschool"), 
+    ch_care_main_6m_opt2_3c = as.character(ch_care_main_6m_opt2_3c), 
+    ch_care_main_6m_opt2_3c = fct_recode(ch_care_main_6m_opt2_3c, 
+                                         "Collective day care" = "1",
+                                         "Nursery assistant (out child home)" = "2",
+                                         "Other" = "3"), 
+    ch_care_main_12m_opt2_3c = as.character(ch_care_main_12m_opt2_3c), 
+    ch_care_main_12m_opt2_3c = fct_recode(ch_care_main_12m_opt2_3c, 
+                                         "Collective day care" = "1",
+                                         "Nursery assistant (out child home)" = "2",
+                                         "Other" = "3"), 
+    
+    ch_care_main_6m_opt2_2c = as.character(ch_care_main_6m_opt2_2c), 
+    ch_care_main_6m_opt2_2c = fct_recode(ch_care_main_6m_opt2_2c, 
+                                         "Collective day care" = "1",
+                                         "Other" = "2"), 
+    ch_care_main_12m_opt2_2c = as.character(ch_care_main_12m_opt2_2c), 
+    ch_care_main_12m_opt2_2c = fct_recode(ch_care_main_12m_opt2_2c, 
+                                          "Collective day care" = "1",
+                                          "Other" = "2"), 
+    ch_WPPSI_psy_Y3 = as.character(ch_WPPSI_psy_Y3),
+    ch_WPPSI_psy_Y3 = na_if(ch_WPPSI_psy_Y3, ""),
+    ch_WPPSI_psy_Y3 = factor(ch_WPPSI_psy_Y3))
+
 # warning message mo_ethnicity : Unknown levels in `f`: 6  : normal car absence d'observation pour cette modalité 
 # warning message fa_dipl : Unknown levels in `f`: 1, 2  : normal car absence d'observation pour ces modalités 
 
@@ -209,7 +244,14 @@ bdd_genera_imp <- bdd_genera_imp %>%
   rename_with(~gsub("genus ", "", .), everything()) %>% # changement des noms de colonnes pour qu'ils n'aient pas d'espace
   rownames_to_column(var = "ident")
 
-
+bdd <- bdd %>%                                          # changement des unités des expo pour l'affichage des beta
+  mutate(
+    ch_feces_SpecRich_5000_ASV_Y1_10 = ch_feces_SpecRich_5000_ASV_Y1/10,        
+    ch_feces_SpecRich_10000_ASV_Y1_10 = ch_feces_SpecRich_10000_ASV_Y1/10, 
+    ch_feces_rel_p1_Y1_10 = ch_feces_rel_p1_Y1/10, 
+    ch_feces_rel_p2_Y1_10 = ch_feces_rel_p2_Y1/10, 
+    ch_feces_rel_p3_Y1_10 = ch_feces_rel_p3_Y1/10, 
+    ch_feces_rel_p4_Y1_10 = ch_feces_rel_p4_Y1/10)
 
 
 # Création variable âge du père ----
@@ -244,41 +286,34 @@ bdd <- bdd %>%
     ch_age_SRS_BRIEFP_Y3 = difftime(cy3hat1_date_creation, po_datedel, units = "weeks"), 
     ch_age_SRS_BRIEFP_Y3 = as.numeric(ch_age_SRS_BRIEFP_Y3),
     ch_age_CBCL_Y2 = difftime(cy2ebc1_date_creation, po_datedel, units = "weeks"),
-    ch_age_CBCL_Y2 = as.numeric(ch_age_CBCL_Y2),
-    ch_age_IQ_Y3 = difftime(cy3hax1_date_creation, po_datedel, units = "weeks"),     # Le test du QI a été réalisé en même temsp que l'examen clinique des 3 ans 
-    ch_age_IQ_Y3 = as.numeric(ch_age_IQ_Y3),
-    ch_age_Vineland_Y2 = difftime(cy2hap2_date_creation, po_datedel, units = "weeks"), 
-    ch_age_Vineland_Y2 = as.numeric(ch_age_Vineland_Y2),
-    ch_age_Vineland_Y2 = ifelse(ident == "27201", NA, ch_age_Vineland_Y2),
-    ch_age_Vineland_Y2_bis = difftime(cy2hap3_date_creation, po_datedel, units = "weeks"), 
-    ch_age_Vineland_Y2_bis = as.numeric(ch_age_Vineland_Y2_bis))
+    ch_age_CBCL_Y2 = as.numeric(ch_age_CBCL_Y2))
 
 
 # Création d'une variable exposition périnatale au tabac ----
-bdd <- bdd %>%
-  mutate(
-    ch_tabacco_total_Y1 = case_when(mo_tob_gr_anyt_yn_n2 == "Yes" | Mo_ETS_anyT_yn1_opt == "Yes" | ch_ETS_12m_opt36m == "Yes" ~ "Yes",  
-                                    mo_tob_gr_anyt_yn_n2 == "No" & Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ "No",   
-                                    
-                                    is.na(mo_tob_gr_anyt_yn_n2) & is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA,
-                                    
-                                    is.na(mo_tob_gr_anyt_yn_n2) & Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ NA,
-                                    mo_tob_gr_anyt_yn_n2 == "No" & is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
-                                    mo_tob_gr_anyt_yn_n2 == "No" & Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA,
-                                    
-                                    is.na(mo_tob_gr_anyt_yn_n2) & is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
-                                    is.na(mo_tob_gr_anyt_yn_n2) & Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA,
-                                    mo_tob_gr_anyt_yn_n2 == "No" & is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA), 
-    
-    ch_tabacco_passive_up_to_Y1 = case_when(Mo_ETS_anyT_yn1_opt == "Yes" | ch_ETS_12m_opt36m == "Yes" ~ "Yes",  
-                                           Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ "No",   
-                                           
-                                           is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA,
-                                           
-                                           is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
-                                           Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA), 
-    ch_tabacco_total_Y1 = as.factor(ch_tabacco_total_Y1), 
-    ch_tabacco_passive_up_to_Y1 = as.factor(ch_tabacco_passive_up_to_Y1)) 
+# bdd <- bdd %>%
+#   mutate(
+#     ch_tabacco_total_Y1 = case_when(mo_tob_gr_anyt_yn_n2 == "Yes" | Mo_ETS_anyT_yn1_opt == "Yes" | ch_ETS_12m_opt36m == "Yes" ~ "Yes",  
+#                                     mo_tob_gr_anyt_yn_n2 == "No" & Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ "No",   
+#                                     
+#                                     is.na(mo_tob_gr_anyt_yn_n2) & is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA,
+#                                     
+#                                     is.na(mo_tob_gr_anyt_yn_n2) & Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ NA,
+#                                     mo_tob_gr_anyt_yn_n2 == "No" & is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
+#                                     mo_tob_gr_anyt_yn_n2 == "No" & Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA,
+#                                     
+#                                     is.na(mo_tob_gr_anyt_yn_n2) & is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
+#                                     is.na(mo_tob_gr_anyt_yn_n2) & Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA,
+#                                     mo_tob_gr_anyt_yn_n2 == "No" & is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA), 
+#     
+#     ch_tabacco_passive_up_to_Y1 = case_when(Mo_ETS_anyT_yn1_opt == "Yes" | ch_ETS_12m_opt36m == "Yes" ~ "Yes",  
+#                                            Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ "No",   
+#                                            
+#                                            is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA,
+#                                            
+#                                            is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
+#                                            Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA), 
+#     ch_tabacco_total_Y1 = as.factor(ch_tabacco_total_Y1), 
+#     ch_tabacco_passive_up_to_Y1 = as.factor(ch_tabacco_passive_up_to_Y1)) 
 
 
 # Création variable mode de garde up to one year ----
@@ -558,6 +593,10 @@ bdd = modify(bdd,{
   
   var_lab(ch_care_main_6m_12m_opt2_2c) = "Main mode of child care up to 1 year" ## mode of care
   var_lab(ch_care_main_6m_12m_opt2_3c) = "Main mode of child care up to 1 year"
+  var_lab(ch_care_main_6m_opt2_2c) = "Main mode of child care at 6 months" 
+  var_lab(ch_care_main_6m_opt2_3c) = "Main mode of child care at 6 months" 
+  var_lab(ch_care_main_12m_opt2_2c) = "Main mode of child care at 12 months"
+  var_lab(ch_care_main_12m_opt2_3c) = "Main mode of child care at 12 months"
   
   var_lab(ch_antibio_Y1) = "Number of antibiotics use between 0-12 months old"  ## expo
   var_lab(ch_antibio_Y1_3cat) = "Number of antibiotics use between 0-12 months old"
@@ -565,9 +604,9 @@ bdd = modify(bdd,{
   
   var_lab(mo_tob_gr_anyt_yn_n2) = "Maternal active smoking during pregnancy"    
   var_lab(Mo_ETS_anyT_yn1_opt) = "Maternal passive smoking during pregnancy"
-  var_lab(ch_ETS_12m_opt36m) = "Child passive smoking during the first year of life"
-  var_lab(ch_tabacco_passive_up_to_Y1) = "Child perinatal passive smoking up to one year"
-  var_lab(ch_tabacco_total_Y1) = "Child perinatal exposure to tabacco up to one year"
+  #var_lab(ch_ETS_12m_opt36m) = "Child passive smoking during the first year of life"
+  #var_lab(ch_tabacco_passive_up_to_Y1) = "Child perinatal passive smoking up to one year"
+  #var_lab(ch_tabacco_total_Y1) = "Child perinatal exposure to tabacco up to one year"
   
   var_lab(mo_alcool_preg) = "Maternal alcohol consumption during pregnancy"     
   var_lab(mo_alcool_preg_opt) = "Maternal alcohol consumption during pregnancy"
@@ -607,17 +646,28 @@ bdd = modify(bdd,{
   var_lab(ch_briefpworkmemo_y3) = "Child working memory score at 3 years (BRIEF-P)"  
   var_lab(ch_briefpplan_y3) = "Child plan/organization score at 3 years (BRIEF-P)"  
   
-  var_lab(ch_verbal_comprehension_IQ_Y3) = "Verbal comprehension score at 3 years (IQ test)"
-  var_lab(ch_visuospatiale_IQ_Y3) = "Visuospatiale score at 3 years (IQ test)"
-  var_lab(ch_work_memory_IQ_Y3) = "Work memory score at 3 years (IQ test)"
-  var_lab(ch_total_IQ_Y3) = "Total IQ score at 3 years"
+
+  var_lab(ch_WPPSI_verbal_comprehension_cor_Y3) = "Verbal comprehension score at 3 years (WPPSI)"
+  var_lab(ch_WPPSI_visuospatiale_cor_Y3) = "Visuospatiale score at 3 years (WPPSI)"
+  var_lab(ch_WPPSI_work_memory_cor_Y3) = "Work memory score at 3 years (WPPSI)"
+  var_lab(ch_WPPSI_total_cor_Y3) = "Total IQ score at 3 years (WPPSI)"
+  var_lab(ch_WPPSI_psy_Y3) = "Neuropsychologist who conducted the WPPSI test at 3 years"
+  
+  var_lab(ch_WPPSI_verbal_comprehension_Y3) = "Verbal comprehension score at 3 years (WPPSI)"
+  var_lab(ch_WPPSI_visuospatiale_Y3) = "Visuospatiale score at 3 years (WPPSI)"
+  var_lab(ch_WPPSI_work_memory_Y3) = "Work memory score at 3 years (WPPSI)"
+  var_lab(ch_WPPSI_total_Y3) = "Total IQ score at 3 years (WPPSI)"
   
   var_lab(ch_age_CBCL_Y2) = "Child age at the CBCL 2 years evaluation"
-  var_lab(ch_age_Vineland_Y2) = "Child age at the Vineland 2 years evaluation (cy2hap2)"
-  var_lab(ch_age_Vineland_Y2_bis) = "Child age at the Vineland 2 years evaluation (cy2hap3)"
-  var_lab(ch_age_IQ_Y3) = "Child age at the IQ 3 years evaluation"
   var_lab(ch_age_SRS_BRIEFP_Y3) = "Child age at the SRS 3 years evaluation"
+  var_lab(ch_age_WPPSI_Y3) = "Child age at the WPPSI 3 years evaluation"
   
+  var_lab(ch_feces_SpecRich_5000_ASV_Y1_10) = "Specific richness diversity in 1Y child gut microbiota ASV based div by 10 (seq. depth = 5 000)"
+  var_lab(ch_feces_SpecRich_10000_ASV_Y1_10) = "Specific richness diversity in 1Y child gut microbiota ASV based div by 10 (seq. depth = 10 000)"
+  var_lab(ch_feces_rel_p1_Y1_10) = "One year child feces relative abundance of phylum Firmicutes div by 10"
+  var_lab(ch_feces_rel_p2_Y1_10) = "One year child feces relative abundance of phylum Actinobacteria div by 10"	
+  var_lab(ch_feces_rel_p3_Y1_10) = "One year child feces relative abundance of phylum Bacteroidetes div by 10"
+  var_lab(ch_feces_rel_p4_Y1_10) = "One year child feces relative abundance of phylum Proteobacteria div by 10" 
     })
 
 # Export ----

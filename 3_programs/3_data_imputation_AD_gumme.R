@@ -35,9 +35,9 @@ visu_na <- tbl_merge(
   tbls = list(
     tbl_1 = 
       bdd %>% 
-      #filter(!is.na(ch_cbclintscore_y2), !is.na(ch_feces_rel_p1_Y1)) %>%
+      filter(!is.na(ch_cbclintscore_y2), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
-      select(-ch_age_IQ_Y3, -ch_age_SRS_BRIEFP_Y3) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_SRS_BRIEFP_Y3, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -48,7 +48,7 @@ visu_na <- tbl_merge(
       bdd %>% 
       filter(!is.na(ch_cbclextscore_y2), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
-      select(-ch_age_IQ_Y3, -ch_age_SRS_BRIEFP_Y3) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_SRS_BRIEFP_Y3, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -59,7 +59,7 @@ visu_na <- tbl_merge(
       bdd %>% 
       filter(!is.na(ch_SRStotal_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -70,7 +70,7 @@ visu_na <- tbl_merge(
       bdd %>% 
       filter(!is.na(ch_briefpinhibit_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -81,7 +81,7 @@ visu_na <- tbl_merge(
       bdd %>% 
       filter(!is.na(ch_briefpshift_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -92,7 +92,7 @@ visu_na <- tbl_merge(
       bdd %>% 
       filter(!is.na(ch_briefpemocontrol_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -103,7 +103,7 @@ visu_na <- tbl_merge(
       bdd %>% 
       filter(!is.na(ch_briefpworkmemo_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -114,7 +114,7 @@ visu_na <- tbl_merge(
       bdd %>% 
       filter(!is.na(ch_briefpplan_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -123,7 +123,7 @@ visu_na <- tbl_merge(
       bold_labels(), 
     tbl_9 = 
       bdd %>% 
-      filter(!is.na(ch_verbal_comprehension_IQ_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
+      filter(!is.na(ch_WPPSI_verbal_comprehension_cor_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
       select(-ch_age_SRS_BRIEFP_Y3, -ch_age_CBCL_Y2) %>%
       is.na() %>%
@@ -134,7 +134,7 @@ visu_na <- tbl_merge(
       bold_labels(), 
     tbl_10 = 
       bdd %>% 
-      filter(!is.na(ch_visuospatiale_IQ_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
+      filter(!is.na(ch_WPPSI_visuospatiale_cor_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
       select(-ch_age_SRS_BRIEFP_Y3, -ch_age_CBCL_Y2) %>%
       is.na() %>%
@@ -145,7 +145,7 @@ visu_na <- tbl_merge(
       bold_labels(), 
     tbl_11 = 
       bdd %>% 
-      filter(!is.na(ch_work_memory_IQ_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
+      filter(!is.na(ch_WPPSI_work_memory_cor_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
       select(-ch_age_SRS_BRIEFP_Y3, -ch_age_CBCL_Y2) %>%
       is.na() %>%
@@ -156,7 +156,7 @@ visu_na <- tbl_merge(
       bold_labels(), 
     tbl_12 = 
       bdd %>% 
-      filter(!is.na(ch_total_IQ_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
+      filter(!is.na(ch_WPPSI_total_cor_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer)) %>%
       select(-ch_age_SRS_BRIEFP_Y3, -ch_age_CBCL_Y2) %>%
       is.na() %>%
@@ -167,9 +167,8 @@ visu_na <- tbl_merge(
       bold_labels()), 
   tab_spanner = c("**CBCL interne score Y2**", "**CBCL externe score Y2**", "**SRS total score Y3**", 
                   "**briefp inhibit y3**", "**briefp shift y3**", "**brief pemocontrol y3**", "**brief pworkmemo y3**", "**brief pplan y3**",
-                  "**verbal comprehension IQ Y3**", "**visuo spatiale IQ Y3**", "**work memory IQ Y3**", "**total IQ Y3**"))
+                  "**verbal comprehension WPPSI Y3**", "**visuospatial WPPSI Y3**", "**work memory WPPSI Y3**", "**total WPPSI Y3**"))
 visu_na
-rm(visu_na)
 
 # Imputation multiple des covariables ----
 bdd_final <- bdd %>%
@@ -177,7 +176,7 @@ bdd_final <- bdd %>%
          all_of(neuro_vec), 
          all_of(microbiote_vec), 
          all_of(covar_a_imputer)) %>%
-  filter(!is.na(ch_feces_rel_p1_Y1))
+  filter(!is.na(ch_feces_rel_p1_Y1_10))
 
 bdd_final <- bdd_final %>%
   mutate(
@@ -209,15 +208,15 @@ bdd_final <- bdd_final %>%
                                      "1" = "No",
                                      "2" = "Yes"),
 
-    ch_ETS_12m_opt36m = fct_recode(ch_ETS_12m_opt36m,
-                                   "1" = "No",
-                                   "2" = "Yes"),
-    ch_tabacco_total_Y1 = fct_recode(ch_tabacco_total_Y1,
-                                     "1" = "No",
-                                     "2" = "Yes"),
-    ch_tabacco_passive_up_to_Y1 = fct_recode(ch_tabacco_passive_up_to_Y1,
-                                             "1" = "No",
-                                             "2" = "Yes"),
+    # ch_ETS_12m_opt36m = fct_recode(ch_ETS_12m_opt36m,
+    #                                "1" = "No",
+    #                                "2" = "Yes"),
+    # ch_tabacco_total_Y1 = fct_recode(ch_tabacco_total_Y1,
+    #                                  "1" = "No",
+    #                                  "2" = "Yes"),
+    # ch_tabacco_passive_up_to_Y1 = fct_recode(ch_tabacco_passive_up_to_Y1,
+    #                                          "1" = "No",
+    #                                          "2" = "Yes"),
     ch_antibio_Y1_2cat = fct_recode(ch_antibio_Y1_2cat,
                                     "1" = "No",
                                     "2" = "Yes"),
@@ -282,15 +281,15 @@ bdd_final_imp <- bdd_final_imp %>%
                                      "No" = "1",
                                      "Yes" = "2"),
     
-    ch_ETS_12m_opt36m = fct_recode(ch_ETS_12m_opt36m,
-                                   "No" = "1",
-                                   "Yes" = "2"),
-    ch_tabacco_total_Y1 = fct_recode(ch_tabacco_total_Y1,
-                                     "No" = "1",
-                                     "Yes" = "2"),
-    ch_tabacco_passive_up_to_Y1 = fct_recode(ch_tabacco_passive_up_to_Y1,
-                                             "No" = "1",
-                                             "Yes" = "2"),
+    # ch_ETS_12m_opt36m = fct_recode(ch_ETS_12m_opt36m,
+    #                                "No" = "1",
+    #                                "Yes" = "2"),
+    # ch_tabacco_total_Y1 = fct_recode(ch_tabacco_total_Y1,
+    #                                  "No" = "1",
+    #                                  "Yes" = "2"),
+    # ch_tabacco_passive_up_to_Y1 = fct_recode(ch_tabacco_passive_up_to_Y1,
+    #                                          "No" = "1",
+    #                                          "Yes" = "2"),
     ch_antibio_Y1_2cat = fct_recode(ch_antibio_Y1_2cat,
                                     "No" = "1",
                                     "Yes" = "2"),
@@ -309,7 +308,7 @@ bdd_final_imp <- bdd_final_imp %>%
 
 bdd_final_imp_sensi_seuil <-                      # base de données réduite à n = 339 pour l'analyse de sensibilité du seuil de raréaction 
   bdd_final_imp %>%
-  filter(!is.na(ch_feces_SpecRich_10000_ASV_Y1))
+  filter(!is.na(ch_feces_SpecRich_10000_ASV_Y1_10))
 bdd_final_imp_sensi_seuil <- as.mids(bdd_final_imp_sensi_seuil)
 
 bdd_final_imp <- as.mids(bdd_final_imp)
@@ -344,15 +343,15 @@ bdd_final <- bdd_final %>%
                                      "No" = "1",
                                      "Yes" = "2"),
     
-    ch_ETS_12m_opt36m = fct_recode(ch_ETS_12m_opt36m,
-                                   "No" = "1",
-                                   "Yes" = "2"),
-    ch_tabacco_total_Y1 = fct_recode(ch_tabacco_total_Y1,
-                                     "No" = "1",
-                                     "Yes" = "2"),
-    ch_tabacco_passive_up_to_Y1 = fct_recode(ch_tabacco_passive_up_to_Y1,
-                                             "No" = "1",
-                                             "Yes" = "2"),
+    # ch_ETS_12m_opt36m = fct_recode(ch_ETS_12m_opt36m,
+    #                                "No" = "1",
+    #                                "Yes" = "2"),
+    # ch_tabacco_total_Y1 = fct_recode(ch_tabacco_total_Y1,
+    #                                  "No" = "1",
+    #                                  "Yes" = "2"),
+    # ch_tabacco_passive_up_to_Y1 = fct_recode(ch_tabacco_passive_up_to_Y1,
+    #                                          "No" = "1",
+    #                                          "Yes" = "2"),
     ch_antibio_Y1_2cat = fct_recode(ch_antibio_Y1_2cat,
                                     "No" = "1",
                                     "Yes" = "2"),
@@ -399,7 +398,7 @@ visu_na <- tbl_merge(
       bdd_final_imp_1 %>% 
       #filter(!is.na(ch_cbclintscore_y2), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer), ch_cbclintscore_y2) %>%
-      select(-ch_age_IQ_Y3, -ch_age_SRS_BRIEFP_Y3) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_SRS_BRIEFP_Y3, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -410,7 +409,7 @@ visu_na <- tbl_merge(
       bdd_final_imp_1 %>% 
       #filter(!is.na(ch_cbclextscore_y2), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer), ch_cbclextscore_y2) %>%
-      select(-ch_age_IQ_Y3, -ch_age_SRS_BRIEFP_Y3) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_SRS_BRIEFP_Y3, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -421,7 +420,7 @@ visu_na <- tbl_merge(
       bdd_final_imp_1 %>% 
       #filter(!is.na(ch_SRStotal_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer), ch_SRStotal_y3) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -432,7 +431,7 @@ visu_na <- tbl_merge(
       bdd_final_imp_1 %>% 
       #filter(!is.na(ch_briefpinhibit_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer), ch_briefpinhibit_y3) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -443,7 +442,7 @@ visu_na <- tbl_merge(
       bdd_final_imp_1 %>% 
       #filter(!is.na(ch_briefpshift_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer), ch_briefpshift_y3) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -454,7 +453,7 @@ visu_na <- tbl_merge(
       bdd_final_imp_1 %>% 
       #filter(!is.na(ch_briefpemocontrol_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer), ch_briefpemocontrol_y3) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -465,7 +464,7 @@ visu_na <- tbl_merge(
       bdd_final_imp_1 %>% 
       #filter(!is.na(ch_briefpworkmemo_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer), ch_briefpworkmemo_y3) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -476,7 +475,7 @@ visu_na <- tbl_merge(
       bdd_final_imp_1 %>% 
       #filter(!is.na(ch_briefpplan_y3), !is.na(ch_feces_rel_p1_Y1)) %>%
       select(all_of(covar_a_imputer), ch_briefpplan_y3) %>%
-      select(-ch_age_IQ_Y3, -ch_age_CBCL_Y2) %>%
+      select(-ch_age_WPPSI_Y3, -ch_age_CBCL_Y2, -ch_WPPSI_psy_Y3) %>%
       is.na() %>%
       as.data.frame() %>%
       tbl_summary(
@@ -485,8 +484,8 @@ visu_na <- tbl_merge(
       bold_labels(), 
     tbl_9 = 
       bdd_final_imp_1 %>% 
-      #filter(!is.na(ch_verbal_comprehension_IQ_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
-      select(all_of(covar_a_imputer), ch_verbal_comprehension_IQ_Y3) %>%
+      #filter(!is.na(ch_WPPSI_verbal_comprehension_cor_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
+      select(all_of(covar_a_imputer), ch_WPPSI_verbal_comprehension_cor_Y3) %>%
       select(-ch_age_SRS_BRIEFP_Y3, -ch_age_CBCL_Y2) %>%
       is.na() %>%
       as.data.frame() %>%
@@ -496,8 +495,8 @@ visu_na <- tbl_merge(
       bold_labels(), 
     tbl_10 = 
       bdd_final_imp_1 %>% 
-      #filter(!is.na(ch_visuospatiale_IQ_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
-      select(all_of(covar_a_imputer), ch_visuospatiale_IQ_Y3) %>%
+      #filter(!is.na(ch_WPPSI_visuospatiale_cor_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
+      select(all_of(covar_a_imputer), ch_WPPSI_visuospatiale_cor_Y3) %>%
       select(-ch_age_SRS_BRIEFP_Y3, -ch_age_CBCL_Y2) %>%
       is.na() %>%
       as.data.frame() %>%
@@ -507,8 +506,8 @@ visu_na <- tbl_merge(
       bold_labels(), 
     tbl_11 = 
       bdd_final_imp_1 %>% 
-      #filter(!is.na(ch_work_memory_IQ_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
-      select(all_of(covar_a_imputer), ch_work_memory_IQ_Y3) %>%
+      #filter(!is.na(ch_WPPSI_work_memory_cor_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
+      select(all_of(covar_a_imputer), ch_WPPSI_work_memory_cor_Y3) %>%
       select(-ch_age_SRS_BRIEFP_Y3, -ch_age_CBCL_Y2) %>%
       is.na() %>%
       as.data.frame() %>%
@@ -518,8 +517,8 @@ visu_na <- tbl_merge(
       bold_labels(), 
     tbl_12 = 
       bdd_final_imp_1 %>% 
-      #filter(!is.na(ch_total_IQ_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
-      select(all_of(covar_a_imputer), ch_total_IQ_Y3) %>%
+      #filter(!is.na(ch_WPPSI_total_cor_Y3), !is.na(ch_feces_rel_p1_Y1)) %>%
+      select(all_of(covar_a_imputer), ch_WPPSI_total_cor_Y3) %>%
       select(-ch_age_SRS_BRIEFP_Y3, -ch_age_CBCL_Y2) %>%
       is.na() %>%
       as.data.frame() %>%
@@ -529,7 +528,7 @@ visu_na <- tbl_merge(
       bold_labels()), 
   tab_spanner = c("**CBCL interne score Y2**", "**CBCL externe score Y2**", "**SRS total score Y3**", 
                   "**briefp inhibit y3**", "**briefp shift y3**", "**brief pemocontrol y3**", "**brief pworkmemo y3**", "**brief pplan y3**",
-                  "**verbal comprehension IQ Y3**", "**visuo spatiale IQ Y3**", "**work memory IQ Y3**", "**total IQ Y3**"))
+                  "**verbal comprehension WPPSI Y3**", "**visuospatial WPPSI Y3**", "**work memory WPPSI Y3**", "**total WPPSI Y3**"))
 visu_na
 rm(visu_na)
 

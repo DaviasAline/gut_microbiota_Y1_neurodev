@@ -36,28 +36,25 @@ neuro_vec <- bdd %>%
     ch_briefpworkmemo_y3, 
     ch_briefpplan_y3, 
     
-    ch_verbal_comprehension_IQ_Y3,
-    ch_visuospatiale_IQ_Y3,
-    ch_work_memory_IQ_Y3,
-    ch_total_IQ_Y3) %>%
+    ch_WPPSI_verbal_comprehension_cor_Y3,
+    ch_WPPSI_visuospatiale_cor_Y3,
+    ch_WPPSI_work_memory_cor_Y3,
+    ch_WPPSI_total_cor_Y3) %>%
   colnames()
 
 ## Microbiote ----
 microbiote_vec <- bdd %>% 
   select(
-    ch_feces_SpecRich_5000_ASV_Y1,        
+    ch_feces_SpecRich_5000_ASV_Y1_10,        
     ch_feces_Shannon_5000_ASV_Y1, 
     
-    ch_feces_SpecRich_10000_ASV_Y1,        
+    ch_feces_SpecRich_10000_ASV_Y1_10,        
     ch_feces_Shannon_10000_ASV_Y1, 
     
-    ch_feces_SpecRich_cmin_ASV_Y1, 
-    ch_feces_Shannon_cmin_ASV_Y1,
-    
-    ch_feces_rel_p1_Y1, 
-    ch_feces_rel_p2_Y1, 
-    ch_feces_rel_p3_Y1, 
-    ch_feces_rel_p4_Y1,
+    ch_feces_rel_p1_Y1_10, 
+    ch_feces_rel_p2_Y1_10, 
+    ch_feces_rel_p3_Y1_10, 
+    ch_feces_rel_p4_Y1_10,
     
     all_of(genera_linear)) %>%
   colnames()
@@ -66,8 +63,9 @@ microbiote_vec <- bdd %>%
 covar_a_imputer <- bdd %>%
   select(
     ch_age_CBCL_Y2,
-    ch_age_IQ_Y3,
+    ch_age_WPPSI_Y3,
     ch_age_SRS_BRIEFP_Y3, 
+    ch_WPPSI_psy_Y3,
     
     
     po_w_kg,      # utilisé précédement : po_w_kg_3cat
@@ -113,9 +111,9 @@ covar_a_imputer <- bdd %>%
     mo_hadtotscore_y1_imp, 
     mo_tob_gr_anyt_yn_n2,
     Mo_ETS_anyT_yn1_opt,
-    ch_ETS_12m_opt36m,
-    ch_tabacco_total_Y1,
-    ch_tabacco_passive_up_to_Y1,
+    # ch_ETS_12m_opt36m,
+    # ch_tabacco_total_Y1,
+    # ch_tabacco_passive_up_to_Y1,
     mo_alcool_preg_opt_3cat,
     mo_alcool_preg_opt_4cat,
     ch_care_main_6m_opt2_2c, 
@@ -136,7 +134,7 @@ covar_a_imputer <- bdd %>%
 
 covar_age <- bdd %>%
   select(ch_age_CBCL_Y2,
-         ch_age_IQ_Y3,
+         ch_age_WPPSI_Y3,
          ch_age_SRS_BRIEFP_Y3) %>%
   colnames()
 
@@ -181,9 +179,9 @@ covar_a_tester <- bdd %>%
     mo_hadtotscore_y1_imp, 
     mo_tob_gr_anyt_yn_n2,
     Mo_ETS_anyT_yn1_opt,
-    ch_ETS_12m_opt36m,
-    ch_tabacco_total_Y1,
-    ch_tabacco_passive_up_to_Y1,
+    # ch_ETS_12m_opt36m,
+    # ch_tabacco_total_Y1,
+    # ch_tabacco_passive_up_to_Y1,
     mo_alcool_preg_opt_3cat,
     mo_alcool_preg_opt_4cat,
     ch_care_main_6m_opt2_2c, 
@@ -199,9 +197,11 @@ covar_a_tester <- bdd %>%
   colnames()
 
 ## Vecteurs covariables
-covar_vec_model_1 <- bdd %>%
+covar_vec_model_final <- bdd %>%
   select(
-    # ne pas oublier de changer covariable âge selon l'outcome de neuro 
+    # ne pas oublier d'ajouter covariable âge selon l'outcome de neuro (pour CBCL, SRS et BRIEF-P)
+    # ne pas oublier d'ajouter covariable psy pour les outcomes WPPSI (en analyse de sensibilité ou principale à définir)
+    
     po_w_kg_3cat, 
     po_he_3cat, 
     mo_dipl_2cat,
@@ -215,40 +215,12 @@ covar_vec_model_1 <- bdd %>%
     ch_food_intro_Y1_3cat,
     mo_pets,
     ch_antibio_Y1_2cat,
-    home_total_y3,              # ne pas oublier de ne pas inclure cette variable dans le modèle CBCL 2 ans 
+    home_total_y3,              
     mo_hadtotscore_grt3_imp,   
     mo_tob_gr_anyt_yn_n2,
-    ch_tabacco_passive_up_to_Y1,
-    
+    # ch_tabacco_passive_up_to_Y1,
     ch_care_main_12m_opt2_2c) %>% 
   colnames()
-
-# covar_vec_model_2 <- bdd %>%
-#   select(
-#     # ne pas oublier de changer selon l'outcome de neuro 
-#     po_w_kg_3cat, 
-#     po_he_3cat, 
-#     mo_dipl_2cat,
-#     mo_age,
-#     mo_bmi_bepr_3cat,    
-#     ch_sex,
-#     mo_par_2cat, 
-#     ch_bf_duration_till48w_4cat,
-#     po_gd,
-#     po_delmod, 
-#     ch_food_intro_Y1_3cat,
-#     mo_pets,
-#     ch_antibio_Y1_2cat,
-#     home_total_y3,            # ne pas oublier de ne pas inclure cette variable dans le modèle CBCL 2 ans 
-#     mo_hadtotscore_grt3_imp,   
-#     mo_tob_gr_anyt_yn_n2, 
-#     ch_tabacco_passive_up_to_Y1,
-#     
-#     ch_care_main_6m_12m_opt2_2c) %>% 
-#   colnames()
-
-covar_vec_model_final <- covar_vec_model_1  # on choisit le modèle 1 (cf 5_stats)
-rm(covar_vec_model_1)
 
 # Export ----
 save(list = ls(),

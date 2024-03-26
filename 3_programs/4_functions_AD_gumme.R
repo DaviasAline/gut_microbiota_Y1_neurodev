@@ -325,37 +325,37 @@ outliers <- function(data, var) {
 #   return(model)
 # }
 
-model_Y3_1 <- function(var_outcome, 
-                       #var_microbiote, 
-                       var_age) {
-  model <- with(data = bdd_final_imp,
-                exp = lm(var_outcome ~
-                           
-                           #var_microbiote +
-                           
-                           var_age +      # ne pas oublier de changer selon l'outcome de neuro
-                           
-                           po_w_kg_3cat + 
-                           po_he_3cat + 
-                           mo_dipl_2cat +
-                           mo_age +
-                           mo_bmi_bepr_3cat +    
-                           ch_sex +
-                           mo_par_2cat + 
-                           ch_bf_duration_till48w_4cat +
-                           po_gd +
-                           po_delmod + 
-                           ch_food_intro_Y1_3cat +
-                           mo_pets +
-                           ch_antibio_Y1_2cat +
-                           home_total_y3 +  
-                           mo_hadtotscore_grt3_imp +   
-                           
-                           mo_tob_gr_anyt_yn_n2+
-                           ch_tabacco_passive_up_to_Y1 +
-                           ch_care_main_12m_opt2_2c))
-  return(model)
-}
+# model_Y3_1 <- function(var_outcome, 
+#                        #var_microbiote, 
+#                        var_age) {
+#   model <- with(data = bdd_final_imp,
+#                 exp = lm(var_outcome ~
+#                            
+#                            #var_microbiote +
+#                            
+#                            var_age +      # ne pas oublier de changer selon l'outcome de neuro
+#                            
+#                            po_w_kg_3cat + 
+#                            po_he_3cat + 
+#                            mo_dipl_2cat +
+#                            mo_age +
+#                            mo_bmi_bepr_3cat +    
+#                            ch_sex +
+#                            mo_par_2cat + 
+#                            ch_bf_duration_till48w_4cat +
+#                            po_gd +
+#                            po_delmod + 
+#                            ch_food_intro_Y1_3cat +
+#                            mo_pets +
+#                            ch_antibio_Y1_2cat +
+#                            home_total_y3 +  
+#                            mo_hadtotscore_grt3_imp +   
+#                            
+#                            mo_tob_gr_anyt_yn_n2+
+#                            ch_tabacco_passive_up_to_Y1 +
+#                            ch_care_main_12m_opt2_2c))
+#   return(model)
+# }
 
 # model_Y3_2 <- function(var_outcome, 
 #                        #var_microbiote, 
