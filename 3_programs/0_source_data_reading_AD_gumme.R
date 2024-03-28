@@ -20,8 +20,6 @@ solidfood_Y1 <- read_labelled_csv("0_source_data/solidfood_Y1_labelled_AD_202203
 weight_length_Y1 <- read_labelled_csv("0_source_data/weight_length_Y1_labelled_AD_20220301_2.csv")
 
 taxa_table_Y1 <- read_csv("0_source_data/taxa_table_ASVbased_Y1_AD_20220504_8.csv")  # ne pas inclure, table de correspondance taxonomique
-# load("0_source_data/ch_mode_care_AD_20231005_49.RData") 
-# bdd_care <- bdd_care %>% select(ident, contains("main"))
 
 var_lab(metadata$ident) <- NULL
 var_lab(alphadiv_Y1$ident) <- NULL
@@ -30,7 +28,6 @@ var_lab(age_feces_Y1$ident) <- NULL
 var_lab(atb_Y1$ident) <- NULL
 var_lab(solidfood_Y1$ident) <- NULL
 var_lab(weight_length_Y1$ident) <- NULL
-# var_lab(bdd_care$ident) <- NULL
 
 # Regroupement des données ----
 bdd <- 

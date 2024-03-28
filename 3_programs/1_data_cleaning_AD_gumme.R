@@ -42,7 +42,8 @@ bdd <- bdd %>%
     ch_WPPSI_visuospatiale_cor_Y3 = ch_wppsi_vs_cor_3y, 
     ch_WPPSI_work_memory_cor_Y3 = ch_wppsi_wm_cor_3y, 
     ch_WPPSI_total_cor_Y3 = ch_wppsi_iq_cor_3y, 
-    ch_WPPSI_psy_Y3 = ch_wppsi_psy_3y)
+    ch_WPPSI_psy_Y3 = ch_wppsi_psy_3y) %>%
+  mutate(ident = as.character(ident))
 
 
 bdd[, c("fa_ethnicity_2cat",
@@ -59,7 +60,7 @@ bdd[, c("fa_ethnicity_2cat",
         
         "ch_sex",
         "mo_par",
-        #"ch_ETS_12m_opt36m",
+        "ch_ETS_12m_opt36m",
         "po_delmod",
         "ch_food_intro_Y1",
         "mo_pets",
@@ -79,7 +80,7 @@ bdd[, c("fa_ethnicity_2cat",
                                        
                                        "ch_sex",
                                        "mo_par",
-                                       #"ch_ETS_12m_opt36m",
+                                       "ch_ETS_12m_opt36m",
                                        "po_delmod",
                                        "ch_food_intro_Y1",
                                        "mo_pets",
@@ -100,7 +101,7 @@ bdd[, c("fa_ethnicity_2cat",
         
         "ch_sex",
         "mo_par",
-        #"ch_ETS_12m_opt36m",
+        "ch_ETS_12m_opt36m",
         "po_delmod",
         "ch_food_intro_Y1",
         "mo_pets",
@@ -120,7 +121,7 @@ bdd[, c("fa_ethnicity_2cat",
                                        
                                        "ch_sex",
                                        "mo_par",
-                                       #"ch_ETS_12m_opt36m",
+                                       "ch_ETS_12m_opt36m",
                                        "po_delmod",
                                        "ch_food_intro_Y1",
                                        "mo_pets",
@@ -133,9 +134,9 @@ bdd <- bdd %>%
     mo_tob_gr_anyt_yn_n2 = fct_recode(mo_tob_gr_anyt_yn_n2,            # tabagisme actif de la mère pdt la grossesse
                                       "No" = "0",
                                       "Yes" = "1"), 
-    # ch_ETS_12m_opt36m = fct_recode(ch_ETS_12m_opt36m,                  # tabagisme passif de l'enfant 
-    #                                "No" = "0",
-    #                                "Yes" = "1"), 
+    ch_ETS_12m_opt36m = fct_recode(ch_ETS_12m_opt36m,                  # tabagisme passif de l'enfant
+                                   "No" = "0",
+                                   "Yes" = "1"),
     Mo_ETS_anyT_yn1_opt = fct_recode(Mo_ETS_anyT_yn1_opt,              # tabagisme passif de la mère pdt la grossesse
                                      "No" = "0",
                                      "Yes" = "1"), 
@@ -225,25 +226,34 @@ bdd <- bdd %>%
 ## Imputation des 0 par la valeur 1/5000 + log transformation des variables genres 
 bdd_genera_imp <- bdd %>%
   select(ident, 
-         contains("ch_feces_rel_g")) %>%
-  column_to_rownames("ident")
-var_label(bdd_genera_imp) <-  str_replace(
-  var_label(bdd_genera_imp),                                    # set correct variable names                   
-  "One year child feces relative abundance of genus ", "")
-colnames(bdd_genera_imp) <- var_label(bdd_genera_imp)
-
-genera_linear <- bdd_genera_imp %>%                             # create a vector 
+         contains("ch_feces_rel_g"))  %>%
   na.omit() %>%
-  select_if(~ sum(. != 0, na.rm = TRUE) / length(.) >= 0.3) %>%
-  colnames()
+  select_if(~ sum(. != 0, na.rm = TRUE) / length(.) >= 0.3)   # selection des genres ayant une abondance >30%
+
+
+genera_var_labels <- bdd_genera_imp %>%                             # create a vector of the genera latin variables names  
+  select(-ident) %>%
+  var_label() %>% 
+  unlist() %>%
+  str_replace("One year child feces relative abundance of genus ", "")
 
 bdd_genera_imp <- bdd_genera_imp %>% 
-  select(all_of(genera_linear)) %>%                     # selection des genres ayant une abondance >30%
+  column_to_rownames("ident") %>%                     
   mutate_all(., ~ ifelse(. == 0, 1/5000, .)) %>%        # remplacement des valeurs 0 par 1/5000
   mutate_all(~ log(.)) %>%                              # transformation logarithmique
-  rename_with(~gsub("genus ", "", .), everything()) %>% # changement des noms de colonnes pour qu'ils n'aient pas d'espace
-  rownames_to_column(var = "ident")
+  rename_with(~gsub("_Y1", "_imp_log_Y1", .), everything())  %>%# changement des noms de colonnes pour qu'ils n'aient pas d'espace
+  rownames_to_column("ident") 
 
+genera_var_names <- bdd_genera_imp %>%                             # create a vector of the genera R variables names
+  select(-ident) %>%
+  colnames()
+
+bdd$ident <- as.character(bdd$ident)
+bdd <- left_join(bdd, bdd_genera_imp, by ="ident")
+rm(bdd_genera_imp)
+
+
+# Division par 10 de la variable richesse et les phyla pour grossir les betas
 bdd <- bdd %>%                                          # changement des unités des expo pour l'affichage des beta
   mutate(
     ch_feces_SpecRich_5000_ASV_Y1_10 = ch_feces_SpecRich_5000_ASV_Y1/10,        
@@ -290,30 +300,30 @@ bdd <- bdd %>%
 
 
 # Création d'une variable exposition périnatale au tabac ----
-# bdd <- bdd %>%
-#   mutate(
-#     ch_tabacco_total_Y1 = case_when(mo_tob_gr_anyt_yn_n2 == "Yes" | Mo_ETS_anyT_yn1_opt == "Yes" | ch_ETS_12m_opt36m == "Yes" ~ "Yes",  
-#                                     mo_tob_gr_anyt_yn_n2 == "No" & Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ "No",   
-#                                     
-#                                     is.na(mo_tob_gr_anyt_yn_n2) & is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA,
-#                                     
-#                                     is.na(mo_tob_gr_anyt_yn_n2) & Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ NA,
-#                                     mo_tob_gr_anyt_yn_n2 == "No" & is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
-#                                     mo_tob_gr_anyt_yn_n2 == "No" & Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA,
-#                                     
-#                                     is.na(mo_tob_gr_anyt_yn_n2) & is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
-#                                     is.na(mo_tob_gr_anyt_yn_n2) & Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA,
-#                                     mo_tob_gr_anyt_yn_n2 == "No" & is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA), 
-#     
-#     ch_tabacco_passive_up_to_Y1 = case_when(Mo_ETS_anyT_yn1_opt == "Yes" | ch_ETS_12m_opt36m == "Yes" ~ "Yes",  
-#                                            Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ "No",   
-#                                            
-#                                            is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA,
-#                                            
-#                                            is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
-#                                            Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA), 
-#     ch_tabacco_total_Y1 = as.factor(ch_tabacco_total_Y1), 
-#     ch_tabacco_passive_up_to_Y1 = as.factor(ch_tabacco_passive_up_to_Y1)) 
+bdd <- bdd %>%
+  mutate(
+    ch_tabacco_total_Y1 = case_when(mo_tob_gr_anyt_yn_n2 == "Yes" | Mo_ETS_anyT_yn1_opt == "Yes" | ch_ETS_12m_opt36m == "Yes" ~ "Yes",
+                                    mo_tob_gr_anyt_yn_n2 == "No" & Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ "No",
+
+                                    is.na(mo_tob_gr_anyt_yn_n2) & is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA,
+
+                                    is.na(mo_tob_gr_anyt_yn_n2) & Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ NA,
+                                    mo_tob_gr_anyt_yn_n2 == "No" & is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
+                                    mo_tob_gr_anyt_yn_n2 == "No" & Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA,
+
+                                    is.na(mo_tob_gr_anyt_yn_n2) & is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
+                                    is.na(mo_tob_gr_anyt_yn_n2) & Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA,
+                                    mo_tob_gr_anyt_yn_n2 == "No" & is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA),
+
+    ch_tabacco_passive_up_to_Y1 = case_when(Mo_ETS_anyT_yn1_opt == "Yes" | ch_ETS_12m_opt36m == "Yes" ~ "Yes",
+                                           Mo_ETS_anyT_yn1_opt == "No" & ch_ETS_12m_opt36m == "No" ~ "No",
+
+                                           is.na(Mo_ETS_anyT_yn1_opt) & is.na(ch_ETS_12m_opt36m) ~ NA,
+
+                                           is.na(Mo_ETS_anyT_yn1_opt) & ch_ETS_12m_opt36m == "No" ~ NA,
+                                           Mo_ETS_anyT_yn1_opt == "No" & is.na(ch_ETS_12m_opt36m) ~ NA),
+    ch_tabacco_total_Y1 = as.factor(ch_tabacco_total_Y1),
+    ch_tabacco_passive_up_to_Y1 = as.factor(ch_tabacco_passive_up_to_Y1))
 
 
 # Création variable mode de garde up to one year ----
@@ -604,9 +614,9 @@ bdd = modify(bdd,{
   
   var_lab(mo_tob_gr_anyt_yn_n2) = "Maternal active smoking during pregnancy"    
   var_lab(Mo_ETS_anyT_yn1_opt) = "Maternal passive smoking during pregnancy"
-  #var_lab(ch_ETS_12m_opt36m) = "Child passive smoking during the first year of life"
-  #var_lab(ch_tabacco_passive_up_to_Y1) = "Child perinatal passive smoking up to one year"
-  #var_lab(ch_tabacco_total_Y1) = "Child perinatal exposure to tabacco up to one year"
+  var_lab(ch_ETS_12m_opt36m) = "Child passive smoking during the first year of life"
+  var_lab(ch_tabacco_passive_up_to_Y1) = "Child perinatal passive smoking up to one year"
+  var_lab(ch_tabacco_total_Y1) = "Child perinatal exposure to tabacco up to one year"
   
   var_lab(mo_alcool_preg) = "Maternal alcohol consumption during pregnancy"     
   var_lab(mo_alcool_preg_opt) = "Maternal alcohol consumption during pregnancy"
@@ -671,8 +681,5 @@ bdd = modify(bdd,{
     })
 
 # Export ----
-bdd$ident <- as.character(bdd$ident)
-bdd <- left_join(bdd, bdd_genera_imp, by ="ident")
-
 save.image(
   file = "1_intermediate_data/1_data_cleaning_AD_gumme.RData")

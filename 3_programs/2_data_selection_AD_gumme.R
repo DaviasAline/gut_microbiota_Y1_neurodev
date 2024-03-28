@@ -14,7 +14,6 @@ library(expss)
 
 # Chargement des données 
 load("1_intermediate_data/1_data_cleaning_AD_gumme.RData")
-taxa_table_Y1 <- read_csv("0_source_data/taxa_table_ASVbased_Y1_AD_20220504_8.csv")  # ne pas inclure, table de correspondance taxonomique
 
 # Création des vecteurs ----
 ## Neuro ----
@@ -42,13 +41,27 @@ neuro_vec <- bdd %>%
     ch_WPPSI_total_cor_Y3) %>%
   colnames()
 
+spanner_names <- c("Internalizing CBCL score at 2 years",
+                   "Externalizing CBCL score at 2 years",
+                   "Total SRS score at 3 years",
+                   "Inhibition BRIEF-P score at 3 years",
+                   "Shift BRIEF-P score at 3 years",
+                   "Emotional control BRIEF-P score at 3 years",
+                   "Work memory BRIEF-P score at 3 years",
+                   "Plan and organization BRIEF-P score at 3 years",
+                   "Verbal comprehension WPPSI score at 3 years",
+                   "Visuospatial WPPSI score at 3 years",
+                   "Work memory WPPSI score at 3 years",
+                   "Total WPPSI score at 3 years")
+
+
 ## Microbiote ----
 microbiote_vec <- bdd %>% 
   select(
     ch_feces_SpecRich_5000_ASV_Y1_10,        
     ch_feces_Shannon_5000_ASV_Y1, 
     
-    ch_feces_SpecRich_10000_ASV_Y1_10,        
+    ch_feces_SpecRich_10000_ASV_Y1_10,      # pour analyses de sensibilité   
     ch_feces_Shannon_10000_ASV_Y1, 
     
     ch_feces_rel_p1_Y1_10, 
@@ -56,7 +69,7 @@ microbiote_vec <- bdd %>%
     ch_feces_rel_p3_Y1_10, 
     ch_feces_rel_p4_Y1_10,
     
-    all_of(genera_linear)) %>%
+    all_of(genera_var_names)) %>%
   colnames()
 
 ## Covariables ----
@@ -111,9 +124,9 @@ covar_a_imputer <- bdd %>%
     mo_hadtotscore_y1_imp, 
     mo_tob_gr_anyt_yn_n2,
     Mo_ETS_anyT_yn1_opt,
-    # ch_ETS_12m_opt36m,
-    # ch_tabacco_total_Y1,
-    # ch_tabacco_passive_up_to_Y1,
+    ch_ETS_12m_opt36m,
+    ch_tabacco_total_Y1,
+    ch_tabacco_passive_up_to_Y1,
     mo_alcool_preg_opt_3cat,
     mo_alcool_preg_opt_4cat,
     ch_care_main_6m_opt2_2c, 
@@ -134,7 +147,6 @@ covar_a_imputer <- bdd %>%
 
 covar_age <- bdd %>%
   select(ch_age_CBCL_Y2,
-         ch_age_WPPSI_Y3,
          ch_age_SRS_BRIEFP_Y3) %>%
   colnames()
 
@@ -179,9 +191,9 @@ covar_a_tester <- bdd %>%
     mo_hadtotscore_y1_imp, 
     mo_tob_gr_anyt_yn_n2,
     Mo_ETS_anyT_yn1_opt,
-    # ch_ETS_12m_opt36m,
-    # ch_tabacco_total_Y1,
-    # ch_tabacco_passive_up_to_Y1,
+    ch_ETS_12m_opt36m,
+    ch_tabacco_total_Y1,
+    ch_tabacco_passive_up_to_Y1,
     mo_alcool_preg_opt_3cat,
     mo_alcool_preg_opt_4cat,
     ch_care_main_6m_opt2_2c, 
@@ -218,7 +230,7 @@ covar_vec_model_final <- bdd %>%
     home_total_y3,              
     mo_hadtotscore_grt3_imp,   
     mo_tob_gr_anyt_yn_n2,
-    # ch_tabacco_passive_up_to_Y1,
+    ch_tabacco_passive_up_to_Y1,
     ch_care_main_12m_opt2_2c) %>% 
   colnames()
 

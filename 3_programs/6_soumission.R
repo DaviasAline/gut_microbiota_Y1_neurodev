@@ -28,25 +28,44 @@ library(GGally)
 theme_gtsummary_compact()
 
 # Data and functions loading ----
-load("1_intermediate_data/3_data_imputation_AD_gumme.RData")
-source("3_programs/4_functions_AD_gumme.R")
+load("1_intermediate_data/4_data_standardization_AD_gumme.RData")
+rm(resultats_correlation, bdd_final_imp, bdd_final_imp_sensi_seuil, 
+   bdd_std_large, bdd_std_long)
+source("3_programs/5_functions_AD_gumme.R")
 corres <- 
   taxa_table_Y1 %>% 
   select(Phyla_corres = ch_feces_phylum_ASVbased_Y1, 
          Class_corres = ch_feces_class_ASVbased_Y1,
          Order_corres = ch_feces_order_ASVbased_Y1, 
          Family_corres = ch_feces_family_ASVbased_Y1,
-         Exposure = ch_feces_genus_ASVbased_Y1) %>%
-  filter(Exposure %in% genera_linear) %>%
-  distinct(Exposure, .keep_all = TRUE)
+         Genera_corres = ch_feces_genus_ASVbased_Y1) %>%
+  filter(Genera_corres %in% genera_var_labels) %>%
+  distinct(Genera_corres, .keep_all = TRUE)
+
+
+test <- bdd %>% select(all_of(genera_var_names_raw))                     # récupération des labels des variables
+colnames(test) <- gsub("_Y1", "_imp_log_std_Y1", colnames(test))
+test <- test %>% 
+  var_label() %>% 
+  as.data.frame() %>% 
+  t() %>% 
+  as.matrix() %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "Exposure") %>%
+  mutate(Genera_corres = gsub("One year child feces relative abundance of genus ", "", V1)) %>%
+  select(-V1)
+corres <-                                                                         # Ajout des correspondances taxonomiques 
+  left_join(corres, test, by = "Genera_corres")
+rm(test)
+
 
 
 # Vectors ----
 covariates <- covar_vec_model_final
 explanatory <- bdd_final_imp_1 %>% 
-  select(all_of(microbiote_vec)) %>% 
-  select(-ch_feces_SpecRich_10000_ASV_Y1_10, # pour analyses de sensibilité
-         -ch_feces_Shannon_10000_ASV_Y1) %>% # pour analyses de sensibilité) 
+  select(all_of(microbiote_std_vec)) %>% 
+  select(-ch_feces_SpecRich_10000_ASV_std_Y1_10, # pour analyses de sensibilité
+         -ch_feces_Shannon_10000_ASV_std_Y1) %>% # pour analyses de sensibilité) 
   colnames()
 
 outcomes <- bdd %>%
@@ -57,26 +76,14 @@ outcomes <- bdd %>%
          -ch_socmot_y3, 
          -ch_RRB_y3) %>%
   colnames()
-rm(neuro_vec, microbiote_vec, covar_a_imputer, covar_a_tester, covar_vec_model_final)
+rm(neuro_vec, microbiote_vec, covar_a_imputer, covar_a_tester, covar_vec_model_final, microbiote_std_vec)
 
-genera_linear_complet <- bdd %>%
-  select(contains("ch_feces_rel_g")) %>%
-  filter(!is.na(ch_feces_rel_g1_Y1)) %>%
-  select_if(~ sum(. != 0, na.rm = TRUE) / length(.) >= 0.3) %>%
-  colnames()
+genera_var_names <- genera_var_names %>%
+  str_replace_all("imp_log_Y1", "imp_log_std_Y1")
+genera_var_names_raw <- genera_var_names %>%
+  str_replace_all("_imp_log_std_Y1", "_Y1")
 
-spanner_names <- c("Internalizing CBCL score at 2 years",
-                   "Externalizing CBCL score at 2 years",
-                   "Total SRS score at 3 years",
-                   "Inhibition BRIEF-P score at 3 years",
-                   "Shift BRIEF-P score at 3 years",
-                   "Emotional control BRIEF-P score at 3 years",
-                   "Working memory BRIEF-P score at 3 years",
-                   "Plan and organization BRIEF-P score at 3 years",
-                   "Verbal comprehension WPPSI score at 3 years",
-                   "Visuospatial WPPSI score at 3 years",
-                   "Work memory WPPSI score at 3 years",
-                   "Total WPPSI score at 3 years")
+
 
 # Data description ----
 ## Covariates ----
@@ -91,57 +98,52 @@ descrip_covar
 
 ## Included genera (n=46) ----
 ### Tables ----
-bdd %>% 
-  select(all_of(genera_linear_complet)) %>%
-  na.omit()%>%
-  View()
-
-descrip_genera_linear <- tbl_merge(
+descrip_genera <- tbl_merge(
   tbls = 
     list(
       tbl_1 = 
         bdd %>% 
-        select(all_of(genera_linear_complet)) %>%
+        select(all_of(genera_var_names_raw)) %>%
         na.omit()%>%
-        set_label(genera_linear) %>%
+        set_label(genera_var_labels) %>%
         tbl_summary(
           type = list(everything() ~ "continuous"), 
           statistic = list(everything() ~ "{median} ({p25}, {p75})"), 
           digits = list(all_continuous() ~ c(2, 1, 1))), 
       tbl_2 = 
         bdd_final_imp_1 %>% 
-        select(all_of(genera_linear)) %>%
-        set_label(genera_linear) %>%
+        select(all_of(genera_var_names)) %>%
+        set_label(genera_var_labels) %>%
         tbl_summary(
           type = list(everything() ~ "continuous"), 
           statistic = list(everything() ~ "{median} ({p25}, {p75})"), 
           digits = list(all_continuous() ~ c(2, 1, 1))), 
       tbl_3 = 
         bdd %>% 
-        select(all_of(genera_linear_complet)) %>%
+        select(all_of(genera_var_names_raw)) %>%
         na.omit()%>%
         mutate_all(~ ifelse(.>0, "Yes", "No")) %>%
-        set_label(genera_linear) %>%
+        set_label(genera_var_labels) %>%
         tbl_summary(
           type = list(everything() ~ "categorical"))), 
   tab_spanner = c("**Continuous**", "**Log transformed**", "**Categorical (Y/N)**"))
-descrip_genera_linear
+descrip_genera
 
 ### Density plots ----
 #### Distribution avant imputation et transformation 
-densityplot(data = bdd, vars = genera_linear_complet[1:23], ncol = 5)    
-densityplot(data = bdd, vars = genera_linear_complet[24:46], ncol = 5)
+densityplot(data = bdd, vars = genera_var_names_raw[1:23], ncol = 5)    
+densityplot(data = bdd, vars = genera_var_names_raw[24:46], ncol = 5)
 
 #### Distribution après imputation et transformation 
-densityplot(data = bdd_final_imp_1, vars = genera_linear[1:23], ncol = 5)    
-densityplot(data = bdd_final_imp_1, vars = genera_linear[24:46], ncol = 5)
+densityplot(data = bdd_final_imp_1, vars = genera_var_names[1:23], ncol = 5)    
+densityplot(data = bdd_final_imp_1, vars = genera_var_names[24:46], ncol = 5)
 
 
 # Calcul du nombre de tests effectifs pour la correction pour comp multiple (FWER) ----
 test_expo_taxa <- bdd_final_imp_1 %>%
-  filter(!is.na(ch_feces_rel_p1_Y1)) %>%
+  filter(!is.na(ch_feces_rel_p1_std_Y1_10)) %>%
   select(all_of(explanatory)) %>%
-  select(-"ch_feces_SpecRich_5000_ASV_Y1_10", -"ch_feces_Shannon_5000_ASV_Y1") 
+  select(-"ch_feces_SpecRich_5000_ASV_std_Y1_10", -"ch_feces_Shannon_5000_ASV_std_Y1") 
 test_expo_taxa <- lapply(test_expo_taxa, function(x) { var_lab(x) <- NULL; return(x) })
 test_expo_taxa <- as.data.frame(test_expo_taxa)
 cor_mixed_table_expo_taxa <- cor_mixed(data = test_expo_taxa)
@@ -169,8 +171,8 @@ rm(test_expo_taxa, test_expo_outcomes,
 # Running linear regressions ----
 ## adapation des covariables selon l'outcome
 covariates_CBCL <- c("ch_age_CBCL_Y2", covariates)                    
-covariates_IQ <- c("ch_age_IQ_Y3", covariates)
 covariates_SRS_BRIEF <- c("ch_age_SRS_BRIEFP_Y3", covariates)
+covariates_IQ <- covariates   # les variables WPPSI sont déjà standardisées sur l'âge et le neuropsychologue
 
 covariates_map <- list(
   CBCL = covariates_CBCL,
@@ -186,18 +188,18 @@ names(tbls_by_outcome_multi) <- outcomes
 for (outcome in outcomes) {
   # Sélection des covariables appropriées
   if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
-    covariates <- covariates_map$CBCL
+    covars <- covariates_map$CBCL
   } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
-    covariates <- covariates_map$SRS_BRIEF
-  } else if (outcome %in% c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")) {
-    covariates <- covariates_map$IQ
+    covars <- covariates_map$SRS_BRIEF
+  } else if (outcome %in% c("ch_WPPSI_verbal_comprehension_cor_Y3", "ch_WPPSI_visuospatiale_cor_Y3", "ch_WPPSI_work_memory_cor_Y3", "ch_WPPSI_total_cor_Y3")) {
+    covars <- covariates_map$IQ
   }
   
   tbls_for_outcome_multi <- vector("list", length(explanatory))
   names(tbls_for_outcome_multi) <- explanatory
   
   for (exposure in explanatory) {                                               # running linear regression
-    terms <- c(exposure, covariates)
+    terms <- c(exposure, covars)
     formula <- reformulate(terms, response = outcome)
     model <- lm(formula, data = bdd_final_imp_1)
     # model <- with(data = bdd_final_imp, 
@@ -235,48 +237,33 @@ for (i in seq_along(tbls_by_outcome_multi)) {                                   
 rm(terms, formula, model,
    tbl, tbl_data,
    tbls_for_outcome_multi,
-   exposure, exposure_name, i, j, outcome, outcome_name)
-covariates <- c("po_w_kg_3cat",                                                 # redéfinition de covariates sinon il garde une variable age 
-                "po_he_3cat",
-                "mo_dipl_2cat",
-                "mo_age",
-                "mo_bmi_bepr_3cat",
-                "ch_sex",
-                "mo_par_2cat",
-                "ch_bf_duration_till48w_4cat",
-                "po_gd",
-                "po_delmod",
-                "ch_food_intro_Y1_3cat",
-                "mo_pets",
-                "ch_antibio_Y1_2cat",
-                "home_total_y3",              
-                "mo_hadtotscore_grt3_imp",
-                "mo_tob_gr_anyt_yn_n2",
-                "ch_tabacco_passive_up_to_Y1",
-                "ch_care_main_12m_opt2_2c")
+   exposure, exposure_name, i, j, outcome, outcome_name, 
+   covars)
 
-table_multi <-                                                                         # Ajout des correspondances taxonomiques 
+
+table_multi <-                                                                  # Ajout des correspondances taxonomiques 
   left_join(table_multi, corres, by = "Exposure") %>%
-  select(Phyla_corres, Class_corres, Order_corres, Family_corres, everything())
+  select(Phyla_corres, Class_corres, Order_corres, Family_corres, Genera_corres, everything())
 rm(corres)
 
 table_multi <- table_multi %>%
   select(Outcome, 
-         Phyla_corres, Class_corres, Order_corres, Family_corres,
-         `Gut microbiota parameters` = Exposure, 
+         Phyla_corres, Class_corres, Order_corres, Family_corres, Genera_corres,
+         Exposure, 
          Beta = "**Beta**", 
          "95% CI" = "**95% CI**",
          "p-value" = "**p-value**", 
          "Characteristic" = "**Characteristic**") %>%
   mutate(
+    `Gut microbiota parameters` = ifelse(!is.na(Genera_corres), Genera_corres, Exposure),
     `Gut microbiota parameters` = 
       fct_recode(`Gut microbiota parameters`, 
-                 "Firmicutes" = "ch_feces_rel_p1_Y1_10",
-                 "Actinobacteria" = "ch_feces_rel_p2_Y1_10",
-                 "Bacteroidetes" = "ch_feces_rel_p3_Y1_10",
-                 "Proteobacteria" = "ch_feces_rel_p4_Y1_10",
-                 "Shannon diversity" = "ch_feces_Shannon_5000_ASV_Y1",
-                 "Specific richness" = "ch_feces_SpecRich_5000_ASV_Y1_10",
+                 "Firmicutes" = "ch_feces_rel_p1_std_Y1_10",
+                 "Actinobacteria" = "ch_feces_rel_p2_std_Y1_10",
+                 "Bacteroidetes" = "ch_feces_rel_p3_std_Y1_10",
+                 "Proteobacteria" = "ch_feces_rel_p4_std_Y1_10",
+                 "Shannon diversity" = "ch_feces_Shannon_5000_ASV_std_Y1",
+                 "Specific richness" = "ch_feces_SpecRich_5000_ASV_std_Y1_10",
                  "Clostridium IV" = "Clostridium_IV",
                   "Clostridium sensu stricto" = "Clostridium_sensu_stricto",
                   "Clostridium XlVa" = "Clostridium_XlVa",
@@ -313,10 +300,10 @@ table_multi <- table_multi %>%
                   "Externalizing CBCL score at 2 years" = "ch_cbclextscore_y2",
                   "Internalizing CBCL score at 2 years" = "ch_cbclintscore_y2",
                   "Total SRS score at 3 years" = "ch_SRStotal_y3",
-                  "Total WPPSI score at 3 years" = "ch_total_IQ_Y3",
-                  "Verbal comprehension WPPSI score at 3 years" = "ch_verbal_comprehension_IQ_Y3",
-                  "Visuospatiale WPPSI score at 3 years" = "ch_visuospatiale_IQ_Y3",
-                  "Work memory WPPSI score at 3 years" = "ch_work_memory_IQ_Y3"),
+                  "Total WPPSI score at 3 years" = "ch_WPPSI_total_cor_Y3",
+                  "Verbal comprehension WPPSI score at 3 years" = "ch_WPPSI_verbal_comprehension_cor_Y3",
+                  "Visuospatiale WPPSI score at 3 years" = "ch_WPPSI_visuospatiale_cor_Y3",
+                  "Work memory WPPSI score at 3 years" = "ch_WPPSI_work_memory_cor_Y3"),
     Outcome = 
       fct_relevel(Outcome,
                   "Internalizing CBCL score at 2 years", "Externalizing CBCL score at 2 years",
@@ -344,12 +331,11 @@ table_multi <- table_multi %>%
     Phyla_corres, Class_corres, Order_corres, Family_corres,
     Outcome, 
     `Gut microbiota parameters`,
+    Exposure, 
     Beta, sens_beta, 
     "95% CI", lower_CI, upper_CI, 
     "p-value", p_value_shape, 
-    "q-value", q_value_shape)
-
-table_multi <- table_multi %>%
+    "q-value", q_value_shape) %>%
   mutate(
     improved_neuro = 
       case_when(Outcome %in% c("Verbal comprehension WPPSI score at 3 years",
@@ -398,7 +384,6 @@ table_1 <- bdd %>%
                   home_total_y3 ~ 0, 
                   mo_hadtotscore_grt3_imp ~ 0, 
                   ch_age_CBCL_Y2 ~ 0, 
-                  ch_age_IQ_Y3 ~ 0, 
                   ch_age_SRS_BRIEFP_Y3 ~ 0)) %>%
   add_p(pvalue_fun = function(x) formatC(x, format = "f", digits = 3)) %>%
   bold_labels() %>%
@@ -410,18 +395,18 @@ table_2_long <-
               lapply(tbls_by_outcome_multi, function(tbl_list) {
                 tbl_merge(
                   list(
-                    tbl_list[[1]] %>% add_n(),   # correspond à ch_feces_SpecRich_5000_ASV_Y1_10
-                    tbl_list[[2]] %>% add_n()),  # correspond àch_feces_Shannon_5000_ASV_Y1
+                    tbl_list$ch_feces_SpecRich_5000_ASV_std_Y1_10 %>% add_n(),   
+                    tbl_list$ch_feces_Shannon_5000_ASV_std_Y1 %>% add_n()),  
                   tab_spanner = c("**Specific richness**", "**Shannon diversity**"))}),
             group_header = spanner_names)
 
 table_2_large <- 
   tbl_stack(tbls = list(
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[1]]),  # correspond à ch_feces_SpecRich_5000_ASV_Y1_10
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]]$ch_feces_SpecRich_5000_ASV_std_Y1_10),  
       tab_spanner = spanner_names),
     tbl_merge( 
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[2]]),  # correspond àch_feces_Shannon_5000_ASV_Y1
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]]$ch_feces_Shannon_5000_ASV_std_Y1),  
       tab_spanner = spanner_names)))
 
 table_2 <- list(table_2_long = table_2_long, 
@@ -436,10 +421,10 @@ table_4_long <-
   tbl_stack(tbls =
               lapply(tbls_by_outcome_multi, function(tbl_list) {
                 tbl_merge(
-                  list(tbl_list[[3]] %>% add_n(),   # correspond à ch_feces_rel_p1_Y1_10 (Firmicutes)
-                       tbl_list[[4]] %>% add_n(),   # correspond à ch_feces_rel_p2_Y1_10 (Actinobacteria)
-                       tbl_list[[5]] %>% add_n(),   # correspond à ch_feces_rel_p3_Y1_10 (Bacteroidetes)
-                       tbl_list[[6]] %>% add_n()),  # correspond à ch_feces_rel_p4_Y1_10 (Proteobacteria)
+                  list(tbl_list$ch_feces_rel_p1_std_Y1_10 %>% add_n(),   # correspond Firmicutes
+                       tbl_list$ch_feces_rel_p2_std_Y1_10 %>% add_n(),   # correspond Actinobacteria
+                       tbl_list$ch_feces_rel_p3_std_Y1_10 %>% add_n(),   # correspond Bacteroidetes
+                       tbl_list$ch_feces_rel_p4_std_Y1_10 %>% add_n()),  # correspond Proteobacteria
                   tab_spanner = c("**Firmicutes**", 
                                   "**Actinobacteria**", 
                                   "**Bacteroidetes**", 
@@ -449,16 +434,16 @@ table_4_long <-
 table_4_large <- 
   tbl_stack(tbls = list(
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[3]]),  # correspond à ch_feces_rel_p1_Y1_10 (Firmicutes)
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]]$ch_feces_rel_p1_std_Y1_10),  # correspond à Firmicutes
       tab_spanner = spanner_names),
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[4]]),  # correspond à ch_feces_rel_p2_Y1_10 (Actinobacteria)
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]]$ch_feces_rel_p2_std_Y1_10),  # correspond à Actinobacteria
       tab_spanner = spanner_names),
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[5]]),  # correspond à ch_feces_rel_p3_Y1_10 (Bacteroidetes)
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]]$ch_feces_rel_p3_std_Y1_10),  # correspond à Bacteroidetes
       tab_spanner = spanner_names),
     tbl_merge(
-      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]][[6]]),  # correspond à ch_feces_rel_p4_Y1_10 (Proteobacteria)
+      tbls = lapply(1:length(tbls_by_outcome_multi), function(i) tbls_by_outcome_multi[[i]]$ch_feces_rel_p4_std_Y1_10),  # correspond à Proteobacteria
       tab_spanner = spanner_names)))
 
 table_4 <- list(table_4_long = table_4_long, 
@@ -671,7 +656,7 @@ figure_4 <- table_multi %>%
   ) 
 
 figure_4
-ggsave("4_output/fig.4 forest_plot_genera.tiff", 
+ggsave("4_output/fig.4 forest_plot_genera_28_04_2024.tiff", 
        figure_4, 
        device = "tiff",
        units = "cm",
@@ -688,7 +673,7 @@ table_S1 <- descrip_num(data = bdd,
                                  "ch_feces_rel_p2_Y1",
                                  "ch_feces_rel_p3_Y1",
                                  "ch_feces_rel_p4_Y1",
-                                 genera_linear_complet))
+                                 genera_var_names_raw))
 #write.xlsx(table_S1, file = "4_output/Table_S1.xlsx")
 
 ### Table S2: Distribution neurodevelopment ----
@@ -747,25 +732,6 @@ model_covars <- function(var_outcome, var_age, covars, data) {
   return(tbl_model)
 }
 
-covariates <- c("po_w_kg_3cat",                                                 # redéfinition de covariates sinon il garde une variable age 
-                "po_he_3cat",
-                "mo_dipl_2cat",
-                "mo_age",
-                "mo_bmi_bepr_3cat",
-                "ch_sex",
-                "mo_par_2cat",
-                "ch_bf_duration_till48w_4cat",
-                "po_gd",
-                "po_delmod",
-                "ch_food_intro_Y1_3cat",
-                "mo_pets",
-                "ch_antibio_Y1_2cat",
-                "home_total_y3",              
-                "mo_hadtotscore_grt3_imp",
-                "mo_tob_gr_anyt_yn_n2",
-                "ch_tabacco_passive_up_to_Y1",
-                "ch_care_main_12m_opt2_2c")
-
 table_S3 <- tbl_merge(
   tbls = list(
     model_covars(var_outcome = "ch_cbclintscore_y2", var_age = "ch_age_CBCL_Y2", covars = covariates, data = bdd_final_imp_1),
@@ -776,10 +742,10 @@ table_S3 <- tbl_merge(
     model_covars(var_outcome = "ch_briefpemocontrol_y3", var_age = "ch_age_SRS_BRIEFP_Y3", covars = covariates, data = bdd_final_imp_1),
     model_covars(var_outcome = "ch_briefpworkmemo_y3", var_age = "ch_age_SRS_BRIEFP_Y3", covars = covariates, data = bdd_final_imp_1),
     model_covars(var_outcome = "ch_briefpplan_y3", var_age = "ch_age_SRS_BRIEFP_Y3", covars = covariates, data = bdd_final_imp_1),
-    model_covars(var_outcome = "ch_verbal_comprehension_IQ_Y3", var_age = "ch_age_IQ_Y3", covars = covariates, data = bdd_final_imp_1),
-    model_covars(var_outcome = "ch_visuospatiale_IQ_Y3", var_age = "ch_age_IQ_Y3", covars = covariates, data = bdd_final_imp_1),
-    model_covars(var_outcome = "ch_work_memory_IQ_Y3", var_age = "ch_age_IQ_Y3", covars = covariates, data = bdd_final_imp_1), 
-    model_covars(var_outcome = "ch_total_IQ_Y3", var_age = "ch_age_IQ_Y3", covars = covariates, data = bdd_final_imp_1)),
+    model_covars(var_outcome = "ch_WPPSI_verbal_comprehension_cor_Y3", var_age = "ch_WPPSI_psy_Y3", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_WPPSI_visuospatiale_cor_Y3", var_age = "ch_WPPSI_psy_Y3", covars = covariates, data = bdd_final_imp_1),
+    model_covars(var_outcome = "ch_WPPSI_work_memory_cor_Y3", var_age = "ch_WPPSI_psy_Y3", covars = covariates, data = bdd_final_imp_1), 
+    model_covars(var_outcome = "ch_WPPSI_total_cor_Y3", var_age = "ch_WPPSI_psy_Y3", covars = covariates, data = bdd_final_imp_1)),
   tab_spanner = spanner_names)
 
 
@@ -793,8 +759,8 @@ table_S4 <- tbl_stack(
 
 ## Table S5: Sensitivity analysis - effect of the rarefaction threshold ----
 # Sensitivity analysis - Adjusted associations between the gut microbiota α-diversity at different sequencing depths and the neurodevelopment. 
-alpha_vec <- c("ch_feces_SpecRich_5000_ASV_Y1_10", "ch_feces_SpecRich_10000_ASV_Y1_10", 
-               "ch_feces_Shannon_5000_ASV_Y1", "ch_feces_Shannon_10000_ASV_Y1")
+alpha_vec <- c("ch_feces_SpecRich_5000_ASV_std_Y1_10", "ch_feces_SpecRich_10000_ASV_std_Y1_10", 
+               "ch_feces_Shannon_5000_ASV_std_Y1", "ch_feces_Shannon_10000_ASV_std_Y1")
 table_S5 <- vector("list", length(outcomes))
 names(table_S5) <- outcomes
 
@@ -805,7 +771,7 @@ for (outcome in outcomes) {
     covariates <- covariates_map$CBCL
   } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
     covariates <- covariates_map$SRS_BRIEF
-  } else if (outcome %in% c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")) {
+  } else if (outcome %in% c("ch_WPPSI_verbal_comprehension_cor_Y3", "ch_WPPSI_visuospatiale_cor_Y3", "ch_WPPSI_work_memory_cor_Y3", "ch_WPPSI_total_cor_Y3")) {
     covariates <- covariates_map$IQ
   }
   
@@ -963,10 +929,11 @@ table_S6 <- tbl_stack(table_S6)
 
 rm(covariates_sensi_home, i, tbl, prep_table_S6)
 
-## Table S7: Sensitivity analysis – effect of the age variable on WPSSI Y3 -----
+## Table S7: Sensitivity analysis – effect of the psy variable on WPSSI Y3 -----
 ## Sensitivity analysis – Effects of the age of assessment covariate on the WPSSI outcomes assessed at 3 years.
 
-iq_vec <- c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")
+iq_vec <- c("ch_WPPSI_verbal_comprehension_cor_Y3", "ch_WPPSI_visuospatiale_cor_Y3", "ch_WPPSI_work_memory_cor_Y3", "ch_WPPSI_total_cor_Y3")
+covariates_sensi_psy <- c("ch_WPPSI_psy_Y3", covariates)
 
 # Initialisation de la liste pour stocker les résultats
 prep_table_S7 <- list()
@@ -977,12 +944,11 @@ for (outcome in iq_vec) {
   
   for (explicative in explanatory) {
     # Construction de la formule
-    formula <- as.formula(paste(outcome, "~", explicative, "+", paste(covariates, collapse = "+")))
+    formula <- as.formula(paste(outcome, "~", explicative, "+", paste(covariates_sensi_psy, collapse = "+")))
     
     # Création du modèle de régression linéaire
     model <- lm(formula, data = bdd_final_imp_1)
     
-    # Création du tbl_regression sans les covariates_sensi_home
     tbl <-                                                                      
       tbl_regression(
         model, 
@@ -1038,7 +1004,7 @@ table_S7 <- tbl_stack(table_S7)
 rm(tbl, prep_table_S7)
 
 
-## Table S8: Sensitivity analysis – effect of removing the predictors of the exposure -----
+## Table S8: Sensitivity analysis – effect of the predictors of the exposure -----
 ## Sensitivity analysis – Effects of the age of assessment covariate on the WPSSI outcomes assessed at 3 years.
 sensi_covariates <- c("po_w_kg_3cat", 
                       "po_he_3cat", 
@@ -1061,7 +1027,7 @@ sensi_covariates <- c("po_w_kg_3cat",
 
 sensi_covariates_CBCL <- c("ch_age_CBCL_Y2", sensi_covariates)     
 sensi_ovariates_SRS_BRIEF <- c("ch_age_SRS_BRIEFP_Y3", sensi_covariates)               
-sensi_covariates_IQ <- c("ch_age_IQ_Y3", sensi_covariates)
+sensi_covariates_IQ <- sensi_covariates
 
 sensi_covariates_map <- list(
   CBCL = sensi_covariates_CBCL,
@@ -1079,7 +1045,7 @@ for (outcome in outcomes) {
     covariates <- sensi_covariates_map$CBCL
   } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
     covariates <- sensi_covariates_map$SRS_BRIEF
-  } else if (outcome %in% c("ch_verbal_comprehension_IQ_Y3", "ch_visuospatiale_IQ_Y3", "ch_work_memory_IQ_Y3", "ch_total_IQ_Y3")) {
+  } else if (outcome %in% c("ch_WPPSI_verbal_comprehension_cor_Y3", "ch_WPPSI_visuospatiale_cor_Y3", "ch_WPPSI_work_memory_cor_Y3", "ch_WPPSI_total_cor_Y3")) {
     covariates <- sensi_covariates_map$IQ
   }
   
@@ -1199,6 +1165,9 @@ rm(
   sensi_covariates_CBCL, sensi_covariates_IQ, sensi_ovariates_SRS_BRIEF, sensi_covariates_map)
 
 
+## Table S9: Sensitivity analysis - non linear relation ? -----
+## Sensitivity analysis – Effects of tertiles of gut microbiota parameters on the neurodeveloppment.
+
 
 # Additional figures ----
 ## Figure S1: DAG ----
@@ -1241,8 +1210,8 @@ dev.off()
 ## Figure SX: correlations gut microbiota parameters ----
 ## xx correlations between gut microbiota parameters (n between X and X). 
 figure_SX <- bdd %>% 
-  select(all_of(genera_linear_complet)) 
-colnames(figure_S2) <- genera_linear
+  select(all_of(genera_var_names)) 
+colnames(figure_S2) <- genera_var_labels
 figure_S2 <- figure_S2 %>%
   rename(
     "Escherichia and Shigella" = Escherichia_Shigella,
