@@ -665,7 +665,7 @@ ggsave("4_output/fig.4 forest_plot_genera_28_04_2024.tiff",
        width = 25)
 
 # Additional tables ----
-### Table S1: Distribution gut microbiota parameters ----
+## Table S1: Distribution gut microbiota parameters ----
 table_S1 <- descrip_num(data = bdd, 
                         vars = c("ch_feces_SpecRich_5000_ASV_Y1",
                                  "ch_feces_Shannon_5000_ASV_Y1",
@@ -752,7 +752,7 @@ table_S3 <- tbl_merge(
 ## Table S4: Associations genera and neurodev ----
 # Adjusted associations between the 46 most abundant genera in the child gut microbiota at one year and the neurodevelopment (n between X and X).
 table_S4 <- tbl_stack(
-  tbls = lapply(3:48, function(j) {  # tbl 3 à 48 : correspond aux analyses de genres
+  tbls = lapply(7:52, function(j) {  # tbl 7 à 52 : correspond aux analyses de genres
     tbl_merge(
       tbls = lapply(tbls_by_outcome_multi, function(i) i[[j]]),
       tab_spanner = spanner_names)}))
@@ -768,18 +768,18 @@ names(table_S5) <- outcomes
 for (outcome in outcomes) {
   # Sélection des covariables appropriées
   if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
-    covariates <- covariates_map$CBCL
+    covars <- covariates_map$CBCL
   } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
-    covariates <- covariates_map$SRS_BRIEF
+    covars <- covariates_map$SRS_BRIEF
   } else if (outcome %in% c("ch_WPPSI_verbal_comprehension_cor_Y3", "ch_WPPSI_visuospatiale_cor_Y3", "ch_WPPSI_work_memory_cor_Y3", "ch_WPPSI_total_cor_Y3")) {
-    covariates <- covariates_map$IQ
+    covars <- covariates_map$IQ
   }
   
   tbls_for_outcome_multi <- vector("list", length(alpha_vec))
   names(tbls_for_outcome_multi) <- alpha_vec
   
   for (exposure in alpha_vec) {                                               # running linear regression
-    terms <- c(exposure, covariates)
+    terms <- c(exposure, covars)
     formula <- reformulate(terms, response = outcome)
     model <- lm(formula, data = bdd_final_imp_1_sensi_seuil)
     # model <- with(data = bdd_final_imp, 
@@ -805,39 +805,27 @@ for (outcome in outcomes) {
 
 table_S5_large <- tbl_stack(
   tbls = list(
-    tbl_merge(tbls = lapply(tbls_by_outcome_multi, function(x) x[[1]]), tab_spanner = spanner_names),  # analyse principale seuil 5000
-    tbl_merge(tbls = lapply(table_S5, function(x) x[[1]]), tab_spanner = spanner_names),               # analyse de sensibilité seuil 5000 pour n sur seuil 10000
-    tbl_merge(tbls = lapply(table_S5, function(x) x[[2]]), tab_spanner = spanner_names),               # analyse de sensibilité seuil 10000 pour n sur seuil 10000
-    tbl_merge(tbls = lapply(tbls_by_outcome_multi, function(x) x[[2]]), tab_spanner = spanner_names),  # analyse principale
-    tbl_merge(tbls = lapply(table_S5, function(x) x[[3]]), tab_spanner = spanner_names),               # analyse de sensibilité seuil 5000 pour n sur seuil 10000
-    tbl_merge(tbls = lapply(table_S5, function(x) x[[4]]), tab_spanner = spanner_names)))              # analyse de sensibilité seuil 10000 pour n sur seuil 10000
+    tbl_merge(tbls = lapply(tbls_by_outcome_multi, function(x) x$ch_feces_SpecRich_5000_ASV_std_Y1_10), # analyse principale seuil 5000
+              tab_spanner = spanner_names),  
+    tbl_merge(tbls = lapply(table_S5, function(x) x$ch_feces_SpecRich_5000_ASV_std_Y1_10),              # analyse de sensibilité seuil 5000 pour n sur seuil 10000
+              tab_spanner = spanner_names),               
+    tbl_merge(tbls = lapply(table_S5, function(x) x$ch_feces_SpecRich_10000_ASV_std_Y1_10),             # analyse de sensibilité seuil 10000 pour n sur seuil 10000
+              tab_spanner = spanner_names),               
+    tbl_merge(tbls = lapply(tbls_by_outcome_multi, function(x) x$ch_feces_Shannon_5000_ASV_std_Y1),     # analyse principale
+              tab_spanner = spanner_names),  
+    tbl_merge(tbls = lapply(table_S5, function(x) x$ch_feces_Shannon_5000_ASV_std_Y1),                  # analyse de sensibilité seuil 5000 pour n sur seuil 10000
+              tab_spanner = spanner_names),               
+    tbl_merge(tbls = lapply(table_S5, function(x) x$ch_feces_Shannon_10000_ASV_std_Y1),                 # analyse de sensibilité seuil 10000 pour n sur seuil 10000
+              tab_spanner = spanner_names)))              
 
-rm(terms, formula, model, exposure, outcome, alpha_vec, tbl)
-covariates <- c("po_w_kg_3cat",                                                 # redéfinition de covariates sans variable age 
-                "po_he_3cat",
-                "mo_dipl_2cat",
-                "mo_age",
-                "mo_bmi_bepr_3cat",
-                "ch_sex",
-                "mo_par_2cat",
-                "ch_bf_duration_till48w_4cat",
-                "po_gd",
-                "po_delmod",
-                "ch_food_intro_Y1_3cat",
-                "mo_pets",
-                "ch_antibio_Y1_2cat",
-                "home_total_y3",              
-                "mo_hadtotscore_grt3_imp",
-                "mo_tob_gr_anyt_yn_n2",
-                "ch_tabacco_passive_up_to_Y1",
-                "ch_care_main_12m_opt2_2c")
+rm(terms, formula, model, exposure, outcome, alpha_vec, tbl, covars, i)
 
 merge_tbls_function_rich <- function(index, tbls_by_outcome_multi, table_S5) {
   tbl_merge(
     tbls = list(
-      tbls_by_outcome_multi[[index]][[1]] %>% add_n(), # Premier tbl_regression de tbls_by_outcome_multi
-      table_S5[[index]][[1]],              # Premier tbl_regression de table_S5
-      table_S5[[index]][[2]]               # Deuxième tbl_regression de table_S5
+      tbls_by_outcome_multi[[index]]$ch_feces_SpecRich_5000_ASV_std_Y1_10 %>% add_n(), 
+      table_S5[[index]]$ch_feces_SpecRich_5000_ASV_std_Y1_10,             
+      table_S5[[index]]$ch_feces_SpecRich_10000_ASV_std_Y1_10             
     ), 
     tab_spanner = c("**Threshold 5,000 (n=350)**","**Threshold 5,000 (n=339)**", "**Threshold 10,000 (n=339)**")
   )
@@ -846,9 +834,9 @@ merge_tbls_function_rich <- function(index, tbls_by_outcome_multi, table_S5) {
 merge_tbls_function_sha <- function(index, tbls_by_outcome_multi, table_S5) {
   tbl_merge(
     tbls = list(
-      tbls_by_outcome_multi[[index]][[2]] %>% add_n(), # Premier tbl_regression de tbls_by_outcome_multi
-      table_S5[[index]][[3]],              # Premier tbl_regression de table_S5
-      table_S5[[index]][[4]]               # Deuxième tbl_regression de table_S5
+      tbls_by_outcome_multi[[index]]$ch_feces_SpecRich_5000_ASV_std_Y1_10 %>% add_n(), # Premier tbl_regression de tbls_by_outcome_multi
+      table_S5[[index]]$ch_feces_SpecRich_5000_ASV_std_Y1_10,              # Premier tbl_regression de table_S5
+      table_S5[[index]]$ch_feces_SpecRich_10000_ASV_std_Y1_10               # Deuxième tbl_regression de table_S5
     ), 
     tab_spanner = c("**Threshold 5,000 (n=350)**","**Threshold 5,000 (n=339)**", "**Threshold 10,000 (n=339)**")
   )
@@ -913,10 +901,10 @@ table_S6 <- list()
 for (i in 1:52) {
   tbl <- tbl_merge(
     list(
-      tbls_by_outcome_multi[[1]][[i]], # Premier tbl_regression de la première liste de "tbls_by_outcome_multi"
-      prep_table_S6[[1]][[i]], # Premier tbl_regression de la première liste de "table_S6"
-      tbls_by_outcome_multi[[2]][[i]], # Premier tbl_regression de la deuxième liste de "tbls_by_outcome_multi"
-      prep_table_S6[[2]][[i]] # Premier tbl_regression de la deuxième liste de "table_S6"
+      tbls_by_outcome_multi$ch_cbclintscore_y2[[i]], # Premier tbl_regression de la première liste de "tbls_by_outcome_multi"
+      prep_table_S6$ch_cbclintscore_y2[[i]], # Premier tbl_regression de la première liste de "table_S6"
+      tbls_by_outcome_multi$ch_cbclextscore_y2[[i]], # Premier tbl_regression de la deuxième liste de "tbls_by_outcome_multi"
+      prep_table_S6$ch_cbclextscore_y2[[i]] # Premier tbl_regression de la deuxième liste de "table_S6"
     ),
     tab_spanner = c("**Internalizing CBCL score at 2 years, adjusted for HOME variable (main analysis)**", 
                     "**Internalizing CBCL score at 2 years, not adjusted for HOME variable**", 
@@ -932,19 +920,18 @@ rm(covariates_sensi_home, i, tbl, prep_table_S6)
 ## Table S7: Sensitivity analysis – effect of the psy variable on WPSSI Y3 -----
 ## Sensitivity analysis – Effects of the age of assessment covariate on the WPSSI outcomes assessed at 3 years.
 
-iq_vec <- c("ch_WPPSI_verbal_comprehension_cor_Y3", "ch_WPPSI_visuospatiale_cor_Y3", "ch_WPPSI_work_memory_cor_Y3", "ch_WPPSI_total_cor_Y3")
-covariates_sensi_psy <- c("ch_WPPSI_psy_Y3", covariates)
+iq_vec_sensi <- c("ch_WPPSI_verbal_comprehension_Y3", "ch_WPPSI_visuospatiale_Y3", "ch_WPPSI_work_memory_Y3", "ch_WPPSI_total_Y3")
 
 # Initialisation de la liste pour stocker les résultats
 prep_table_S7 <- list()
 
-for (outcome in iq_vec) {
+for (outcome in iq_vec_sensi) {
   # Initialisation de la sous-liste pour stocker les résultats pour chaque outcome
   table_S7_for_outcome <- list()
   
   for (explicative in explanatory) {
     # Construction de la formule
-    formula <- as.formula(paste(outcome, "~", explicative, "+", paste(covariates_sensi_psy, collapse = "+")))
+    formula <- as.formula(paste(outcome, "~", explicative, "+", paste(covariates, collapse = "+")))
     
     # Création du modèle de régression linéaire
     model <- lm(formula, data = bdd_final_imp_1)
@@ -965,7 +952,7 @@ for (outcome in iq_vec) {
   
   prep_table_S7[[outcome]] <- table_S7_for_outcome    # Stockage des résultats pour chaque outcome
 }
-rm(iq_vec, outcome, explicative, formula, model, tbl, table_S7_for_outcome)
+rm(iq_vec_sensi, outcome, explicative, formula, model, tbl, table_S7_for_outcome)
 
 
 table_S7 <- list()
@@ -973,31 +960,31 @@ table_S7 <- list()
 for (i in 1:52) {
   tbl <- tbl_merge(
     list(
-      tbls_by_outcome_multi[[9]][[i]], # neuvième tbl_regression de la première liste de "tbls_by_outcome_multi"
-      prep_table_S7[[1]][[i]], # Premier tbl_regression de la première liste de "table_S7"
+      tbls_by_outcome_multi$ch_WPPSI_verbal_comprehension_cor_Y3[[i]], 
+      prep_table_S7$ch_WPPSI_verbal_comprehension_Y3[[i]], 
       
-      tbls_by_outcome_multi[[10]][[i]], # dixième tbl_regression de la deuxième liste de "tbls_by_outcome_multi"
-      prep_table_S7[[2]][[i]], # Premier tbl_regression de la deuxième liste de "table_S7"
+      tbls_by_outcome_multi$ch_WPPSI_visuospatiale_cor_Y3[[i]], 
+      prep_table_S7$ch_WPPSI_visuospatiale_Y3[[i]], 
       
-      tbls_by_outcome_multi[[11]][[i]], # onzième tbl_regression de la troisième liste de "tbls_by_outcome_multi"
-      prep_table_S7[[3]][[i]], # Premier tbl_regression de la troisième liste de "table_S7"
+      tbls_by_outcome_multi$ch_WPPSI_work_memory_cor_Y3[[i]], 
+      prep_table_S7$ch_WPPSI_work_memory_Y3[[i]], 
       
-      tbls_by_outcome_multi[[12]][[i]], # douzième tbl_regression de la quatrième liste de "tbls_by_outcome_multi"
-      prep_table_S7[[4]][[i]] # Premier tbl_regression de la quatrième liste de "table_S7"
+      tbls_by_outcome_multi$ch_WPPSI_total_cor_Y3[[i]], 
+      prep_table_S7$ch_WPPSI_total_Y3[[i]] 
     ),
-    tab_spanner = c("**Verbal comprehension WPPSI score at 3 years, adjusted for age at neurodevelopmental assessment (main analysis)**", 
-                    "**Verbal comprehension WPPSI score at 3 years, not adjusted for age at neurodevelopmental assessment**", 
+    tab_spanner = c("**Verbal comprehension WPPSI score at 3 years, adjusted for neuropsychologist (main analysis)**", 
+                    "**Verbal comprehension WPPSI score at 3 years, not adjusted for neuropsychologist**", 
                     
-                    "**Visuospatial WPPSI score at 3 years, adjusted for age at neurodevelopmental assessment (main analysis)**", 
-                    "**Visuospatial WPPSI score at 3 years, not adjusted for age at neurodevelopmental assessment**", 
+                    "**Visuospatial WPPSI score at 3 years, adjusted for neuropsychologist (main analysis)**", 
+                    "**Visuospatial WPPSI score at 3 years, not adjusted for neuropsychologist**", 
                     
-                    "**Work memory WPPSI score at 3 years, adjusted for age at neurodevelopmental assessment (main analysis)**", 
-                    "**Work memory WPPSI score at 3 years, not adjusted for age at neurodevelopmental assessment**", 
+                    "**Work memory WPPSI score at 3 years, adjusted for neuropsychologist (main analysis)**", 
+                    "**Work memory WPPSI score at 3 years, not adjusted for neuropsychologist**", 
                     
-                    "**Total WPPSI score at 3 years, adjusted for age at neurodevelopmental assessment (main analysis)**", 
-                    "**Total WPPSI score at 3 years, not adjusted for age at neurodevelopmental assessment**")
+                    "**Total WPPSI score at 3 years, adjusted for neuropsychologist (main analysis)**", 
+                    "**Total WPPSI score at 3 years, not adjusted for neuropsychologist**")
   )
-  table_S7[[i]] <- tbl   # Ajout de la table fusionnée à la liste
+  table_S7[[i]] <- tbl   
 }
 table_S7 <- tbl_stack(table_S7)
 
@@ -1006,6 +993,8 @@ rm(tbl, prep_table_S7)
 
 ## Table S8: Sensitivity analysis – effect of the predictors of the exposure -----
 ## Sensitivity analysis – Effects of the age of assessment covariate on the WPSSI outcomes assessed at 3 years.
+sensi_explanatory <- explanatory %>% str_replace_all("_std", "")
+
 sensi_covariates <- c("po_w_kg_3cat", 
                       "po_he_3cat", 
                       "mo_dipl_2cat", 
@@ -1034,26 +1023,24 @@ sensi_covariates_map <- list(
   SRS_BRIEF = sensi_ovariates_SRS_BRIEF,
   IQ = sensi_covariates_IQ)
 
-## Création d'une liste pour stocker les tableaux par outcome
-prep_table_S8 <- vector("list", length(outcomes))
-names(prep_table_S8) <- outcomes
+### standardized on technical factors & not adjusted for the exposure’s predictors ----
+prep_table_S8_a <- vector("list", length(outcomes))
+names(prep_table_S8_a) <- outcomes
 
-# Boucle principale
-for (outcome in outcomes) {
-  # Sélection des covariables appropriées
-  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
-    covariates <- sensi_covariates_map$CBCL
+for (outcome in outcomes) {     
+  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {    # Sélection des covariables appropriées
+    covars <- sensi_covariates_map$CBCL
   } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
-    covariates <- sensi_covariates_map$SRS_BRIEF
+    covars <- sensi_covariates_map$SRS_BRIEF
   } else if (outcome %in% c("ch_WPPSI_verbal_comprehension_cor_Y3", "ch_WPPSI_visuospatiale_cor_Y3", "ch_WPPSI_work_memory_cor_Y3", "ch_WPPSI_total_cor_Y3")) {
-    covariates <- sensi_covariates_map$IQ
+    covars <- sensi_covariates_map$IQ
   }
   
-  tbls_for_outcome_multi_sensi <- vector("list", length(explanatory))
-  names(tbls_for_outcome_multi_sensi) <- explanatory
+  tbls_for_outcome_multi_sensi_a <- vector("list", length(explanatory))
+  names(tbls_for_outcome_multi_sensi_a) <- explanatory
   
   for (exposure in explanatory) {                                               # running linear regression
-    terms <- c(exposure, covariates)
+    terms <- c(exposure, covars)
     formula <- reformulate(terms, response = outcome)
     model <- lm(formula, data = bdd_final_imp_1)
     
@@ -1068,105 +1055,238 @@ for (outcome in outcomes) {
       bold_labels() %>%
       add_global_p(include = exposure, singular.ok = TRUE, keep = TRUE)
     
-    tbls_for_outcome_multi_sensi[[exposure]] <- tbl
+    tbls_for_outcome_multi_sensi_a[[exposure]] <- tbl
   }
-  prep_table_S8[[outcome]] <- tbls_for_outcome_multi_sensi
+  prep_table_S8_a[[outcome]] <- tbls_for_outcome_multi_sensi_a
 }
+rm(tbl)
 
+### not standardized on technical factors & not adjusted for the exposure’s predictors ----
+prep_table_S8_b <- vector("list", length(outcomes))
+names(prep_table_S8_b) <- outcomes
 
+for (outcome in outcomes) {     
+  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {    # Sélection des covariables appropriées
+    covars <- sensi_covariates_map$CBCL
+  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
+    covars <- sensi_covariates_map$SRS_BRIEF
+  } else if (outcome %in% c("ch_WPPSI_verbal_comprehension_cor_Y3", "ch_WPPSI_visuospatiale_cor_Y3", "ch_WPPSI_work_memory_cor_Y3", "ch_WPPSI_total_cor_Y3")) {
+    covars <- sensi_covariates_map$IQ
+  }
+  
+  tbls_for_outcome_multi_sensi_b <- vector("list", length(sensi_explanatory))
+  names(tbls_for_outcome_multi_sensi_b) <- sensi_explanatory
+  
+  for (exposure in sensi_explanatory) {                                            
+    terms <- c(exposure, covars)
+    formula <- reformulate(terms, response = outcome)
+    model <- lm(formula, data = bdd_final_imp_1)
+    
+    tbl <-                                                                      
+      tbl_regression(
+        model, 
+        include = exposure,
+        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+        pvalue_fun = custom_pvalue_fun,
+        exponentiate = FALSE) %>%
+      bold_p() %>%
+      bold_labels() %>%
+      add_global_p(include = exposure, singular.ok = TRUE, keep = TRUE)
+    
+    tbls_for_outcome_multi_sensi_b[[exposure]] <- tbl
+  }
+  prep_table_S8_b[[outcome]] <- tbls_for_outcome_multi_sensi_b
+}
+rm(tbl)
 
+### not standardized on technical factors & adjusted for the exposure’s predictors ----
+prep_table_S8_c <- vector("list", length(outcomes))
+names(prep_table_S8_c) <- outcomes
+
+for (outcome in outcomes) {     
+  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {    # Sélection des covariables appropriées
+    covars <- covariates_map$CBCL
+  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
+    covars <- covariates_map$SRS_BRIEF
+  } else if (outcome %in% c("ch_WPPSI_verbal_comprehension_cor_Y3", "ch_WPPSI_visuospatiale_cor_Y3", "ch_WPPSI_work_memory_cor_Y3", "ch_WPPSI_total_cor_Y3")) {
+    covars <- covariates_map$IQ
+  }
+  
+  tbls_for_outcome_multi_sensi_c <- vector("list", length(sensi_explanatory))
+  names(tbls_for_outcome_multi_sensi_c) <- sensi_explanatory
+  
+  for (exposure in sensi_explanatory) {                                            
+    terms <- c(exposure, covars)
+    formula <- reformulate(terms, response = outcome)
+    model <- lm(formula, data = bdd_final_imp_1)
+    
+    tbl <-                                                                      
+      tbl_regression(
+        model, 
+        include = exposure,
+        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+        pvalue_fun = custom_pvalue_fun,
+        exponentiate = FALSE) %>%
+      bold_p() %>%
+      bold_labels() %>%
+      add_global_p(include = exposure, singular.ok = TRUE, keep = TRUE)
+    
+    tbls_for_outcome_multi_sensi_c[[exposure]] <- tbl
+  }
+  prep_table_S8_c[[outcome]] <- tbls_for_outcome_multi_sensi_c
+}
+rm(tbl)
+
+### Assemblage avec l'analyse principale
 table_S8 <- list()
 
 for (i in 1:52) {
   tbl <- tbl_merge(
     list(
-      tbls_by_outcome_multi[[1]][[i]], 
-      prep_table_S8[[1]][[i]], 
+      tbls_by_outcome_multi$ch_cbclintscore_y2[[i]], 
+      prep_table_S8_a$ch_cbclintscore_y2[[i]], 
+      prep_table_S8_c$ch_cbclintscore_y2[[i]], 
+      prep_table_S8_b$ch_cbclintscore_y2[[i]], 
       
-      tbls_by_outcome_multi[[2]][[i]], 
-      prep_table_S8[[2]][[i]], 
+      tbls_by_outcome_multi$ch_cbclextscore_y2[[i]], 
+      prep_table_S8_a$ch_cbclextscore_y2[[i]], 
+      prep_table_S8_c$ch_cbclextscore_y2[[i]], 
+      prep_table_S8_b$ch_cbclextscore_y2[[i]], 
       
-      tbls_by_outcome_multi[[3]][[i]], 
-      prep_table_S8[[3]][[i]], 
+      tbls_by_outcome_multi$ch_SRStotal_y3[[i]], 
+      prep_table_S8_a$ch_SRStotal_y3[[i]],
+      prep_table_S8_c$ch_SRStotal_y3[[i]],
+      prep_table_S8_b$ch_SRStotal_y3[[i]],
       
-      tbls_by_outcome_multi[[4]][[i]], 
-      prep_table_S8[[4]][[i]], 
+      tbls_by_outcome_multi$ch_briefpinhibit_y3[[i]], 
+      prep_table_S8_a$ch_briefpinhibit_y3[[i]], 
+      prep_table_S8_c$ch_briefpinhibit_y3[[i]], 
+      prep_table_S8_b$ch_briefpinhibit_y3[[i]], 
       
-      tbls_by_outcome_multi[[5]][[i]], 
-      prep_table_S8[[5]][[i]], 
+      tbls_by_outcome_multi$ch_briefpshift_y3[[i]], 
+      prep_table_S8_a$ch_briefpshift_y3[[i]], 
+      prep_table_S8_c$ch_briefpshift_y3[[i]], 
+      prep_table_S8_b$ch_briefpshift_y3[[i]], 
       
-      tbls_by_outcome_multi[[6]][[i]], 
-      prep_table_S8[[6]][[i]], 
+      tbls_by_outcome_multi$ch_briefpemocontrol_y3[[i]], 
+      prep_table_S8_a$ch_briefpemocontrol_y3[[i]], 
+      prep_table_S8_c$ch_briefpemocontrol_y3[[i]], 
+      prep_table_S8_b$ch_briefpemocontrol_y3[[i]], 
       
-      tbls_by_outcome_multi[[7]][[i]], 
-      prep_table_S8[[7]][[i]], 
+      tbls_by_outcome_multi$ch_briefpworkmemo_y3[[i]], 
+      prep_table_S8_a$ch_briefpworkmemo_y3[[i]], 
+      prep_table_S8_c$ch_briefpworkmemo_y3[[i]], 
+      prep_table_S8_b$ch_briefpworkmemo_y3[[i]], 
       
-      tbls_by_outcome_multi[[8]][[i]], 
-      prep_table_S8[[8]][[i]], 
+      tbls_by_outcome_multi$ch_briefpplan_y3[[i]], 
+      prep_table_S8_a$ch_briefpplan_y3[[i]], 
+      prep_table_S8_c$ch_briefpplan_y3[[i]], 
+      prep_table_S8_b$ch_briefpplan_y3[[i]], 
       
-      tbls_by_outcome_multi[[9]][[i]], 
-      prep_table_S8[[9]][[i]], 
+      tbls_by_outcome_multi$ch_WPPSI_verbal_comprehension_cor_Y3[[i]], 
+      prep_table_S8_a$ch_WPPSI_verbal_comprehension_cor_Y3[[i]], 
+      prep_table_S8_c$ch_WPPSI_verbal_comprehension_cor_Y3[[i]], 
+      prep_table_S8_b$ch_WPPSI_verbal_comprehension_cor_Y3[[i]], 
       
-      tbls_by_outcome_multi[[10]][[i]], 
-      prep_table_S8[[10]][[i]], 
+      tbls_by_outcome_multi$ch_WPPSI_visuospatiale_cor_Y3[[i]], 
+      prep_table_S8_a$ch_WPPSI_visuospatiale_cor_Y3[[i]], 
+      prep_table_S8_c$ch_WPPSI_visuospatiale_cor_Y3[[i]], 
+      prep_table_S8_b$ch_WPPSI_visuospatiale_cor_Y3[[i]], 
       
-      tbls_by_outcome_multi[[11]][[i]], 
-      prep_table_S8[[11]][[i]], 
+      tbls_by_outcome_multi$ch_WPPSI_work_memory_cor_Y3[[i]], 
+      prep_table_S8_a$ch_WPPSI_work_memory_cor_Y3[[i]], 
+      prep_table_S8_c$ch_WPPSI_work_memory_cor_Y3[[i]], 
+      prep_table_S8_b$ch_WPPSI_work_memory_cor_Y3[[i]], 
       
-      tbls_by_outcome_multi[[12]][[i]], 
-      prep_table_S8[[12]][[i]]
+      tbls_by_outcome_multi$ch_WPPSI_total_cor_Y3[[i]], 
+      prep_table_S8_a$ch_WPPSI_total_cor_Y3[[i]],
+      prep_table_S8_c$ch_WPPSI_total_cor_Y3[[i]],
+      prep_table_S8_b$ch_WPPSI_total_cor_Y3[[i]]
     ),
-    tab_spanner = c("**Internalizing CBCL score at 2 years, main analysis**", 
-                    "**Internalizing CBCL score at 2 years, sensitivity analysis**", 
+    tab_spanner = c("**Internalizing CBCL score at 2 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Internalizing CBCL score at 2 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Internalizing CBCL score at 2 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Internalizing CBCL score at 2 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Externalizing CBCL score at 2 years, main analysis**", 
-                    "**Externalizing CBCL score at 2 years, sensitivity analysis**", 
+                    "**Externalizing CBCL score at 2 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Externalizing CBCL score at 2 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Externalizing CBCL score at 2 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Externalizing CBCL score at 2 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Total SRS score at 3 years, main analysis**", 
-                    "**Total SRS score at 3 years, sensitivity analysis**", 
+                    "**Total SRS score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Total SRS score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Total SRS score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Total SRS score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Inhibition BRIEF-P score at 3 years, main analysis**",
-                    "**Inhibition BRIEF-P score at 3 years, sensitivity analysis**",
+                    "**Inhibition BRIEF-P score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Inhibition BRIEF-P score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Inhibition BRIEF-P score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Inhibition BRIEF-P score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Shift BRIEF-P score at 3 years, main analysis**",
-                    "**Shift BRIEF-P score at 3 years, sensitivity analysis**",
+                    "**Shift BRIEF-P score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Shift BRIEF-P score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Shift BRIEF-P score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Shift BRIEF-P score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Emotional control BRIEF-P score at 3 years, main analysis**",    
-                    "**Emotional control BRIEF-P score at 3 years, sensitivity analysis**",    
+                    "**Emotional control BRIEF-P score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Emotional control BRIEF-P score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Emotional control BRIEF-P score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Emotional control BRIEF-P score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Working memory BRIEF-P score at 3 years, main analysis**",
-                    "**Working memory BRIEF-P score at 3 years, sensitivity analysis**",
+                    "**Working memory BRIEF-P score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Working memory BRIEF-P score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Working memory BRIEF-P score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Working memory BRIEF-P score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Plan and organization BRIEF-P score at 3 years, main analysis**",
-                    "**Plan and organization BRIEF-P score at 3 years, sensitivity analysis**",
+                    "**Plan and organization BRIEF-P score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Plan and organization BRIEF-P score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Plan and organization BRIEF-P score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Plan and organization BRIEF-P score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Verbal comprehension WPPSI score at 3 years, main analysis**", 
-                    "**Verbal comprehension WPPSI score at 3 years, sensitivity analysis**", 
+                    "**Verbal comprehension WPPSI score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Verbal comprehension WPPSI score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Verbal comprehension WPPSI score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Verbal comprehension WPPSI score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Visuospatial WPPSI score at 3 years, main analysis**", 
-                    "**Visuospatial WPPSI score at 3 years, sensitivity analysis*", 
+                    "**Visuospatial WPPSI score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Visuospatial WPPSI score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Visuospatial WPPSI score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Visuospatial WPPSI score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Work memory WPPSI score at 3 years, main analysis**", 
-                    "**Work memory WPPSI score at 3 years, sensitivity analysis**", 
+                    "**Work memory WPPSI score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Work memory WPPSI score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Work memory WPPSI score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Work memory WPPSI score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Total WPPSI score at 3 years, main analysis**", 
-                    "**Total WPPSI score at 3 years, sensitivity analysis**")
+                    "**Total WPPSI score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Total WPPSI score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Total WPPSI score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Total WPPSI score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**")
   )
-  table_S8[[i]] <- tbl   # Ajout de la table fusionnée à la liste
+  table_S8[[i]] <- tbl  
 }
 table_S8 <- tbl_stack(table_S8)
 
 rm(
-  prep_table_S8,
+  prep_table_S8_a, prep_table_S8_b, prep_table_S8_c,
   terms, formula, model,
-  tbl, tbl_data_sensi,
-  tbls_for_outcome_multi_sensi,
+  tbl, 
+  tbls_for_outcome_multi_sensi_a, tbls_for_outcome_multi_sensi_b, tbls_for_outcome_multi_sensi_c,
   exposure, exposure_name, i, j, outcome, outcome_name, 
-  sensi_covariates_CBCL, sensi_covariates_IQ, sensi_ovariates_SRS_BRIEF, sensi_covariates_map)
+  sensi_covariates_CBCL, sensi_covariates_IQ, sensi_ovariates_SRS_BRIEF, sensi_covariates_map, 
+  sensi_explanatory)
 
 
-## Table S9: Sensitivity analysis - non linear relation ? -----
+## Table S9: Sensitivity analysis - non linear relation ? ----
 ## Sensitivity analysis – Effects of tertiles of gut microbiota parameters on the neurodeveloppment.
+names_ter <- explanatory %>% str_replace_all("std", "std_ter")
+bdd_final_imp_1 <- bdd_final_imp_1 %>%
+  mutate(across(all_of(explanatory), 
+                ~cut(., 
+                     breaks = quantile(., probs = 0:3/3, na.rm = TRUE), 
+                     labels = c("1st tertile", "2nd tertile", "3rd tertile"), 
+                     include.lowest = TRUE),
+                .names = function(nom) str_replace(nom, "std", "std_ter")))
 
 
 # Additional figures ----

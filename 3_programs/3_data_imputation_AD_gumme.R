@@ -183,6 +183,7 @@ visu_na
 bdd_final <- bdd %>%
   select(ident, 
          all_of(neuro_vec), 
+         "ch_WPPSI_verbal_comprehension_Y3", "ch_WPPSI_visuospatiale_Y3", "ch_WPPSI_work_memory_Y3", "ch_WPPSI_total_Y3", # pour analyses de sensibilité
          all_of(microbiote_vec), 
          all_of(covar_a_imputer)) %>%
   filter(!is.na(ch_feces_rel_p1_Y1_10))
@@ -247,7 +248,7 @@ bdd_final_imp <- mice(bdd_final,
                       maxit = 0)
 
 method <- bdd_final_imp$method
-method[c(microbiote_vec, neuro_vec)] <- ""
+method[c(microbiote_vec, neuro_vec, "ch_WPPSI_verbal_comprehension_Y3", "ch_WPPSI_visuospatiale_Y3", "ch_WPPSI_work_memory_Y3", "ch_WPPSI_total_Y3")] <- ""
 method
 
 pred <- quickpred(bdd_final, 
