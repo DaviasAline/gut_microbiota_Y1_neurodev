@@ -33,23 +33,134 @@ source("3_programs/5_functions_AD_gumme.R")
 
 # Création des vecteurs de variables ----
 protocol_vars <- c("ch_feces_age_w_Y1", "ch_feces_RUN_Y1")
-# covariates_gm <- c("po_w_kg_3cat", 
-#                    "po_he_3cat", 
-#                    "mo_dipl_2cat", 
-#                    "mo_age", 
-#                    "mo_bmi_bepr_3cat", 
-#                    "ch_sex", 
-#                    "mo_par_2cat", 
-#                    "ch_bf_duration_till48w_4cat", 
-#                    "po_gd", 
-#                    "po_delmod", 
-#                    "ch_food_intro_Y1_3cat", 
-#                    "mo_pets", 
-#                    "ch_antibio_Y1_2cat", 
-#                    "mo_hadtotscore_grt3_imp",     
-#                    "mo_tob_gr_anyt_yn_n2", 
-#                    "ch_tabacco_passive_up_to_Y1",
-#                    "ch_care_main_12m_opt2_2c")
+covariates_gm <- c("po_w_kg_3cat",
+                   "po_he_3cat",
+                   "mo_dipl_2cat",
+                   "mo_age",
+                   "mo_bmi_bepr_3cat",
+                   "ch_sex",
+                   "mo_par_2cat",
+                   "ch_bf_duration_till48w_4cat",
+                   "po_gd",
+                   "po_delmod",
+                   "ch_food_intro_Y1_3cat",
+                   "mo_pets",
+                   "ch_antibio_Y1_2cat",
+                   "mo_hadtotscore_grt3_imp",
+                   "mo_tob_gr_anyt_yn_n2",
+                   "ch_tabacco_passive_up_to_Y1",
+                   "ch_care_main_12m_opt2_2c")
+
+# Est ce que les prédicteurs du microbiote sont associées aux facteurs techniques du microbiote ? 
+
+test <- 
+  tbl_merge(
+  tbls = list(
+    bdd_final_imp_1 %>% 
+      select("ch_feces_age_w_Y1", 
+             "ch_feces_RUN_Y1",
+             "po_w_kg_3cat",
+             "po_he_3cat",
+             "mo_dipl_2cat",
+             "mo_age",
+             "mo_bmi_bepr_3cat",
+             "ch_sex",
+             "mo_par_2cat",
+             "ch_bf_duration_till48w_4cat",
+             "po_gd",
+             "po_delmod",
+             "ch_food_intro_Y1_3cat",
+             "mo_pets",
+             "ch_antibio_Y1_2cat",
+             "mo_hadtotscore_grt3_imp",
+             "mo_tob_gr_anyt_yn_n2",
+             "ch_tabacco_passive_up_to_Y1",
+             "ch_care_main_12m_opt2_2c") %>%
+      tbl_uvregression(
+        method = lm, 
+        y = "ch_feces_age_w_Y1") %>%
+      bold_labels() %>%
+      bold_p(), 
+    tbl_regression(
+      lm(ch_feces_age_w_Y1 ~ 
+           ch_feces_RUN_Y1 +
+           po_w_kg_3cat +
+           po_he_3cat +
+           mo_dipl_2cat +
+           mo_age +
+           mo_bmi_bepr_3cat +
+           ch_sex +
+           mo_par_2cat +
+           ch_bf_duration_till48w_4cat +
+           po_gd +
+           po_delmod +
+           ch_food_intro_Y1_3cat +
+           mo_pets +
+           ch_antibio_Y1_2cat +
+           mo_hadtotscore_grt3_imp +
+           mo_tob_gr_anyt_yn_n2 +
+           ch_tabacco_passive_up_to_Y1 +
+           ch_care_main_12m_opt2_2c, 
+         data = bdd_final_imp_1)) %>%
+      bold_p() %>% bold_labels() %>% add_global_p(), 
+    
+    bdd_final_imp_1 %>% 
+      select("ch_feces_age_w_Y1",
+             "ch_feces_RUN_Y1", 
+             "po_w_kg_3cat",
+             "po_he_3cat",
+             "mo_dipl_2cat",
+             "mo_age",
+             "mo_bmi_bepr_3cat",
+             "ch_sex",
+             "mo_par_2cat",
+             "ch_bf_duration_till48w_4cat",
+             "po_gd",
+             "po_delmod",
+             "ch_food_intro_Y1_3cat",
+             "mo_pets",
+             "ch_antibio_Y1_2cat",
+             "mo_hadtotscore_grt3_imp",
+             "mo_tob_gr_anyt_yn_n2",
+             "ch_tabacco_passive_up_to_Y1",
+             "ch_care_main_12m_opt2_2c") %>%
+      tbl_uvregression(
+        method = glm,
+        method.args = list(family = binomial),
+        y = "ch_feces_RUN_Y1") %>%
+      bold_labels() %>%
+      bold_p(),
+    
+    bdd_final_imp_1 %>%
+      tbl_regression(
+        glm(ch_feces_RUN_Y1 ~ 
+              ch_feces_age_w_Y1 + 
+              po_w_kg_3cat +
+              po_he_3cat +
+              mo_dipl_2cat +
+              mo_age +
+              mo_bmi_bepr_3cat +
+              ch_sex +
+              mo_par_2cat +
+              ch_bf_duration_till48w_4cat +
+              po_gd +
+              po_delmod +
+              ch_food_intro_Y1_3cat +
+              mo_pets +
+              ch_antibio_Y1_2cat +
+              mo_hadtotscore_grt3_imp +
+              mo_tob_gr_anyt_yn_n2 +
+              ch_tabacco_passive_up_to_Y1 +
+              ch_care_main_12m_opt2_2c, 
+            data = bdd_final_imp_1, 
+            family = binomial(logit))) %>% 
+      bold_p() %>% bold_labels() %>% add_global_p()), 
+  tab_spanner = c("**Effet sur l'age au prélévement de la selle, univarié**", 
+                  "**Effet sur l'age au prélévement de la selle, multivarié**", 
+                  "**Effet sur le run de séquençage, univarié**", 
+                  "**Effet sur le run de séquengage, multivarié**"))
+
+
 
 # Standardisation ----
 bdd_a_std <- bdd_final_imp_1 %>%
