@@ -18,8 +18,8 @@ library(writexl)
 library(forcats)
 library(egg)
 library(corrplot)
-load("1_intermediate_data/3_data_imputation_AD_gumme.RData")
-source("3_programs/4_functions_AD_gumme.R")
+load("1_intermediate_data/4_data_standardization_AD_gumme.RData")
+source("3_programs/5_functions_AD_gumme.R")
 rm(bdd_final_imp_1_sensi_seuil, bdd_final_imp_sensi_seuil, bdd_genera_imp, 
    covar_a_imputer, covar_a_tester, 
    comp_effectifs, model, model_sensi_home, model_sensi_seuil, 
@@ -37,20 +37,8 @@ outcomes <- bdd %>%
          -ch_socmot_y3, 
          -ch_RRB_y3) %>%
   colnames()
-rm(covar_vec_model_final, neuro_vec, genera_linear, microbiote_vec)
+rm(covar_vec_model_final, neuro_vec, microbiote_vec)
 
-spanner_names <- c("Internalizing CBCL score at 2 years",
-                   "Externalizing CBCL score at 2 years",
-                   "Total SRS score at 3 years",
-                   "Inhibition BRIEF-P score at 3 years",
-                   "Shift BRIEF-P score at 3 years",
-                   "Emotional control BRIEF-P score at 3 years",
-                   "Working memory BRIEF-P score at 3 years",
-                   "Plan and organization BRIEF-P score at 3 years",
-                   "Verbal comprehension IQ score at 3 years",
-                   "Visuospatial IQ score at 3 years",
-                   "Work memory IQ score at 3 years",
-                   "Total IQ score at 3 years")
 
 # Création variables neuro catégorisées (tertiles) ----
 bdd_final_imp_1 <- bdd_final_imp_1 %>%
@@ -236,10 +224,10 @@ all_dist_briefp_plan <- bdd_final_briefp_plan %>%
 #### filter IQ (because of the NA) ----
 excluded_iq <- bdd_final %>% 
   select(ident, 
-         ch_verbal_comprehension_IQ_Y3_cat, 
-         ch_visuospatiale_IQ_Y3_cat, 
-         ch_work_memory_IQ_Y3_cat, 
-         ch_total_IQ_Y3_cat) %>% 
+         ch_WPPSI_verbal_comprehension_cor_Y3_cat, 
+         ch_WPPSI_visuospatiale_cor_Y3_cat, 
+         ch_WPPSI_work_memory_cor_Y3_cat, 
+         ch_WPPSI_total_cor_Y3_cat) %>% 
   filter_all(any_vars(is.na(.)))
 excluded_iq <- excluded_iq$ident
 
@@ -423,10 +411,10 @@ results_betadiv_multivar_bray_curtis_briefp_plan <-
 ### IQ ----
 iq_vars <- 
   bdd_final_iq%>% 
-  select(ch_verbal_comprehension_IQ_Y3_cat, 
-         ch_visuospatiale_IQ_Y3_cat, 
-         ch_work_memory_IQ_Y3_cat, 
-         ch_total_IQ_Y3_cat) %>%
+  select(ch_WPPSI_verbal_comprehension_cor_Y3_cat, 
+         ch_WPPSI_visuospatiale_cor_Y3_cat, 
+         ch_WPPSI_work_memory_cor_Y3_cat, 
+         ch_WPPSI_total_cor_Y3_cat) %>%
   colnames()
 
 results_betadiv_univar_bray_curtis_iq <- 
@@ -438,10 +426,10 @@ results_betadiv_univar_bray_curtis_iq <-
   do.call(rbind, results_betadiv_univar_bray_curtis_iq) %>%
   rownames_to_column(var = "Variables") %>%
   mutate(
-    Outcome = c(rep("ch_verbal_comprehension_IQ_Y3_cat", times = 3), 
-                   rep("ch_visuospatiale_IQ_Y3_cat", times = 3), 
-                   rep("ch_work_memory_IQ_Y3_cat", times = 3),
-                   rep("ch_total_IQ_Y3_cat", times = 3))) %>%
+    Outcome = c(rep("ch_WPPSI_verbal_comprehension_cor_Y3_cat", times = 3), 
+                   rep("ch_WPPSI_visuospatiale_cor_Y3_cat", times = 3), 
+                   rep("ch_WPPSI_work_memory_cor_Y3_cat", times = 3),
+                   rep("ch_WPPSI_total_cor_Y3_cat", times = 3))) %>%
   select(Outcome, everything())
 
 results_betadiv_multivar_bray_curtis_iq <-
@@ -453,10 +441,10 @@ results_betadiv_multivar_bray_curtis_iq <-
   do.call(rbind, results_betadiv_multivar_bray_curtis_iq) %>%
   rownames_to_column(var = "Variables") %>%
   mutate(
-    Outcome = c(rep("ch_verbal_comprehension_IQ_Y3_cat", times = 21), 
-                 rep("ch_visuospatiale_IQ_Y3_cat", times = 21), 
-                 rep("ch_work_memory_IQ_Y3_cat", times = 21),
-                 rep("ch_total_IQ_Y3_cat", times = 21))) %>%
+    Outcome = c(rep("ch_WPPSI_verbal_comprehension_cor_Y3_cat", times = 21), 
+                 rep("ch_WPPSI_visuospatiale_cor_Y3_cat", times = 21), 
+                 rep("ch_WPPSI_work_memory_cor_Y3_cat", times = 21),
+                 rep("ch_WPPSI_total_cor_Y3_cat", times = 21))) %>%
   select(Outcome, everything())
 
 results_betadiv_univar_bray_curtis_iq %>%                         # Visualisation des résultats significatifs univarié
@@ -607,10 +595,10 @@ table_3 <- results_betadiv_multi %>%
                          "Working memory BRIEF-P score at 3 years" = "ch_briefpworkmemo_y3_cat",
                          "Plan and organization BRIEF-P score at 3 years" = "ch_briefpplan_y3_cat",
                          
-                         "Verbal comprehension IQ score at 3 years" = "ch_verbal_comprehension_IQ_Y3_cat", 
-                         "Visuospatial IQ score at 3 years" = "ch_visuospatiale_IQ_Y3_cat",
-                         "Work memory IQ score at 3 years" = "ch_work_memory_IQ_Y3_cat",
-                         "Total IQ score at 3 years" = "ch_total_IQ_Y3_cat"))
+                         "Verbal comprehension IQ score at 3 years" = "ch_WPPSI_verbal_comprehension_cor_Y3_cat", 
+                         "Visuospatial IQ score at 3 years" = "ch_WPPSI_visuospatiale_cor_Y3_cat",
+                         "Work memory IQ score at 3 years" = "ch_WPPSI_work_memory_cor_Y3_cat",
+                         "Total IQ score at 3 years" = "ch_WPPSI_total_cor_Y3_cat"))
 write_xlsx(table_3, 
            path = "4_output/table_3.xlsx")
 
