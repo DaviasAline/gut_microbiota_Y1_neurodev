@@ -1206,16 +1206,65 @@ rm(
 
 ## Table S9: Sensitivity analysis - non linear relation ? ----
 ## Sensitivity analysis – Effects of tertiles of gut microbiota parameters on the neurodeveloppment.
-names_ter <- explanatory %>% str_replace_all("std", "std_ter")
-bdd_final_imp_1 <- bdd_final_imp_1 %>%
-  mutate(across(all_of(explanatory), 
+explanatory_raw <- explanatory %>% str_replace_all("_imp_log_std", "")
+explanatory_raw <- explanatory_raw %>% str_replace_all("_std", "")
+explanatory_raw <- explanatory_raw %>% str_replace_all("_Y1_10", "_Y1")
+
+descrip_tertiles <- function(data, vars) {                                           
+  data %>%
+    select(all_of({{vars}})) %>%
+    tbl_summary(
+      missing = "no", 
+      type = list(where(is.numeric)~ "continuous"), 
+      statistic = all_continuous()~ "{min}/{p25}/{p33}/{median}/{mean}/{p66}/{p70}/{max}/{N_nonmiss}", 
+      digits = list(all_continuous() ~ c(0, 0, 10, 0, 1, 10, 10, 0, 0))
+    ) %>%
+    bold_labels() %>% 
+    as_gt()  %>% 
+    as.data.frame()%>% 
+    select(variable, label, stat_0) %>%
+    separate(
+      col = stat_0, 
+      into = c("Min", "p25", "p33", "Median", "Mean", "p66","p70", "Max", "N"), 
+      sep = "/", 
+      remove = TRUE) %>%
+    rename(
+      #"Variable names" = variable, 
+      "Variable labels" = label)
+  #%>% kable()
+}
+
+test <- descrip_tertiles(data = bdd, vars = explanatory_raw)
+test %>% arrange(desc("p70")) %>% View()
+test %>% filter(`Value 2nd tertile` == `Value 3rd tertile`) %>% View()
+
+bdd_ter <- bdd %>%
+  select(ident, all_of(explanatory_raw))%>%
+  mutate(across(all_of(explanatory_raw), 
                 ~cut(., 
                      breaks = quantile(., probs = 0:3/3, na.rm = TRUE), 
                      labels = c("1st tertile", "2nd tertile", "3rd tertile"), 
                      include.lowest = TRUE),
-                .names = function(nom) str_replace(nom, "std", "std_ter")))
+                .names = "{.col}_ter"))
 
 
+
+bdd_ter <- bdd %>%
+  select(ident, all_of(explanatory_raw))%>%
+  mutate(across(all_of(explanatory_raw), 
+                .fns = ~case_when(
+                  ntile(., 3) == 1 ~ "1st tertile",
+                  ntile(., 3) == 2 ~ "2nd tertile",
+                  ntile(., 3) == 3 ~ "3rd tertile"), 
+                .names = "{.col}_ter"))
+
+
+verifier_differences <- function(variable) {
+  variable_triee <- sort(variable)
+  return(variable_triee[119] != variable_triee[120])
+}
+
+resultats <- sapply(bdd_ter %>% select(all_of(explanatory_raw)), verifier_differences)
 # Additional figures ----
 ## Figure S1: DAG ----
 ## Direct acyclic graph of the relation between one year child gut microbiota and neurodevelopment. 
