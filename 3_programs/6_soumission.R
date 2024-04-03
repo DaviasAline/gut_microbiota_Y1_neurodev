@@ -292,26 +292,26 @@ table_multi <- table_multi %>%
                   "Shannon diversity", "Specific richness"),
     Outcome = 
       fct_recode(Outcome, 
-                 "Emotional control BRIEF-P score at 3 years" = "ch_briefpemocontrol_y3",
-                  "Inhibition BRIEF-P score at 3 years" = "ch_briefpinhibit_y3",
-                  "Plan and organization BRIEF-P score at 3 years" = "ch_briefpplan_y3",
-                  "Shift BRIEF-P score at 3 years" = "ch_briefpshift_y3",
-                  "Working memory BRIEF-P score at 3 years" = "ch_briefpworkmemo_y3",
-                  "Externalizing CBCL score at 2 years" = "ch_cbclextscore_y2",
-                  "Internalizing CBCL score at 2 years" = "ch_cbclintscore_y2",
+                 "Emotional control BRIEF-P sub-score at 3 years" = "ch_briefpemocontrol_y3",
+                  "Inhibition BRIEF-P sub-score at 3 years" = "ch_briefpinhibit_y3",
+                  "Plan and organization BRIEF-P sub-score at 3 years" = "ch_briefpplan_y3",
+                  "Shift BRIEF-P sub-score at 3 years" = "ch_briefpshift_y3",
+                  "Work memory BRIEF-P sub-score at 3 years" = "ch_briefpworkmemo_y3",
+                  "Externalizing CBCL sub-score at 2 years" = "ch_cbclextsub-score_y2",
+                  "Internalizing CBCL sub-score at 2 years" = "ch_cbclintsub-score_y2",
                   "Total SRS score at 3 years" = "ch_SRStotal_y3",
                   "Total WPPSI score at 3 years" = "ch_WPPSI_total_cor_Y3",
-                  "Verbal comprehension WPPSI score at 3 years" = "ch_WPPSI_verbal_comprehension_cor_Y3",
-                  "Visuospatiale WPPSI score at 3 years" = "ch_WPPSI_visuospatiale_cor_Y3",
-                  "Work memory WPPSI score at 3 years" = "ch_WPPSI_work_memory_cor_Y3"),
+                  "Verbal comprehension WPPSI sub-score at 3 years" = "ch_WPPSI_verbal_comprehension_cor_Y3",
+                  "Visuospatial WPPSI sub-score at 3 years" = "ch_WPPSI_visuospatiale_cor_Y3",
+                  "Work memory WPPSI sub-score at 3 years" = "ch_WPPSI_work_memory_cor_Y3"),
     Outcome = 
       fct_relevel(Outcome,
-                  "Internalizing CBCL score at 2 years", "Externalizing CBCL score at 2 years",
-                  "Emotional control BRIEF-P score at 3 years", "Inhibition BRIEF-P score at 3 years",
-                  "Plan and organization BRIEF-P score at 3 years", "Shift BRIEF-P score at 3 years",
-                  "Working memory BRIEF-P score at 3 years", "Total SRS score at 3 years",
-                  "Verbal comprehension WPPSI score at 3 years", "Visuospatiale WPPSI score at 3 years",
-                  "Work memory WPPSI score at 3 years", "Total WPPSI score at 3 years"),
+                  "Internalizing CBCL sub-score at 2 years", "Externalizing CBCL sub-score at 2 years",
+                  "Emotional control BRIEF-P sub-score at 3 years", "Inhibition BRIEF-P sub-score at 3 years",
+                  "Plan and organization BRIEF-P sub-score at 3 years", "Shift BRIEF-P sub-score at 3 years",
+                  "Work memory BRIEF-P sub-score at 3 years", "Total SRS score at 3 years",
+                  "Verbal comprehension WPPSI sub-score at 3 years", "Visuospatial WPPSI sub-score at 3 years",
+                  "Work memory WPPSI sub-score at 3 years", "Total WPPSI score at 3 years"),
     `p-value` = gsub("__", "", `p-value`),
     `p-value` = as.numeric(`p-value`),
     `q-value` = case_when(
@@ -338,31 +338,30 @@ table_multi <- table_multi %>%
     "q-value", q_value_shape) %>%
   mutate(
     improved_neuro = 
-      case_when(Outcome %in% c("Verbal comprehension WPPSI score at 3 years",
-                               "Visuospatiale WPPSI score at 3 years", 
-                               "Work memory WPPSI score at 3 years", 
+      case_when(Outcome %in% c("Verbal comprehension WPPSI sub-score at 3 years",
+                               "Visuospatial WPPSI sub-score at 3 years", 
+                               "Work memory WPPSI sub-score at 3 years", 
                                "Total WPPSI score at 3 years") & Beta>0 ~ "Improved neurodevelopmental outcome", 
-                Outcome %in% c("Verbal comprehension WPPSI score at 3 years",
-                               "Visuospatiale WPPSI score at 3 years", 
-                               "Work memory WPPSI score at 3 years", 
+                Outcome %in% c("Verbal comprehension WPPSI sub-score at 3 years",
+                               "Visuospatial WPPSI sub-score at 3 years", 
+                               "Work memory WPPSI sub-score at 3 years", 
                                "Total WPPSI score at 3 years") & Beta<0 ~ "Altered neurodevelopmental outcome", 
-                Outcome %in% c("Internalizing CBCL score at 2 years", 
-                               "Externalizing CBCL score at 2 years", 
+                Outcome %in% c("Internalizing CBCL sub-score at 2 years", 
+                               "Externalizing CBCL sub-score at 2 years", 
                                "Total SRS score at 3 years", 
-                               "Inhibition BRIEF-P score at 3 years", 
-                               "Shift BRIEF-P score at 3 years", 
-                               "Emotional control BRIEF-P score at 3 years", 
-                               "Working memory BRIEF-P score at 3 years", 
-                               "Plan and organization BRIEF-P score at 3 years") & Beta>0 ~ "Altered neurodevelopmental outcome",
-                Outcome %in% c("Internalizing CBCL score at 2 years", 
-                               "Externalizing CBCL score at 2 years", 
+                               "Inhibition BRIEF-P sub-score at 3 years", 
+                               "Shift BRIEF-P sub-score at 3 years", 
+                               "Emotional control BRIEF-P sub-score at 3 years", 
+                               "Work memory BRIEF-P sub-score at 3 years", 
+                               "Plan and organization BRIEF-P sub-score at 3 years") & Beta>0 ~ "Altered neurodevelopmental outcome",
+                Outcome %in% c("Internalizing CBCL sub-score at 2 years", 
+                               "Externalizing CBCL sub-score at 2 years", 
                                "Total SRS score at 3 years", 
-                               "Inhibition BRIEF-P score at 3 years", 
-                               "Shift BRIEF-P score at 3 years", 
-                               "Emotional control BRIEF-P score at 3 years", 
-                               "Working memory BRIEF-P score at 3 years", 
-                               "Plan and organization BRIEF-P score at 3 years") & Beta<0 ~ "Improved neurodevelopmental outcome"))
-  
+                               "Inhibition BRIEF-P sub-score at 3 years", 
+                               "Shift BRIEF-P sub-score at 3 years", 
+                               "Emotional control BRIEF-P sub-score at 3 years", 
+                               "Work memory BRIEF-P sub-score at 3 years", 
+                               "Plan and organization BRIEF-P sub-score at 3 years") & Beta<0 ~ "Improved neurodevelopmental outcome"))
 
 # Tables ----
 ## Table 1: Covariables description ----
@@ -451,55 +450,8 @@ table_4 <- list(table_4_long = table_4_long,
 rm(table_4_long, table_4_large)
 
 # Figures ----
-## Fig.1: Forestplot alpha div ----
+## Fig.1: Forestplot phyla ----
 figure_1 <- table_multi %>% 
-  filter(`Gut microbiota parameters` %in% c("Shannon diversity",
-                                             "Specific richness")) %>%
-  mutate(Beta = as.numeric(Beta), 
-         Outcome = 
-           fct_relevel(Outcome,
-                       "Total WPPSI score at 3 years", "Work memory WPPSI score at 3 years", 
-                       "Visuospatiale WPPSI score at 3 years","Verbal comprehension WPPSI score at 3 years", 
-                       "Plan and organization BRIEF-P score at 3 years", "Working memory BRIEF-P score at 3 years",
-                       "Emotional control BRIEF-P score at 3 years","Shift BRIEF-P score at 3 years",
-                       "Inhibition BRIEF-P score at 3 years", "Total SRS score at 3 years",
-                       "Externalizing CBCL score at 2 years", "Internalizing CBCL score at 2 years"), 
-         `Gut microbiota parameters` = 
-           fct_relevel(`Gut microbiota parameters`, 
-                       "Specific richness", "Shannon diversity")) %>%
-  ggplot(aes(x = Outcome, 
-             y = Beta, 
-             min = lower_CI, 
-             ymax = upper_CI, 
-             color = p_value_shape)) +
-  geom_hline(yintercept = 0, linetype="dashed") +
-  geom_pointrange(
-    position = position_dodge(width = 0.5), 
-    size = 0.4) +
-  labs(x = "Neurodevelopement", y = "", color = "p-value") +
-  theme_lucid() +
-  coord_flip()  +
-  facet_wrap(~`Gut microbiota parameters`, scales = "free_x", ncol = 2) +
-  theme(
-    legend.position = "right",
-    legend.box = "vertical", 
-    legend.justification = "right") +
-  scale_color_manual(values = c("p-value<0.05" = "red", "p-value≥0.05" = "black"))
-
-figure_1
-ggsave("4_output/fig.1 forest_plot_alphadiv.tiff", 
-       figure_1, 
-       device = "tiff",
-       units = "cm",
-       dpi = 300,
-       height = 15, 
-       width = 25)
-
-
-
-
-## Fig.2: Forestplot phyla ----
-figure_2 <- table_multi %>% 
   filter(`Gut microbiota parameters` %in% c("Firmicutes",
                                             "Actinobacteria", 
                                             "Bacteroidetes", 
@@ -507,12 +459,12 @@ figure_2 <- table_multi %>%
   mutate(Beta = as.numeric(Beta), 
          Outcome = 
            fct_relevel(Outcome,
-                       "Total WPPSI score at 3 years", "Work memory WPPSI score at 3 years", 
-                       "Visuospatiale WPPSI score at 3 years","Verbal comprehension WPPSI score at 3 years", 
-                       "Plan and organization BRIEF-P score at 3 years", "Working memory BRIEF-P score at 3 years",
-                       "Emotional control BRIEF-P score at 3 years","Shift BRIEF-P score at 3 years",
-                       "Inhibition BRIEF-P score at 3 years", "Total SRS score at 3 years",
-                       "Externalizing CBCL score at 2 years", "Internalizing CBCL score at 2 years"), 
+                       "Total WPPSI score at 3 years", "Work memory WPPSI sub-score at 3 years", 
+                       "Visuospatial WPPSI sub-score at 3 years","Verbal comprehension WPPSI sub-score at 3 years", 
+                       "Plan and organization BRIEF-P sub-score at 3 years", "Work memory BRIEF-P sub-score at 3 years",
+                       "Emotional control BRIEF-P sub-score at 3 years","Shift BRIEF-P sub-score at 3 years",
+                       "Inhibition BRIEF-P sub-score at 3 years", "Total SRS score at 3 years",
+                       "Externalizing CBCL sub-score at 2 years", "Internalizing CBCL sub-score at 2 years"), 
          `Gut microbiota parameters` =
            fct_relevel(`Gut microbiota parameters`, 
                        "Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>%
@@ -535,23 +487,41 @@ figure_2 <- table_multi %>%
     legend.justification = "right")  +
   scale_color_manual(values = c("p-value<0.05" = "red", "p-value≥0.05" = "black"))
 
-figure_2
-ggsave("4_output/fig.2 forest_plot_phyla.tiff", 
-       figure_2, 
+figure_1
+ggsave("4_output/figures/Fig.1 forest_plot_phyla.tiff", 
+       figure_1, 
        device = "tiff",
        units = "cm",
        dpi = 300,
        height = 15, 
        width = 25)
 
-## Fig.3: Mahatan plot genera ----
-figure_3 <- table_multi  %>%
+## Fig.2: Mahatan plot genera ----
+figure_2 <- table_multi  %>%
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
                                              "Bacteroidetes",
                                              "Proteobacteria",
                                              "Shannon diversity",
                                              "Specific richness")) %>%
+  mutate(
+    Outcome_rec = fct_recode(Outcome,
+                             "Internalizing CBCL Y2" = "Internalizing CBCL sub-score at 2 years",
+                              "Externalizing CBCL Y2" = "Externalizing CBCL sub-score at 2 years",
+                              "Emotional control BRIEF-P Y3" = "Emotional control BRIEF-P sub-score at 3 years",
+                              "Inhibition BRIEF-P Y3" = "Inhibition BRIEF-P sub-score at 3 years",
+                              "Plan and organization BRIEF-P Y3" = "Plan and organization BRIEF-P sub-score at 3 years",
+                              "Shift BRIEF-PY3" = "Shift BRIEF-P sub-score at 3 years",
+                              "Work memory BRIEF-P Y3" = "Work memory BRIEF-P sub-score at 3 years",
+                              "Total SRS Y3" = "Total SRS score at 3 years",
+                              "Verbal comprehension WPPSI Y3" = "Verbal comprehension WPPSI sub-score at 3 years",
+                              "Visuospatial WPPSI Y3" = "Visuospatial WPPSI sub-score at 3 years",
+                              "Work memory WPPSI Y3" = "Work memory WPPSI sub-score at 3 years",
+                              "Total WPPSI Y3" = "Total WPPSI score at 3 years"), 
+    Outcome_rec = case_when(`Gut microbiota parameters` == "Subdoligranulum" & 
+                              Outcome_rec %in% c("Internalizing CBCL Y2", "Emotional control BRIEF-P Y3") ~ 
+                              "Internalizing CBCL Y2 and Emotional control BRIEF-P Y3", 
+                         .default = Outcome_rec)) %>%
   ggplot(aes(x = -log10(`p-value`), y = `Gut microbiota parameters`)) +
   geom_point(aes(shape = improved_neuro), size = 2) +
   geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = "red") +
@@ -560,63 +530,25 @@ figure_3 <- table_multi  %>%
   labs(x = "-log10(P-value)", 
        y = "Genera", 
        shape = "") +
-  geom_text(aes(label = ifelse(`p-value` < 0.02, as.character(Outcome), "")), hjust = -0.05, vjust = -0.3, angle = 40, size = 3.5) +
+  geom_text(aes(label = ifelse(`p-value` < 0.025, as.character(Outcome_rec), "")), hjust = -0.05, vjust = -0.3, angle = 35, size = 3.5) +
   scale_shape_manual(values = c("Altered neurodevelopmental outcome" = 15, "Improved neurodevelopmental outcome" = 17)) +# 15: carré plein, 17: triangle plein
+  scale_x_continuous(limits = c(-log10(1), -log10(0.0001))) +
   theme(
-    legend.position = "right",
+    legend.position = "bottom",
     legend.box = "vertical", 
-    legend.justification = "right", 
+    legend.justification = "center", 
     axis.text.y = element_text(face = "italic"))
-figure_3
-ggsave("4_output/fig.3 manhattan_plot_genera.tiff", 
-       figure_3, 
+figure_2
+ggsave("4_output/figures/Fig.2 manhattan_plot_genera.tiff", 
+       figure_2, 
        device = "tiff",
        units = "cm",
        dpi = 300,
        height = 25, 
        width = 40)
 
-## Fig.4: Forestplot final genera ----
-figure_4 <- table_multi %>% 
-  filter(`p-value`<0.02) %>% 
-  filter(!`Gut microbiota parameters` %in% c("Firmicutes",
-                                             "Actinobacteria",
-                                             "Bacteroidetes",
-                                             "Proteobacteria",
-                                             "Shannon diversity",
-                                             "Specific richness")) %>%
-  mutate(Beta = as.numeric(Beta), 
-         Outcome = 
-           fct_relevel(Outcome,
-                       "Total WPPSI score at 3 years", "Work memory WPPSI score at 3 years", 
-                       "Visuospatiale WPPSI score at 3 years","Verbal comprehension WPPSI score at 3 years", 
-                       "Total SRS score at 3 years","Working memory BRIEF-P score at 3 years",
-                       "Shift BRIEF-P score at 3 years","Plan and organization BRIEF-P score at 3 years",
-                       "Inhibition BRIEF-P score at 3 years","Emotional control BRIEF-P score at 3 years",
-                       "Externalizing CBCL score at 2 years", "Internalizing CBCL score at 2 years")) %>%
-  ggplot(aes(x = Outcome, 
-             y = Beta, 
-             min = lower_CI, 
-             ymax = upper_CI, 
-             color = `Gut microbiota parameters`)) +
-  geom_hline(yintercept = 0, linetype="dashed") +
-  geom_pointrange(
-    position = position_dodge(width = 0.5), 
-    size = 0.4) +
-  labs(x = "Neurodevelopement", y = "") +
-  theme_lucid() +
-  coord_flip()  +
-  guides(color = guide_legend(title = "Genera", 
-                              reverse = TRUE))+
-  theme(
-    legend.position = "right",
-    legend.box = "vertical", 
-    legend.text = element_text(face = "italic"),
-    legend.justification = "right", 
-    #axis.text.y = element_text(face = "italic")
-    ) 
-
-figure_4 <- table_multi %>% 
+## Fig.3: Forestplot final genera ----
+figure_3 <- table_multi %>% 
   filter(`p-value`<0.05) %>% 
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
@@ -627,41 +559,36 @@ figure_4 <- table_multi %>%
   mutate(Beta = as.numeric(Beta), 
          Outcome = 
            fct_relevel(Outcome,
-                       "Total WPPSI score at 3 years", "Work memory WPPSI score at 3 years", 
-                       "Visuospatiale WPPSI score at 3 years","Verbal comprehension WPPSI score at 3 years", 
-                       "Total SRS score at 3 years","Working memory BRIEF-P score at 3 years",
-                       "Shift BRIEF-P score at 3 years","Plan and organization BRIEF-P score at 3 years",
-                       "Inhibition BRIEF-P score at 3 years","Emotional control BRIEF-P score at 3 years",
-                       "Externalizing CBCL score at 2 years", "Internalizing CBCL score at 2 years")) %>%
+                       "Total WPPSI score at 3 years", "Work memory WPPSI sub-score at 3 years", 
+                       "Visuospatial WPPSI sub-score at 3 years","Verbal comprehension WPPSI sub-score at 3 years", 
+                       "Total SRS score at 3 years","Work memory BRIEF-P sub-score at 3 years",
+                       "Shift BRIEF-P sub-score at 3 years", "Plan and organization BRIEF-P sub-score at 3 years",
+                       "Inhibition BRIEF-P sub-score at 3 years","Emotional control BRIEF-P sub-score at 3 years",
+                       "Externalizing CBCL sub-score at 2 years", "Internalizing CBCL sub-score at 2 years")) %>%
   ggplot(aes(x = Outcome, 
              y = Beta, 
              min = lower_CI, 
              ymax = upper_CI, 
-             color = `Gut microbiota parameters`)) +
+             group = `Gut microbiota parameters`)) +
   geom_hline(yintercept = 0, linetype="dashed") +
+  geom_text(aes(label = ifelse(`p-value` < 0.05, as.character(`Gut microbiota parameters`), "")), 
+            fontface = "italic", hjust = -0.05, vjust = -0.3, angle = 0, size = 3.5, 
+            position = position_dodge(width = 1.2, preserve = "total")) +
   geom_pointrange(
-    position = position_dodge(width = 0.5), 
-    size = 0.4) +
+    size = 0.4,
+    position = position_dodge(width = 1.2, preserve = "total")) +
   labs(x = "Neurodevelopement", y = "") +
   theme_lucid() +
   coord_flip()  +
-  guides(color = guide_legend(title = "Genera", 
-                              reverse = TRUE))+
-  theme(
-    legend.position = "right",
-    legend.box = "vertical", 
-    legend.text = element_text(face = "italic"),
-    legend.justification = "right", 
-    #axis.text.y = element_text(face = "italic")
-  ) 
+  theme(legend.position = "none") 
 
-figure_4
-ggsave("4_output/fig.4 forest_plot_genera_28_04_2024.tiff", 
-       figure_4, 
+figure_3
+ggsave("4_output/figures/Fig.3 forest_plot_genera.tiff", 
+       figure_3, 
        device = "tiff",
        units = "cm",
        dpi = 300,
-       height = 10, 
+       height = 30, 
        width = 25)
 
 # Additional tables ----
@@ -676,11 +603,11 @@ table_S1 <- descrip_num(data = bdd,
                                  genera_var_names_raw))
 #write.xlsx(table_S1, file = "4_output/Table_S1.xlsx")
 
-### Table S2: Distribution neurodevelopment ----
+## Table S2: Distribution neurodevelopment ----
 table_S2 <- descrip_num(data = bdd_final, vars = outcomes)
 #write.xlsx(table_S2, file = "4_output/Table_S2.xlsx")
 
-### Table S3: Effects of the covariates on the outcomes ----
+## Table S3: Effects of the covariates on the outcomes ----
 model_covars <- function(var_outcome, var_age, covars, data) {
   
   effectif <- data %>%                   # Création d'une colonne effectif
@@ -906,10 +833,10 @@ for (i in 1:52) {
       tbls_by_outcome_multi$ch_cbclextscore_y2[[i]], # Premier tbl_regression de la deuxième liste de "tbls_by_outcome_multi"
       prep_table_S6$ch_cbclextscore_y2[[i]] # Premier tbl_regression de la deuxième liste de "table_S6"
     ),
-    tab_spanner = c("**Internalizing CBCL score at 2 years, adjusted for HOME variable (main analysis)**", 
-                    "**Internalizing CBCL score at 2 years, not adjusted for HOME variable**", 
-                    "**Externalizing CBCL score at 2 years, adjusted for HOME variable (main analysis)**", 
-                    "**Externalizing CBCL score at 2 years, not adjusted for HOME variable**")
+    tab_spanner = c("**Internalizing CBCL sub-score at 2 years, adjusted for HOME variable (main analysis)**", 
+                    "**Internalizing CBCL sub-score at 2 years, not adjusted for HOME variable**", 
+                    "**Externalizing CBCL sub-score at 2 years, adjusted for HOME variable (main analysis)**", 
+                    "**Externalizing CBCL sub-score at 2 years, not adjusted for HOME variable**")
   )
   table_S6[[i]] <- tbl   # Ajout de la table fusionnée à la liste
 }
@@ -972,14 +899,14 @@ for (i in 1:52) {
       tbls_by_outcome_multi$ch_WPPSI_total_cor_Y3[[i]], 
       prep_table_S7$ch_WPPSI_total_Y3[[i]] 
     ),
-    tab_spanner = c("**Verbal comprehension WPPSI score at 3 years, adjusted for neuropsychologist (main analysis)**", 
-                    "**Verbal comprehension WPPSI score at 3 years, not adjusted for neuropsychologist**", 
+    tab_spanner = c("**Verbal comprehension WPPSI sub-score at 3 years, adjusted for neuropsychologist (main analysis)**", 
+                    "**Verbal comprehension WPPSI sub-score at 3 years, not adjusted for neuropsychologist**", 
                     
-                    "**Visuospatial WPPSI score at 3 years, adjusted for neuropsychologist (main analysis)**", 
-                    "**Visuospatial WPPSI score at 3 years, not adjusted for neuropsychologist**", 
+                    "**Visuospatial WPPSI sub-score at 3 years, adjusted for neuropsychologist (main analysis)**", 
+                    "**Visuospatial WPPSI sub-score at 3 years, not adjusted for neuropsychologist**", 
                     
-                    "**Work memory WPPSI score at 3 years, adjusted for neuropsychologist (main analysis)**", 
-                    "**Work memory WPPSI score at 3 years, not adjusted for neuropsychologist**", 
+                    "**Work memory WPPSI sub-score at 3 years, adjusted for neuropsychologist (main analysis)**", 
+                    "**Work memory WPPSI sub-score at 3 years, not adjusted for neuropsychologist**", 
                     
                     "**Total WPPSI score at 3 years, adjusted for neuropsychologist (main analysis)**", 
                     "**Total WPPSI score at 3 years, not adjusted for neuropsychologist**")
@@ -1203,60 +1130,60 @@ for (i in 1:52) {
       prep_table_S8_c$ch_WPPSI_total_cor_Y3[[i]],
       prep_table_S8_b$ch_WPPSI_total_cor_Y3[[i]]
     ),
-    tab_spanner = c("**Internalizing CBCL score at 2 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
-                    "**Internalizing CBCL score at 2 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
-                    "**Internalizing CBCL score at 2 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
-                    "**Internalizing CBCL score at 2 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
+    tab_spanner = c("**Internalizing CBCL sub-score at 2 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Internalizing CBCL sub-score at 2 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Internalizing CBCL sub-score at 2 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Internalizing CBCL sub-score at 2 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Externalizing CBCL score at 2 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
-                    "**Externalizing CBCL score at 2 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
-                    "**Externalizing CBCL score at 2 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
-                    "**Externalizing CBCL score at 2 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Externalizing CBCL sub-score at 2 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Externalizing CBCL sub-score at 2 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Externalizing CBCL sub-score at 2 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Externalizing CBCL sub-score at 2 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
                     "**Total SRS score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
                     "**Total SRS score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
                     "**Total SRS score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
                     "**Total SRS score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Inhibition BRIEF-P score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
-                    "**Inhibition BRIEF-P score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
-                    "**Inhibition BRIEF-P score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
-                    "**Inhibition BRIEF-P score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Inhibition BRIEF-P sub-score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Inhibition BRIEF-P sub-score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Inhibition BRIEF-P sub-score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Inhibition BRIEF-P sub-score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Shift BRIEF-P score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
-                    "**Shift BRIEF-P score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
-                    "**Shift BRIEF-P score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
-                    "**Shift BRIEF-P score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Shift BRIEF-P sub-score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Shift BRIEF-P sub-score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Shift BRIEF-P sub-score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Shift BRIEF-P sub-score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Emotional control BRIEF-P score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
-                    "**Emotional control BRIEF-P score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
-                    "**Emotional control BRIEF-P score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
-                    "**Emotional control BRIEF-P score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Emotional control BRIEF-P sub-score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Emotional control BRIEF-P sub-score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Emotional control BRIEF-P sub-score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Emotional control BRIEF-P sub-score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Working memory BRIEF-P score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
-                    "**Working memory BRIEF-P score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
-                    "**Working memory BRIEF-P score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
-                    "**Working memory BRIEF-P score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Work memory BRIEF-P sub-score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Work memory BRIEF-P sub-score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Work memory BRIEF-P sub-score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Work memory BRIEF-P sub-score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Plan and organization BRIEF-P score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
-                    "**Plan and organization BRIEF-P score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
-                    "**Plan and organization BRIEF-P score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
-                    "**Plan and organization BRIEF-P score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Plan and organization BRIEF-P sub-score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Plan and organization BRIEF-P sub-score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Plan and organization BRIEF-P sub-score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Plan and organization BRIEF-P sub-score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Verbal comprehension WPPSI score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
-                    "**Verbal comprehension WPPSI score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
-                    "**Verbal comprehension WPPSI score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
-                    "**Verbal comprehension WPPSI score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Verbal comprehension WPPSI sub-score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Verbal comprehension WPPSI sub-score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Verbal comprehension WPPSI sub-score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Verbal comprehension WPPSI sub-score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Visuospatial WPPSI score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
-                    "**Visuospatial WPPSI score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
-                    "**Visuospatial WPPSI score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
-                    "**Visuospatial WPPSI score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Visuospatial WPPSI sub-score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Visuospatial WPPSI sub-score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Visuospatial WPPSI sub-score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Visuospatial WPPSI sub-score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
-                    "**Work memory WPPSI score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
-                    "**Work memory WPPSI score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
-                    "**Work memory WPPSI score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
-                    "**Work memory WPPSI score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Work memory WPPSI sub-score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
+                    "**Work memory WPPSI sub-score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
+                    "**Work memory WPPSI sub-score at 3 years, not standardized on technical factors & adjusted on exposure’s predictors**", 
+                    "**Work memory WPPSI sub-score at 3 years, not standardized on technical factors & not adjusted on exposure’s predictors**", 
                     
                     "**Total WPPSI score at 3 years, standardized on technical factors & adjusted on exposure’s predictors (main analysis)**", 
                     "**Total WPPSI score at 3 years, standardized on technical factors & not adjusted on exposure’s predictors**", 
@@ -1300,6 +1227,8 @@ figure_S2 <- bdd %>%
   filter(!is.na(ch_feces_rel_p1_Y1)) %>%
   select(all_of(outcomes)) 
 colnames(figure_S2) <- spanner_names
+names(figure_S2) <- gsub(" sub-score at 2 years", " Y2", names(figure_S2))
+names(figure_S2) <- gsub(" sub-score at 3 years", " Y3", names(figure_S2))
 names(figure_S2) <- gsub(" score at 2 years", " Y2", names(figure_S2))
 names(figure_S2) <- gsub(" score at 3 years", " Y3", names(figure_S2))
 
@@ -1312,7 +1241,7 @@ figure_S2 <- cor(figure_S2,
                     method = "pearson")
 
 plot.new()
-tiff(filename = "4_output/Fig.S2 heatmap_cor_neuro.tiff", units = "mm", width = 250, height = 250, res = 300)
+tiff(filename = "4_output/figures/Fig.S2 heatmap_cor_neuro.tiff", units = "mm", width = 250, height = 250, res = 300)
 corrplot(figure_S2, 
          method = 'color', 
          type = "lower", 
@@ -1438,6 +1367,50 @@ dev.off()
 
 
 rm(covariates_CBCL, covariates_IQ, covariates_SRS_BRIEF, covariates_map)
+
+## Figure SX: Forestplot alpha div ----
+figure_1 <- table_multi %>% 
+  filter(`Gut microbiota parameters` %in% c("Shannon diversity",
+                                            "Specific richness")) %>%
+  mutate(Beta = as.numeric(Beta), 
+         Outcome = 
+           fct_relevel(Outcome,
+                       "Total WPPSI score at 3 years", "Work memory WPPSI sub-score at 3 years", 
+                       "Visuospatial WPPSI sub-score at 3 years","Verbal comprehension WPPSI sub-score at 3 years", 
+                       "Plan and organization BRIEF-P sub-score at 3 years", "Work memory BRIEF-P sub-score at 3 years",
+                       "Emotional control BRIEF-P sub-score at 3 years","Shift BRIEF-P sub-score at 3 years",
+                       "Inhibition BRIEF-P sub-score at 3 years", "Total SRS score at 3 years",
+                       "Externalizing CBCL sub-score at 2 years", "Internalizing CBCL sub-score at 2 years"), 
+         `Gut microbiota parameters` = 
+           fct_relevel(`Gut microbiota parameters`, 
+                       "Specific richness", "Shannon diversity")) %>%
+  ggplot(aes(x = Outcome, 
+             y = Beta, 
+             min = lower_CI, 
+             ymax = upper_CI, 
+             color = p_value_shape)) +
+  geom_hline(yintercept = 0, linetype="dashed") +
+  geom_pointrange(
+    position = position_dodge(width = 0.5), 
+    size = 0.4) +
+  labs(x = "Neurodevelopement", y = "", color = "p-value") +
+  theme_lucid() +
+  coord_flip()  +
+  facet_wrap(~`Gut microbiota parameters`, scales = "free_x", ncol = 2) +
+  theme(
+    legend.position = "right",
+    legend.box = "vertical", 
+    legend.justification = "right") +
+  scale_color_manual(values = c("p-value<0.05" = "red", "p-value≥0.05" = "black"))
+
+figure_1
+ggsave("4_output/fig.1 forest_plot_alphadiv.tiff", 
+       figure_1, 
+       device = "tiff",
+       units = "cm",
+       dpi = 300,
+       height = 15, 
+       width = 25)
 
 
 # Vizualisation of the significant results ----
