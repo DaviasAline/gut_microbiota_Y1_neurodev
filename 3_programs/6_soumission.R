@@ -559,37 +559,71 @@ figure_3 <- table_multi %>%
   mutate(Beta = as.numeric(Beta), 
          Outcome = 
            fct_relevel(Outcome,
-                       "Total WPPSI score at 3 years", "Work memory WPPSI sub-score at 3 years", 
-                       "Visuospatial WPPSI sub-score at 3 years","Verbal comprehension WPPSI sub-score at 3 years", 
-                       "Total SRS score at 3 years","Work memory BRIEF-P sub-score at 3 years",
-                       "Shift BRIEF-P sub-score at 3 years", "Plan and organization BRIEF-P sub-score at 3 years",
-                       "Inhibition BRIEF-P sub-score at 3 years","Emotional control BRIEF-P sub-score at 3 years",
-                       "Externalizing CBCL sub-score at 2 years", "Internalizing CBCL sub-score at 2 years")) %>%
-  ggplot(aes(x = Outcome, 
+                       "Internalizing CBCL sub-score at 2 years",
+                       "Externalizing CBCL sub-score at 2 years", 
+                       "Total SRS score at 3 years",
+                       "Inhibition BRIEF-P sub-score at 3 years", 
+                       "Shift BRIEF-P sub-score at 3 years",
+                       "Emotional control BRIEF-P sub-score at 3 years", 
+                       "Work memory BRIEF-P sub-score at 3 years",
+                       "Plan and organization BRIEF-P sub-score at 3 years",
+                       "Verbal comprehension WPPSI sub-score at 3 years", 
+                       "Visuospatial WPPSI sub-score at 3 years",
+                       "Work memory WPPSI sub-score at 3 years", 
+                       "Total WPPSI score at 3 years"), 
+         `Gut microbiota parameters` = fct_relevel(`Gut microbiota parameters`, 
+                                                   "Saccharibacteria genera incertae sedis", "Peptoniphilus",
+                                                   "Granulicatella", "Anaerotruncus", "Lactococcus", "Terrisporobacter",
+                                                   "Oscillibacter", "Haemophilus", "Erysipelotrichaceae incertae sedis",
+                                                   "Butyricicoccus", "Dialister", "Subdoligranulum", "Intestinibacter",
+                                                   "Klebsiella", "Eisenbergiella", "Hungatella", "Dorea", "Eggerthella",
+                                                   "Romboutsia", "Clostridium IV", "Ruminococcus 2", "Flavonifractor",
+                                                   "Alistipes", "Collinsella", "Parabacteroides", "Fusicatenibacter",
+                                                   "Roseburia", "Enterobacter", "Cellulosibacter", "Enterococcus",
+                                                   "Coprococcus", "Veillonella", "Clostridium sensu stricto", "Clostridium XVIII",
+                                                   "Ruminococcus", "Gemmiger", "Anaerostipes", "Lachnospiracea incertae sedis",
+                                                   "Clostridium XlVa", "Streptococcus", "Faecalibacterium", "Akkermansia",
+                                                   "Escherichia and Shigella", "Blautia", "Bacteroides", "Bifidobacterium",
+                                                   "Proteobacteria", "Bacteroidetes", "Actinobacteria", "Firmicutes",
+                                                   "Shannon diversity", "Specific richness")) %>%
+  ggplot(aes(x = `Gut microbiota parameters`, 
              y = Beta, 
              min = lower_CI, 
-             ymax = upper_CI, 
-             group = `Gut microbiota parameters`)) +
+             ymax = upper_CI)) +
   geom_hline(yintercept = 0, linetype="dashed") +
-  geom_text(aes(label = ifelse(`p-value` < 0.05, as.character(`Gut microbiota parameters`), "")), 
-            fontface = "italic", hjust = -0.05, vjust = -0.3, angle = 0, size = 3.5, 
-            position = position_dodge(width = 1.2, preserve = "total")) +
   geom_pointrange(
     size = 0.4,
     position = position_dodge(width = 1.2, preserve = "total")) +
-  labs(x = "Neurodevelopement", y = "") +
-  theme_lucid() +
+  geom_text(aes(label = ifelse(`p-value` < 0.05, as.character(`Gut microbiota parameters`), "")), 
+            fontface = "italic", hjust = 0.5, vjust = -0.5, angle = 0, size = 4, 
+            position = position_dodge(width = 1.2, preserve = "total")) +
   coord_flip()  +
-  theme(legend.position = "none") 
+  facet_grid(Outcome~., 
+             scales = "free_y", 
+             space = "free_y", 
+             switch = "y", 
+             labeller = as_labeller(function(labels) {
+               labels <- gsub(" sub-score", "\nsub-score", labels)
+               labels <- gsub(" score", "\nscore", labels)
+               return(labels)
+             })) + 
+  labs(x = "", y = "") +
+  theme_lucid()  + 
+  theme(axis.text.y = element_blank(), 
+        strip.text.y.left = element_text(angle = 0, hjust = 1, size = 12), 
+        panel.background = element_rect(color = "gray", fill = NULL))
 
 figure_3
+
+
 ggsave("4_output/figures/Fig.3 forest_plot_genera.tiff", 
        figure_3, 
        device = "tiff",
        units = "cm",
        dpi = 300,
-       height = 30, 
-       width = 25)
+       height = 25, 
+       width = 22)
+
 
 # Additional tables ----
 ## Table S1: Distribution gut microbiota parameters ----
