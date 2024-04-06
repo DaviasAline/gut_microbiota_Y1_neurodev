@@ -42,24 +42,6 @@ corres <-
   filter(Genera_corres %in% genera_var_labels) %>%
   distinct(Genera_corres, .keep_all = TRUE)
 
-
-test <- bdd %>% select(all_of(genera_var_names_raw))                     # récupération des labels des variables
-colnames(test) <- gsub("_Y1", "_imp_log_std_Y1", colnames(test))
-test <- test %>% 
-  var_label() %>% 
-  as.data.frame() %>% 
-  t() %>% 
-  as.matrix() %>% 
-  as.data.frame() %>% 
-  rownames_to_column(var = "Exposure") %>%
-  mutate(Genera_corres = gsub("One year child feces relative abundance of genus ", "", V1)) %>%
-  select(-V1)
-corres <-                                                                         # Ajout des correspondances taxonomiques 
-  left_join(corres, test, by = "Genera_corres")
-rm(test)
-
-
-
 # Vectors ----
 covariates <- covar_vec_model_final
 explanatory <- bdd_final_imp_1 %>% 
@@ -83,7 +65,20 @@ genera_var_names <- genera_var_names %>%
 genera_var_names_raw <- genera_var_names %>%
   str_replace_all("_imp_log_std_Y1", "_Y1")
 
-
+test <- bdd %>% select(all_of(genera_var_names_raw))                     # récupération des labels des variables
+colnames(test) <- gsub("_Y1", "_imp_log_std_Y1", colnames(test))
+test <- test %>% 
+  var_label() %>% 
+  as.data.frame() %>% 
+  t() %>% 
+  as.matrix() %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "Exposure") %>%
+  mutate(Genera_corres = gsub("One year child feces relative abundance of genus ", "", V1)) %>%
+  select(-V1)
+corres <-                                                                         # Ajout des correspondances taxonomiques 
+  left_join(corres, test, by = "Genera_corres")
+rm(test)
 
 # Data description ----
 ## Covariates ----
@@ -108,11 +103,12 @@ descrip_genera <- tbl_merge(
         set_label(genera_var_labels) %>%
         tbl_summary(
           type = list(everything() ~ "continuous"), 
-          statistic = list(everything() ~ "{median} ({p25}, {p75})"), 
-          digits = list(all_continuous() ~ c(2, 1, 1))), 
+          statistic = list(everything() ~ "{median} ({p33}, {p66})"), 
+          digits = list(all_continuous() ~ c(2, 3, 3))), 
       tbl_2 = 
         bdd_final_imp_1 %>% 
         select(all_of(genera_var_names)) %>%
+        rename_all(~gsub("imp_log_std_", "", .)) %>%
         set_label(genera_var_labels) %>%
         tbl_summary(
           type = list(everything() ~ "continuous"), 
@@ -297,8 +293,8 @@ table_multi <- table_multi %>%
                   "Plan and organization BRIEF-P sub-score at 3 years" = "ch_briefpplan_y3",
                   "Shift BRIEF-P sub-score at 3 years" = "ch_briefpshift_y3",
                   "Work memory BRIEF-P sub-score at 3 years" = "ch_briefpworkmemo_y3",
-                  "Externalizing CBCL sub-score at 2 years" = "ch_cbclextsub-score_y2",
-                  "Internalizing CBCL sub-score at 2 years" = "ch_cbclintsub-score_y2",
+                  "Externalizing CBCL sub-score at 2 years" = "ch_cbclextscore_y2",
+                  "Internalizing CBCL sub-score at 2 years" = "ch_cbclintscore_y2",
                   "Total SRS score at 3 years" = "ch_SRStotal_y3",
                   "Total WPPSI score at 3 years" = "ch_WPPSI_total_cor_Y3",
                   "Verbal comprehension WPPSI sub-score at 3 years" = "ch_WPPSI_verbal_comprehension_cor_Y3",
@@ -312,6 +308,9 @@ table_multi <- table_multi %>%
                   "Work memory BRIEF-P sub-score at 3 years", "Total SRS score at 3 years",
                   "Verbal comprehension WPPSI sub-score at 3 years", "Visuospatial WPPSI sub-score at 3 years",
                   "Work memory WPPSI sub-score at 3 years", "Total WPPSI score at 3 years"),
+    Outcome_rec = gsub("sub-score at 3 years", "Y3", Outcome), 
+    Outcome_rec = gsub("sub-score at 2 years", "Y2", Outcome_rec), 
+    Outcome_rec = gsub("score at 3 years", "Y3", Outcome_rec), 
     `p-value` = gsub("__", "", `p-value`),
     `p-value` = as.numeric(`p-value`),
     `q-value` = case_when(
@@ -321,22 +320,7 @@ table_multi <- table_multi %>%
     p_value_shape = ifelse(`p-value`<0.05, "p-value<0.05", "p-value≥0.05"),
     q_value_shape = ifelse(`q-value`<0.05, "q-value<0.05", "q-value≥0.05"), 
     sens_beta = ifelse(Beta < 0, "Beta<0", "Beta≥0"), 
-    sens_beta = fct_relevel(sens_beta, "Beta≥0", "Beta<0"))  %>% 
-  separate(col = "95% CI", into = c("lower_CI", "upper_CI"), sep = ",", remove = FALSE) %>%
-  mutate(
-    lower_CI = as.numeric(lower_CI),
-    upper_CI = as.numeric(upper_CI)
-  ) %>%
-  select(
-    Phyla_corres, Class_corres, Order_corres, Family_corres,
-    Outcome, 
-    `Gut microbiota parameters`,
-    Exposure, 
-    Beta, sens_beta, 
-    "95% CI", lower_CI, upper_CI, 
-    "p-value", p_value_shape, 
-    "q-value", q_value_shape) %>%
-  mutate(
+    sens_beta = fct_relevel(sens_beta, "Beta≥0", "Beta<0"), 
     improved_neuro = 
       case_when(Outcome %in% c("Verbal comprehension WPPSI sub-score at 3 years",
                                "Visuospatial WPPSI sub-score at 3 years", 
@@ -361,7 +345,22 @@ table_multi <- table_multi %>%
                                "Shift BRIEF-P sub-score at 3 years", 
                                "Emotional control BRIEF-P sub-score at 3 years", 
                                "Work memory BRIEF-P sub-score at 3 years", 
-                               "Plan and organization BRIEF-P sub-score at 3 years") & Beta<0 ~ "Improved neurodevelopmental outcome"))
+                               "Plan and organization BRIEF-P sub-score at 3 years") & Beta<0 ~ "Improved neurodevelopmental outcome"))  %>% 
+  separate(col = "95% CI", into = c("lower_CI", "upper_CI"), sep = ",", remove = FALSE) %>%
+  mutate(
+    lower_CI = as.numeric(lower_CI),
+    upper_CI = as.numeric(upper_CI)
+  ) %>%
+  select(
+    Phyla_corres, Class_corres, Order_corres, Family_corres,
+    Outcome, Outcome_rec, 
+    `Gut microbiota parameters`,
+    Exposure, 
+    Beta, sens_beta, 
+    "95% CI", lower_CI, upper_CI, 
+    "p-value", p_value_shape, 
+    "q-value", q_value_shape, 
+    improved_neuro) 
 
 # Tables ----
 ## Table 1: Covariables description ----
@@ -457,18 +456,18 @@ figure_1 <- table_multi %>%
                                             "Bacteroidetes", 
                                             "Proteobacteria")) %>%
   mutate(Beta = as.numeric(Beta), 
-         Outcome = 
-           fct_relevel(Outcome,
-                       "Total WPPSI score at 3 years", "Work memory WPPSI sub-score at 3 years", 
-                       "Visuospatial WPPSI sub-score at 3 years","Verbal comprehension WPPSI sub-score at 3 years", 
-                       "Plan and organization BRIEF-P sub-score at 3 years", "Work memory BRIEF-P sub-score at 3 years",
-                       "Emotional control BRIEF-P sub-score at 3 years","Shift BRIEF-P sub-score at 3 years",
-                       "Inhibition BRIEF-P sub-score at 3 years", "Total SRS score at 3 years",
-                       "Externalizing CBCL sub-score at 2 years", "Internalizing CBCL sub-score at 2 years"), 
+         Outcome_rec = 
+           fct_relevel(Outcome_rec,
+                       "Total WPPSI Y3", "Work memory WPPSI Y3", 
+                       "Visuospatial WPPSI Y3","Verbal comprehension WPPSI Y3", 
+                       "Plan and organization BRIEF-P Y3", "Work memory BRIEF-P Y3",
+                       "Emotional control BRIEF-P Y3","Shift BRIEF-P Y3",
+                       "Inhibition BRIEF-P Y3", "Total SRS Y3",
+                       "Externalizing CBCL Y2", "Internalizing CBCL Y2"), 
          `Gut microbiota parameters` =
            fct_relevel(`Gut microbiota parameters`, 
                        "Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>%
-  ggplot(aes(x = Outcome, 
+  ggplot(aes(x = Outcome_rec, 
              y = Beta, 
              min = lower_CI, 
              ymax = upper_CI, 
@@ -505,23 +504,10 @@ figure_2 <- table_multi  %>%
                                              "Shannon diversity",
                                              "Specific richness")) %>%
   mutate(
-    Outcome_rec = fct_recode(Outcome,
-                             "Internalizing CBCL Y2" = "Internalizing CBCL sub-score at 2 years",
-                              "Externalizing CBCL Y2" = "Externalizing CBCL sub-score at 2 years",
-                              "Emotional control BRIEF-P Y3" = "Emotional control BRIEF-P sub-score at 3 years",
-                              "Inhibition BRIEF-P Y3" = "Inhibition BRIEF-P sub-score at 3 years",
-                              "Plan and organization BRIEF-P Y3" = "Plan and organization BRIEF-P sub-score at 3 years",
-                              "Shift BRIEF-PY3" = "Shift BRIEF-P sub-score at 3 years",
-                              "Work memory BRIEF-P Y3" = "Work memory BRIEF-P sub-score at 3 years",
-                              "Total SRS Y3" = "Total SRS score at 3 years",
-                              "Verbal comprehension WPPSI Y3" = "Verbal comprehension WPPSI sub-score at 3 years",
-                              "Visuospatial WPPSI Y3" = "Visuospatial WPPSI sub-score at 3 years",
-                              "Work memory WPPSI Y3" = "Work memory WPPSI sub-score at 3 years",
-                              "Total WPPSI Y3" = "Total WPPSI score at 3 years"), 
     Outcome_rec = case_when(`Gut microbiota parameters` == "Subdoligranulum" & 
                               Outcome_rec %in% c("Internalizing CBCL Y2", "Emotional control BRIEF-P Y3") ~ 
                               "Internalizing CBCL Y2 and Emotional control BRIEF-P Y3", 
-                         .default = Outcome_rec)) %>%
+                            .default = Outcome_rec)) %>%
   ggplot(aes(x = -log10(`p-value`), y = `Gut microbiota parameters`)) +
   geom_point(aes(shape = improved_neuro), size = 2) +
   geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = "red") +
@@ -538,6 +524,7 @@ figure_2 <- table_multi  %>%
     legend.box = "vertical", 
     legend.justification = "center", 
     axis.text.y = element_text(face = "italic"))
+
 figure_2
 ggsave("4_output/figures/Fig.2 manhattan_plot_genera.tiff", 
        figure_2, 
@@ -549,6 +536,37 @@ ggsave("4_output/figures/Fig.2 manhattan_plot_genera.tiff",
 
 ## Fig.3: Forestplot final genera ----
 figure_3 <- table_multi %>% 
+  mutate(Beta = as.numeric(Beta), 
+         Outcome_rec = 
+           fct_relevel(Outcome_rec,
+                       "Internalizing CBCL Y2", 
+                       "Externalizing CBCL Y2",
+                       "Total SRS Y3", 
+                       "Inhibition BRIEF-P Y3", 
+                       "Shift BRIEF-P Y3",
+                       "Emotional control BRIEF-P Y3",
+                       "Work memory BRIEF-P Y3",
+                       "Plan and organization BRIEF-P Y3", 
+                       "Verbal comprehension WPPSI Y3", 
+                       "Visuospatial WPPSI Y3",
+                       "Work memory WPPSI Y3", 
+                       "Total WPPSI Y3"), 
+         `Gut microbiota parameters` = 
+           fct_relevel(`Gut microbiota parameters`, 
+                       "Saccharibacteria genera incertae sedis", "Peptoniphilus",
+                       "Granulicatella", "Anaerotruncus", "Lactococcus", "Terrisporobacter",
+                       "Oscillibacter", "Haemophilus", "Erysipelotrichaceae incertae sedis",
+                       "Butyricicoccus", "Dialister", "Subdoligranulum", "Intestinibacter",
+                       "Klebsiella", "Eisenbergiella", "Hungatella", "Dorea", "Eggerthella",
+                       "Romboutsia", "Clostridium IV", "Ruminococcus 2", "Flavonifractor",
+                       "Alistipes", "Collinsella", "Parabacteroides", "Fusicatenibacter",
+                       "Roseburia", "Enterobacter", "Cellulosibacter", "Enterococcus",
+                       "Coprococcus", "Veillonella", "Clostridium sensu stricto", "Clostridium XVIII",
+                       "Ruminococcus", "Gemmiger", "Anaerostipes", "Lachnospiracea incertae sedis",
+                       "Clostridium XlVa", "Streptococcus", "Faecalibacterium", "Akkermansia",
+                       "Escherichia and Shigella", "Blautia", "Bacteroides", "Bifidobacterium",
+                       "Proteobacteria", "Bacteroidetes", "Actinobacteria", "Firmicutes",
+                       "Shannon diversity", "Specific richness")) %>%
   filter(`p-value`<0.05) %>% 
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
@@ -556,36 +574,6 @@ figure_3 <- table_multi %>%
                                              "Proteobacteria",
                                              "Shannon diversity",
                                              "Specific richness")) %>%
-  mutate(Beta = as.numeric(Beta), 
-         Outcome = 
-           fct_relevel(Outcome,
-                       "Internalizing CBCL sub-score at 2 years",
-                       "Externalizing CBCL sub-score at 2 years", 
-                       "Total SRS score at 3 years",
-                       "Inhibition BRIEF-P sub-score at 3 years", 
-                       "Shift BRIEF-P sub-score at 3 years",
-                       "Emotional control BRIEF-P sub-score at 3 years", 
-                       "Work memory BRIEF-P sub-score at 3 years",
-                       "Plan and organization BRIEF-P sub-score at 3 years",
-                       "Verbal comprehension WPPSI sub-score at 3 years", 
-                       "Visuospatial WPPSI sub-score at 3 years",
-                       "Work memory WPPSI sub-score at 3 years", 
-                       "Total WPPSI score at 3 years"), 
-         `Gut microbiota parameters` = fct_relevel(`Gut microbiota parameters`, 
-                                                   "Saccharibacteria genera incertae sedis", "Peptoniphilus",
-                                                   "Granulicatella", "Anaerotruncus", "Lactococcus", "Terrisporobacter",
-                                                   "Oscillibacter", "Haemophilus", "Erysipelotrichaceae incertae sedis",
-                                                   "Butyricicoccus", "Dialister", "Subdoligranulum", "Intestinibacter",
-                                                   "Klebsiella", "Eisenbergiella", "Hungatella", "Dorea", "Eggerthella",
-                                                   "Romboutsia", "Clostridium IV", "Ruminococcus 2", "Flavonifractor",
-                                                   "Alistipes", "Collinsella", "Parabacteroides", "Fusicatenibacter",
-                                                   "Roseburia", "Enterobacter", "Cellulosibacter", "Enterococcus",
-                                                   "Coprococcus", "Veillonella", "Clostridium sensu stricto", "Clostridium XVIII",
-                                                   "Ruminococcus", "Gemmiger", "Anaerostipes", "Lachnospiracea incertae sedis",
-                                                   "Clostridium XlVa", "Streptococcus", "Faecalibacterium", "Akkermansia",
-                                                   "Escherichia and Shigella", "Blautia", "Bacteroides", "Bifidobacterium",
-                                                   "Proteobacteria", "Bacteroidetes", "Actinobacteria", "Firmicutes",
-                                                   "Shannon diversity", "Specific richness")) %>%
   ggplot(aes(x = `Gut microbiota parameters`, 
              y = Beta, 
              min = lower_CI, 
@@ -598,19 +586,20 @@ figure_3 <- table_multi %>%
             fontface = "italic", hjust = 0.5, vjust = -0.5, angle = 0, size = 4, 
             position = position_dodge(width = 1.2, preserve = "total")) +
   coord_flip()  +
-  facet_grid(Outcome~., 
+  facet_grid(Outcome_rec~., 
              scales = "free_y", 
              space = "free_y", 
              switch = "y", 
-             labeller = as_labeller(function(labels) {
-               labels <- gsub(" sub-score", "\nsub-score", labels)
-               labels <- gsub(" score", "\nscore", labels)
-               return(labels)
-             })) + 
+             # labeller = as_labeller(function(labels) {
+             #   labels <- gsub(" sub-score", "\nsub-score", labels)
+             #   labels <- gsub(" score", "\nscore", labels)
+             #   return(labels)
+             # })
+             ) + 
   labs(x = "", y = "") +
   theme_lucid()  + 
   theme(axis.text.y = element_blank(), 
-        strip.text.y.left = element_text(angle = 0, hjust = 1, size = 12), 
+        strip.text.y.left = element_text(angle = 0, hjust = 1, size = 10), 
         panel.background = element_rect(color = "gray", fill = NULL))
 
 figure_3
@@ -736,8 +725,8 @@ for (outcome in outcomes) {
     covars <- covariates_map$IQ
   }
   
-  tbls_for_outcome_multi <- vector("list", length(alpha_vec))
-  names(tbls_for_outcome_multi) <- alpha_vec
+  tbls_for_outcome_multi_sensi_seuil <- vector("list", length(alpha_vec))
+  names(tbls_for_outcome_multi_sensi_seuil) <- alpha_vec
   
   for (exposure in alpha_vec) {                                               # running linear regression
     terms <- c(exposure, covars)
@@ -759,9 +748,9 @@ for (outcome in outcomes) {
       add_n()%>%
       modify_table_body(~.x %>% arrange(row_type == "glance_statistic"))
     
-    tbls_for_outcome_multi[[exposure]] <- tbl
+    tbls_for_outcome_multi_sensi_seuil[[exposure]] <- tbl
   }
-  table_S5[[outcome]] <- tbls_for_outcome_multi
+  table_S5[[outcome]] <- tbls_for_outcome_multi_sensi_seuil
 }
 
 table_S5_large <- tbl_stack(
@@ -779,28 +768,23 @@ table_S5_large <- tbl_stack(
     tbl_merge(tbls = lapply(table_S5, function(x) x$ch_feces_Shannon_10000_ASV_std_Y1),                 # analyse de sensibilité seuil 10000 pour n sur seuil 10000
               tab_spanner = spanner_names)))              
 
-rm(terms, formula, model, exposure, outcome, alpha_vec, tbl, covars, i)
 
 merge_tbls_function_rich <- function(index, tbls_by_outcome_multi, table_S5) {
   tbl_merge(
     tbls = list(
-      tbls_by_outcome_multi[[index]]$ch_feces_SpecRich_5000_ASV_std_Y1_10 %>% add_n(), 
+      tbls_by_outcome_multi[[index]]$ch_feces_SpecRich_5000_ASV_std_Y1_10, 
       table_S5[[index]]$ch_feces_SpecRich_5000_ASV_std_Y1_10,             
-      table_S5[[index]]$ch_feces_SpecRich_10000_ASV_std_Y1_10             
-    ), 
-    tab_spanner = c("**Threshold 5,000 (n=350)**","**Threshold 5,000 (n=339)**", "**Threshold 10,000 (n=339)**")
-  )
+      table_S5[[index]]$ch_feces_SpecRich_10000_ASV_std_Y1_10), 
+    tab_spanner = c("**Threshold 5,000 (n=350)**","**Threshold 5,000 (n=339)**", "**Threshold 10,000 (n=339)**"))
 }
 
 merge_tbls_function_sha <- function(index, tbls_by_outcome_multi, table_S5) {
   tbl_merge(
     tbls = list(
-      tbls_by_outcome_multi[[index]]$ch_feces_SpecRich_5000_ASV_std_Y1_10 %>% add_n(), # Premier tbl_regression de tbls_by_outcome_multi
-      table_S5[[index]]$ch_feces_SpecRich_5000_ASV_std_Y1_10,              # Premier tbl_regression de table_S5
-      table_S5[[index]]$ch_feces_SpecRich_10000_ASV_std_Y1_10               # Deuxième tbl_regression de table_S5
-    ), 
-    tab_spanner = c("**Threshold 5,000 (n=350)**","**Threshold 5,000 (n=339)**", "**Threshold 10,000 (n=339)**")
-  )
+      tbls_by_outcome_multi[[index]]$ch_feces_Shannon_5000_ASV_std_Y1, 
+      table_S5[[index]]$ch_feces_Shannon_5000_ASV_std_Y1,            
+      table_S5[[index]]$ch_feces_Shannon_10000_ASV_std_Y1), 
+    tab_spanner = c("**Threshold 5,000 (n=350)**","**Threshold 5,000 (n=339)**", "**Threshold 10,000 (n=339)**"))
 }
 
 table_S5_long <- 
@@ -808,8 +792,11 @@ table_S5_long <-
     tbls = c(lapply(1:12, function(index) merge_tbls_function_rich(index, tbls_by_outcome_multi, table_S5)), 
              lapply(1:12, function(index) merge_tbls_function_sha(index, tbls_by_outcome_multi, table_S5))),
     group_header = c(spanner_names, spanner_names))
+
 table_S5 <- list(table_S5_long = table_S5_long, 
                  table_S5_large = table_S5_large)
+
+rm(terms, formula, model, exposure, outcome, alpha_vec, tbl, covars)
 rm(merge_tbls_function_rich, merge_tbls_function_sha, table_S5_large, table_S5_long, tbls_for_outcome_multi)
 
 ## Table S6: Sensitivity analysis – effect of the HOME Y3 variable on CBCL Y2 -----
