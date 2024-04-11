@@ -456,18 +456,19 @@ figure_1 <- table_multi %>%
                                             "Bacteroidetes", 
                                             "Proteobacteria")) %>%
   mutate(Beta = as.numeric(Beta), 
-         Outcome_rec = 
+         Outcome_rec =
            fct_relevel(Outcome_rec,
-                       "Total WPPSI Y3", "Work memory WPPSI Y3", 
-                       "Visuospatial WPPSI Y3","Verbal comprehension WPPSI Y3", 
+                       "Total WPPSI Y3", "Work memory WPPSI Y3",
+                       "Visuospatial WPPSI Y3","Verbal comprehension WPPSI Y3",
                        "Plan and organization BRIEF-P Y3", "Work memory BRIEF-P Y3",
                        "Emotional control BRIEF-P Y3","Shift BRIEF-P Y3",
                        "Inhibition BRIEF-P Y3", "Total SRS Y3",
-                       "Externalizing CBCL Y2", "Internalizing CBCL Y2"), 
+                       "Externalizing CBCL Y2", "Internalizing CBCL Y2"),
+         Outcome_rec = fct_rev(Outcome_rec),
          `Gut microbiota parameters` =
            fct_relevel(`Gut microbiota parameters`, 
                        "Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>%
-  ggplot(aes(x = Outcome_rec, 
+  ggplot(aes(x = `Gut microbiota parameters`, 
              y = Beta, 
              min = lower_CI, 
              ymax = upper_CI, 
@@ -479,7 +480,7 @@ figure_1 <- table_multi %>%
   labs(x = "Neurodevelopement", y = "", color = "p-value") +
   theme_lucid() +
   coord_flip()  +
-  facet_wrap(~`Gut microbiota parameters`, scales = "free_x", ncol = 4) +
+  facet_wrap(Outcome_rec~.,  ncol = 4) +
   theme(
     legend.position = "right",
     legend.box = "vertical", 
@@ -586,7 +587,7 @@ figure_3 <- table_multi %>%
             fontface = "italic", hjust = 0.5, vjust = -0.5, angle = 0, size = 4, 
             position = position_dodge(width = 1.2, preserve = "total")) +
   coord_flip()  +
-  facet_grid(Outcome_rec~., 
+  facet_grid(.~Outcome_rec, 
              scales = "free_y", 
              space = "free_y", 
              switch = "y", 
@@ -1225,67 +1226,190 @@ rm(
   sensi_explanatory)
 
 
-## Table S9: Sensitivity analysis - non linear relation ? ----
-## Sensitivity analysis – Effects of tertiles of gut microbiota parameters on the neurodeveloppment.
-explanatory_raw <- explanatory %>% str_replace_all("_imp_log_std", "")
-explanatory_raw <- explanatory_raw %>% str_replace_all("_std", "")
-explanatory_raw <- explanatory_raw %>% str_replace_all("_Y1_10", "_Y1")
+## Table S9: Sensitivity analysis - non monotonic relation ? ----
+## Sensitivity analysis – Non monotonic relation ? heterogeneity and trend tests
 
-descrip_tertiles <- function(data, vars) {                                           
-  data %>%
-    select(all_of({{vars}})) %>%
-    tbl_summary(
-      missing = "no", 
-      type = list(where(is.numeric)~ "continuous"), 
-      statistic = all_continuous()~ "{min}/{p25}/{p33}/{median}/{mean}/{p66}/{p70}/{max}/{N_nonmiss}", 
-      digits = list(all_continuous() ~ c(0, 0, 10, 0, 1, 10, 10, 0, 0))
-    ) %>%
-    bold_labels() %>% 
-    as_gt()  %>% 
-    as.data.frame()%>% 
-    select(variable, label, stat_0) %>%
-    separate(
-      col = stat_0, 
-      into = c("Min", "p25", "p33", "Median", "Mean", "p66","p70", "Max", "N"), 
-      sep = "/", 
-      remove = TRUE) %>%
-    rename(
-      #"Variable names" = variable, 
-      "Variable labels" = label)
-  #%>% kable()
-}
+# Visualisation des données genres
+bdd %>%
+  select(contains("ch_feces_rel_g")) %>%
+  select(!contains("imp_log")) %>%
+  na.omit() %>%
+  select_if(~ sum(. != 0, na.rm = TRUE) / length(.) >= 0.66) %>%  # selection des genres ayant une detection >= 66% 
+  mutate_all(~ ifelse(.>0, "Yes", "No")) %>%
+  tbl_summary(
+    type = list(everything() ~ "categorical"))
 
-test <- descrip_tertiles(data = bdd, vars = explanatory_raw)
-test %>% arrange(desc("p70")) %>% View()
-test %>% filter(`Value 2nd tertile` == `Value 3rd tertile`) %>% View()
+# Création des vecteurs de variables
+genera_to_select <- bdd %>%
+  select(contains("ch_feces_rel_g")) %>%
+  select(!contains("imp_log")) %>%
+  na.omit() %>%
+  select_if(~ sum(. != 0, na.rm = TRUE) / length(.) >= 0.66) %>%  # selection des genres ayant une detection >= 66% 
+  colnames() %>%
+  str_replace_all("_Y1", "_imp_log_std_Y1")
 
-bdd_ter <- bdd %>%
-  select(ident, all_of(explanatory_raw))%>%
-  mutate(across(all_of(explanatory_raw), 
+var_to_test <- bdd_final_imp_1 %>%
+  select("ch_feces_SpecRich_5000_ASV_std_Y1_10", 
+         "ch_feces_Shannon_5000_ASV_std_Y1", 
+         "ch_feces_rel_p1_std_Y1_10",
+         "ch_feces_rel_p2_std_Y1_10", 
+         "ch_feces_rel_p3_std_Y1_10", 
+         "ch_feces_rel_p4_std_Y1_10", 
+         all_of(genera_to_select)) %>%
+  colnames()
+var_to_test_ter <- paste(var_to_test, "_ter", sep = "")
+rm(genera_to_select)
+
+# Nettoyage des données 
+bdd_hetero <- bdd_final_imp_1 %>%
+  select(
+    ident, 
+    all_of(var_to_test), 
+    all_of(outcomes), 
+    all_of(covariates)) 
+
+bdd_hetero <- bdd_hetero %>%                                                    # Création des variables tertiles 
+  mutate(across(all_of(var_to_test), 
                 ~cut(., 
                      breaks = quantile(., probs = 0:3/3, na.rm = TRUE), 
                      labels = c("1st tertile", "2nd tertile", "3rd tertile"), 
                      include.lowest = TRUE),
                 .names = "{.col}_ter"))
 
+### Test d'hétérogénéité ----
+# ici on met les variables prédicteurs en tertiles, sans covariables
+# on fait des régressions linéaires et on regarde les p globales
+prep_table_S9_a <- vector("list", length(outcomes))
+names(prep_table_S9_a) <- outcomes
 
+vec_name <- table_multi %>% 
+  select(`Gut microbiota parameters`, "Exposure") %>% 
+  filter(Exposure %in% var_to_test) %>% 
+  distinct(Exposure, .keep_all = TRUE) %>%
+  as.vector()
 
-bdd_ter <- bdd %>%
-  select(ident, all_of(explanatory_raw))%>%
-  mutate(across(all_of(explanatory_raw), 
-                .fns = ~case_when(
-                  ntile(., 3) == 1 ~ "1st tertile",
-                  ntile(., 3) == 2 ~ "2nd tertile",
-                  ntile(., 3) == 3 ~ "3rd tertile"), 
-                .names = "{.col}_ter"))
-
-
-verifier_differences <- function(variable) {
-  variable_triee <- sort(variable)
-  return(variable_triee[119] != variable_triee[120])
+for (outcome in outcomes) {
+  
+  tbls <- vector("list", length(var_to_test_ter))
+  names(tbls) <- var_to_test_ter
+  
+  for (exposure in var_to_test_ter) {                                               # running linear regression
+    formula <- as.formula(paste(outcome, "~", exposure))
+    model <- lm(formula, data = bdd_hetero)
+    
+    tbl <-                                                                      
+      tbl_regression(
+        model, 
+        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+        pvalue_fun = custom_pvalue_fun,
+        exponentiate = FALSE) %>%
+      bold_p() %>%
+      bold_labels() %>%
+      add_global_p(include = exposure, keep = TRUE)
+    
+    tbls[[exposure]] <- tbl
+  }
+  prep_table_S9_a[[outcome]] <- tbls
 }
 
-resultats <- sapply(bdd_ter %>% select(all_of(explanatory_raw)), verifier_differences)
+table_S9_a <- tbl_stack(
+  tbls = lapply(1:27, function(j) { 
+    tbl_merge(
+      tbls = lapply(prep_table_S9_a, function(i) i[[j]]),
+      tab_spanner = spanner_names)}))
+
+rm(prep_table_S9_a, outcome, exposure, tbls, tbl, model, formula)
+
+
+### Test de tendance ----
+# ici on 
+replace_with_median <- function(data, var, tertile_var) {                       # Fonction pour remplacer par les médianes des tertiles
+  data %>%
+    group_by({{tertile_var}}) %>%
+    mutate({{var}} := median({{var}})) %>%
+    ungroup()
+}
+
+bdd_hetero_bis <- bdd_hetero %>%
+  replace_with_median(ch_feces_SpecRich_5000_ASV_std_Y1_10, ch_feces_SpecRich_5000_ASV_std_Y1_10_ter) %>%
+  replace_with_median(ch_feces_Shannon_5000_ASV_std_Y1, ch_feces_Shannon_5000_ASV_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_p1_std_Y1_10, ch_feces_rel_p1_std_Y1_10_ter) %>%
+  replace_with_median(ch_feces_rel_p2_std_Y1_10, ch_feces_rel_p2_std_Y1_10_ter) %>%    
+  replace_with_median(ch_feces_rel_p3_std_Y1_10, ch_feces_rel_p3_std_Y1_10_ter) %>%
+  replace_with_median(ch_feces_rel_p4_std_Y1_10, ch_feces_rel_p4_std_Y1_10_ter) %>%
+  replace_with_median(ch_feces_rel_g1_imp_log_std_Y1, ch_feces_rel_g1_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g2_imp_log_std_Y1, ch_feces_rel_g2_imp_log_std_Y1_ter) %>%   
+  replace_with_median(ch_feces_rel_g3_imp_log_std_Y1, ch_feces_rel_g3_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g4_imp_log_std_Y1, ch_feces_rel_g4_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g5_imp_log_std_Y1, ch_feces_rel_g5_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g6_imp_log_std_Y1, ch_feces_rel_g6_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g7_imp_log_std_Y1, ch_feces_rel_g7_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g8_imp_log_std_Y1, ch_feces_rel_g8_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g9_imp_log_std_Y1, ch_feces_rel_g9_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g10_imp_log_std_Y1, ch_feces_rel_g10_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g13_imp_log_std_Y1, ch_feces_rel_g13_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g14_imp_log_std_Y1, ch_feces_rel_g15_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g19_imp_log_std_Y1, ch_feces_rel_g19_imp_log_std_Y1_ter) %>%    
+  replace_with_median(ch_feces_rel_g24_imp_log_std_Y1, ch_feces_rel_g24_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g25_imp_log_std_Y1, ch_feces_rel_g25_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g27_imp_log_std_Y1, ch_feces_rel_g27_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g28_imp_log_std_Y1, ch_feces_rel_g28_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g29_imp_log_std_Y1, ch_feces_rel_g29_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g35_imp_log_std_Y1, ch_feces_rel_g35_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g41_imp_log_std_Y1, ch_feces_rel_g41_imp_log_std_Y1_ter)
+
+bdd_hetero_bis %>% select(all_of(var_to_test)) %>% str() # vérifier si c'est bien codé en continue à 3 valeurs différentes
+
+bdd_hetero_bis <- bdd_hetero_bis %>%
+  select(!contains("_ter"))
+colnames(bdd_hetero_bis) <- colnames(bdd_hetero_bis) %>%
+  str_replace_all("_std_Y1_10", "_std_Y1_10_ter")
+
+colnames(bdd_hetero_bis) <- colnames(bdd_hetero_bis) %>%
+  str_replace_all("_imp_log_std_Y1", "_imp_log_std_Y1_ter")
+
+colnames(bdd_hetero_bis) <- colnames(bdd_hetero_bis) %>%
+  str_replace_all("ch_feces_Shannon_5000_ASV_std_Y1", "ch_feces_Shannon_5000_ASV_std_Y1_ter")
+
+prep_table_S9_b <- vector("list", length(outcomes))
+names(prep_table_S9_b) <- outcomes
+
+for (outcome in outcomes) {
+  
+  tbls <- vector("list", length(var_to_test_ter))
+  names(tbls) <- var_to_test_ter
+  
+  for (exposure in var_to_test_ter) {                                               # running linear regression
+    formula <- as.formula(paste(outcome, "~", exposure))
+    model <- lm(formula, data = bdd_hetero_bis)
+    
+    tbl <-                                                                      
+      tbl_regression(
+        model, 
+        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+        pvalue_fun = custom_pvalue_fun,
+        exponentiate = FALSE) %>%
+      bold_p() %>%
+      bold_labels() 
+    
+    tbls[[exposure]] <- tbl
+  }
+  prep_table_S9_b[[outcome]] <- tbls
+}
+
+table_S9_b <- tbl_stack(
+  tbls = lapply(1:27, function(j) { 
+    tbl_merge(
+      tbls = lapply(prep_table_S9_b, function(i) i[[j]]),
+      tab_spanner = spanner_names)}))
+
+rm(prep_table_S9_b, outcome, exposure, tbls, tbl, model, formula)
+
+
+table_S9 <- tbl_stack(tbls = list(table_S9_a, table_S9_b))
+
+
+
 # Additional figures ----
 ## Figure S1: DAG ----
 ## Direct acyclic graph of the relation between one year child gut microbiota and neurodevelopment. 
