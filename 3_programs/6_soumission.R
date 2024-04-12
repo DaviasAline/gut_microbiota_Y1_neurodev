@@ -578,7 +578,8 @@ figure_3 <- table_multi %>%
   ggplot(aes(x = `Gut microbiota parameters`, 
              y = Beta, 
              min = lower_CI, 
-             ymax = upper_CI)) +
+             ymax = upper_CI, 
+             color = Phyla_corres)) +
   geom_hline(yintercept = 0, linetype="dashed") +
   geom_pointrange(
     size = 0.4,
