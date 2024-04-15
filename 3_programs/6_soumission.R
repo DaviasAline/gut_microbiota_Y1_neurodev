@@ -865,7 +865,7 @@ for (i in 1:52) {
 }
 table_S6 <- tbl_stack(table_S6)
 
-rm(covariates_sensi_home, i, tbl, prep_table_S6)
+rm(covariates_sensi_home, i, tbl, prep_table_S6, merge_tbls_function_rich, merge_tbls_function_sha)
 
 ## Table S7: Sensitivity analysis – effect of the psy variable on WPSSI Y3 -----
 ## Sensitivity analysis – Effects of the age of assessment covariate on the WPSSI outcomes assessed at 3 years.
@@ -1259,6 +1259,7 @@ var_to_test <- bdd_final_imp_1 %>%
          all_of(genera_to_select)) %>%
   colnames()
 var_to_test_ter <- paste(var_to_test, "_ter", sep = "")
+var_to_test_ter_num <- paste(var_to_test, "_ter_num", sep = "")
 rm(genera_to_select)
 
 # Nettoyage des données 
@@ -1277,61 +1278,27 @@ bdd_hetero <- bdd_hetero %>%                                                    
                      include.lowest = TRUE),
                 .names = "{.col}_ter"))
 
-### Test d'hétérogénéité ----
-# ici on met les variables prédicteurs en tertiles, sans covariables
-# on fait des régressions linéaires et on regarde les p globales
-prep_table_S9_a <- vector("list", length(outcomes))
-names(prep_table_S9_a) <- outcomes
+bdd_hetero <- bdd_hetero %>%                                                    # Création des variables muettes tertile 2 ou 0 (pour le test hétérogénéité)
+  mutate(across(all_of(var_to_test_ter),
+                ~ifelse(. == "2nd tertile", 1, 0),
+                .names = "{.col}_2"))
 
-vec_name <- table_multi %>% 
-  select(`Gut microbiota parameters`, "Exposure") %>% 
-  filter(Exposure %in% var_to_test) %>% 
-  distinct(Exposure, .keep_all = TRUE) %>%
-  as.vector()
-
-for (outcome in outcomes) {
-  
-  tbls <- vector("list", length(var_to_test_ter))
-  names(tbls) <- var_to_test_ter
-  
-  for (exposure in var_to_test_ter) {                                               # running linear regression
-    formula <- as.formula(paste(outcome, "~", exposure))
-    model <- lm(formula, data = bdd_hetero)
-    
-    tbl <-                                                                      
-      tbl_regression(
-        model, 
-        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
-        pvalue_fun = custom_pvalue_fun,
-        exponentiate = FALSE) %>%
-      bold_p() %>%
-      bold_labels() %>%
-      add_global_p(include = exposure, keep = TRUE)
-    
-    tbls[[exposure]] <- tbl
-  }
-  prep_table_S9_a[[outcome]] <- tbls
-}
-
-table_S9_a <- tbl_stack(
-  tbls = lapply(1:27, function(j) { 
-    tbl_merge(
-      tbls = lapply(prep_table_S9_a, function(i) i[[j]]),
-      tab_spanner = spanner_names)}))
-
-rm(prep_table_S9_a, outcome, exposure, tbls, tbl, model, formula)
+bdd_hetero <- bdd_hetero %>%                                                    # Création des variables muettes tertile 3 ou 0 (pour le test hétérogénéité)
+  mutate(across(all_of(var_to_test_ter),
+                ~ifelse(. == "3rd tertile", 1, 0),
+                .names = "{.col}_3"))
 
 
-### Test de tendance ----
-# ici on 
-replace_with_median <- function(data, var, tertile_var) {                       # Fonction pour remplacer par les médianes des tertiles
+replace_with_median <- function(data, var, tertile_var) {                       # création des variables numériques à 3 valeurs : les médianes spécifiques des tertiles (pour trend test)
+  new_var_name <- paste0(rlang::as_name(ensym(var)), "_ter_num")  
   data %>%
     group_by({{tertile_var}}) %>%
-    mutate({{var}} := median({{var}})) %>%
+    mutate(!!new_var_name := median({{var}}, na.rm = TRUE)) %>%
     ungroup()
 }
 
-bdd_hetero_bis <- bdd_hetero %>%
+
+bdd_hetero <- bdd_hetero %>%
   replace_with_median(ch_feces_SpecRich_5000_ASV_std_Y1_10, ch_feces_SpecRich_5000_ASV_std_Y1_10_ter) %>%
   replace_with_median(ch_feces_Shannon_5000_ASV_std_Y1, ch_feces_Shannon_5000_ASV_std_Y1_ter) %>%
   replace_with_median(ch_feces_rel_p1_std_Y1_10, ch_feces_rel_p1_std_Y1_10_ter) %>%
@@ -1349,7 +1316,8 @@ bdd_hetero_bis <- bdd_hetero %>%
   replace_with_median(ch_feces_rel_g9_imp_log_std_Y1, ch_feces_rel_g9_imp_log_std_Y1_ter) %>%
   replace_with_median(ch_feces_rel_g10_imp_log_std_Y1, ch_feces_rel_g10_imp_log_std_Y1_ter) %>%
   replace_with_median(ch_feces_rel_g13_imp_log_std_Y1, ch_feces_rel_g13_imp_log_std_Y1_ter) %>%
-  replace_with_median(ch_feces_rel_g14_imp_log_std_Y1, ch_feces_rel_g15_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g14_imp_log_std_Y1, ch_feces_rel_g14_imp_log_std_Y1_ter) %>%
+  replace_with_median(ch_feces_rel_g15_imp_log_std_Y1, ch_feces_rel_g15_imp_log_std_Y1_ter) %>%
   replace_with_median(ch_feces_rel_g19_imp_log_std_Y1, ch_feces_rel_g19_imp_log_std_Y1_ter) %>%    
   replace_with_median(ch_feces_rel_g24_imp_log_std_Y1, ch_feces_rel_g24_imp_log_std_Y1_ter) %>%
   replace_with_median(ch_feces_rel_g25_imp_log_std_Y1, ch_feces_rel_g25_imp_log_std_Y1_ter) %>%
@@ -1358,45 +1326,94 @@ bdd_hetero_bis <- bdd_hetero %>%
   replace_with_median(ch_feces_rel_g29_imp_log_std_Y1, ch_feces_rel_g29_imp_log_std_Y1_ter) %>%
   replace_with_median(ch_feces_rel_g35_imp_log_std_Y1, ch_feces_rel_g35_imp_log_std_Y1_ter) %>%
   replace_with_median(ch_feces_rel_g41_imp_log_std_Y1, ch_feces_rel_g41_imp_log_std_Y1_ter)
+rm(replace_with_median)
 
-bdd_hetero_bis %>% select(all_of(var_to_test)) %>% str() # vérifier si c'est bien codé en continue à 3 valeurs différentes
+### Test d'hétérogénéité ----
+# ici on met les variables prédicteurs en tertiles (tertile 2, ou non; tertile 3, ou non; avec ajustement sur les covariables)
+# on fait des régressions linéaires et on regarde les p globales du modèle entier
+paires_explicatives <- map(var_to_test, ~c(paste0(.x, "_ter_2"), paste0(.x, "_ter_3")))
 
-bdd_hetero_bis <- bdd_hetero_bis %>%
-  select(!contains("_ter"))
-colnames(bdd_hetero_bis) <- colnames(bdd_hetero_bis) %>%
-  str_replace_all("_std_Y1_10", "_std_Y1_10_ter")
-
-colnames(bdd_hetero_bis) <- colnames(bdd_hetero_bis) %>%
-  str_replace_all("_imp_log_std_Y1", "_imp_log_std_Y1_ter")
-
-colnames(bdd_hetero_bis) <- colnames(bdd_hetero_bis) %>%
-  str_replace_all("ch_feces_Shannon_5000_ASV_std_Y1", "ch_feces_Shannon_5000_ASV_std_Y1_ter")
-
-prep_table_S9_b <- vector("list", length(outcomes))
-names(prep_table_S9_b) <- outcomes
-
-for (outcome in outcomes) {
+fct_table_S9_a <- function(outcome, explicative, data) {
+  formule <- as.formula(paste(outcome, "~", paste(explicative, collapse = "+"),
+                              "+ po_w_kg_3cat + 
+                              po_he_3cat + 
+                              mo_dipl_2cat + 
+                              mo_age + 
+                              mo_bmi_bepr_3cat + 
+                              ch_sex +
+                              mo_par_2cat + 
+                              ch_bf_duration_till48w_4cat + 
+                              po_gd + po_delmod + 
+                              ch_food_intro_Y1_3cat + 
+                              mo_pets + 
+                              ch_antibio_Y1_2cat + 
+                              home_total_y3 + 
+                              mo_hadtotscore_grt3_imp + 
+                              mo_tob_gr_anyt_yn_n2 + 
+                              ch_tabacco_passive_up_to_Y1 + 
+                              ch_care_main_12m_opt2_2c"))
+  modèle <- lm(formule, data = data)
   
-  tbls <- vector("list", length(var_to_test_ter))
-  names(tbls) <- var_to_test_ter
-  
-  for (exposure in var_to_test_ter) {                                               # running linear regression
-    formula <- as.formula(paste(outcome, "~", exposure))
-    model <- lm(formula, data = bdd_hetero_bis)
-    
-    tbl <-                                                                      
-      tbl_regression(
-        model, 
-        estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
-        pvalue_fun = custom_pvalue_fun,
-        exponentiate = FALSE) %>%
-      bold_p() %>%
-      bold_labels() 
-    
-    tbls[[exposure]] <- tbl
-  }
-  prep_table_S9_b[[outcome]] <- tbls
+  tbl_regression(
+    modèle,
+    include = !covariates,
+    estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+    pvalue_fun = custom_pvalue_fun,
+    exponentiate = FALSE) %>%
+    bold_p() %>%
+    bold_labels() %>%
+    add_glance_table(include = "p.value")
 }
+
+prep_table_S9_a <- map(outcomes, ~map(paires_explicatives, fct_table_S9_a, outcome = .x, data = bdd_hetero))
+prep_table_S9_a <- set_names(prep_table_S9_a, outcomes)
+
+table_S9_a <- tbl_stack(
+  tbls = lapply(1:27, function(j) { 
+    tbl_merge(
+      tbls = lapply(prep_table_S9_a, function(i) i[[j]]),
+      tab_spanner = spanner_names)}))
+
+rm(prep_table_S9_a, paires_explicatives, fct_table_S9_a)
+
+
+### Test de tendance ----
+# ici on met les variables prédicteurs en variable continues à 3 valeurs correspodant aux médianes spécifiques des tertiles)
+# on fait des régressions linéaires et on regarde les p globales du modèle entier
+fct_table_S9_b <- function(outcome, explicative, data) {
+  formule <- as.formula(paste(outcome, "~", explicative, 
+                              "+ po_w_kg_3cat + 
+                              po_he_3cat + 
+                              mo_dipl_2cat + 
+                              mo_age + 
+                              mo_bmi_bepr_3cat + 
+                              ch_sex +
+                              mo_par_2cat + 
+                              ch_bf_duration_till48w_4cat + 
+                              po_gd + po_delmod + 
+                              ch_food_intro_Y1_3cat + 
+                              mo_pets + 
+                              ch_antibio_Y1_2cat + 
+                              home_total_y3 + 
+                              mo_hadtotscore_grt3_imp + 
+                              mo_tob_gr_anyt_yn_n2 + 
+                              ch_tabacco_passive_up_to_Y1 + 
+                              ch_care_main_12m_opt2_2c"))
+  modèle <- lm(formule, data = data)
+  
+  tbl_regression(
+    modèle,
+    include = !covariates,
+    estimate_fun = scales::label_number(accuracy = .01, decimal.mark = "."),
+    pvalue_fun = custom_pvalue_fun,
+    exponentiate = FALSE) %>%
+    bold_p() %>%
+    bold_labels() %>%
+    add_glance_table(include = "p.value")
+}
+
+prep_table_S9_b <- map(outcomes, ~map(var_to_test_ter_num, fct_table_S9_b, outcome = .x, data = bdd_hetero))
+prep_table_S9_b <- set_names(prep_table_S9_b, outcomes)
 
 table_S9_b <- tbl_stack(
   tbls = lapply(1:27, function(j) { 
@@ -1404,8 +1421,7 @@ table_S9_b <- tbl_stack(
       tbls = lapply(prep_table_S9_b, function(i) i[[j]]),
       tab_spanner = spanner_names)}))
 
-rm(prep_table_S9_b, outcome, exposure, tbls, tbl, model, formula)
-
+rm(prep_table_S9_b, var_to_test, var_to_test_ter, var_to_test_ter_num, fct_table_S9_b)
 
 table_S9 <- tbl_stack(tbls = list(table_S9_a, table_S9_b))
 
