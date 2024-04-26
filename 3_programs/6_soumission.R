@@ -1281,16 +1281,15 @@ bdd_hetero <- bdd_hetero %>%                                                    
                      include.lowest = TRUE),
                 .names = "{.col}_ter"))
 
-bdd_hetero <- bdd_hetero %>%                                                    # Création des variables muettes tertile 2 ou 0 (pour le test hétérogénéité)
-  mutate(across(all_of(var_to_test_ter),
-                ~ifelse(. == "2nd tertile", 1, 0),
-                .names = "{.col}_2"))
-
-bdd_hetero <- bdd_hetero %>%                                                    # Création des variables muettes tertile 3 ou 0 (pour le test hétérogénéité)
-  mutate(across(all_of(var_to_test_ter),
-                ~ifelse(. == "3rd tertile", 1, 0),
-                .names = "{.col}_3"))
-
+# bdd_hetero <- bdd_hetero %>%                                                    # Création des variables muettes tertile 2 ou 0 (pour le test hétérogénéité)
+#   mutate(across(all_of(var_to_test_ter),
+#                 ~ifelse(. == "2nd tertile", 1, 0),
+#                 .names = "{.col}_2"))
+# 
+# bdd_hetero <- bdd_hetero %>%                                                    # Création des variables muettes tertile 3 ou 0 (pour le test hétérogénéité)
+#   mutate(across(all_of(var_to_test_ter),
+#                 ~ifelse(. == "3rd tertile", 1, 0),
+#                 .names = "{.col}_3"))
 
 replace_with_median <- function(data, var, tertile_var) {                       # création des variables numériques à 3 valeurs : les médianes spécifiques des tertiles (pour trend test)
   new_var_name <- paste0(rlang::as_name(ensym(var)), "_ter_num")  
@@ -1332,12 +1331,10 @@ bdd_hetero <- bdd_hetero %>%
 rm(replace_with_median)
 
 ### Test d'hétérogénéité ----
-# ici on met les variables prédicteurs en tertiles (tertile 2, ou non; tertile 3, ou non; avec ajustement sur les covariables)
-# on fait des régressions linéaires et on regarde les p globales du modèle entier
-paires_explicatives <- map(var_to_test, ~c(paste0(.x, "_ter_2"), paste0(.x, "_ter_3")))
-
+# ici on met les variables prédicteurs en tertiles avec ajustement sur les covariables
+# on fait des régressions linéaires et on regarde les p globales du test de Fisher (compare avec ou sans la variable tertile)
 fct_table_S9_a <- function(outcome, explicative, data) {
-  formule <- as.formula(paste(outcome, "~", paste(explicative, collapse = "+"),
+  formule <- as.formula(paste(outcome, "~", explicative,
                               "+ po_w_kg_3cat + 
                               po_he_3cat + 
                               mo_dipl_2cat + 
@@ -1365,10 +1362,10 @@ fct_table_S9_a <- function(outcome, explicative, data) {
     exponentiate = FALSE) %>%
     bold_p() %>%
     bold_labels() %>%
-    add_glance_table(include = "p.value")
+    add_global_p(test = "F")
 }
 
-prep_table_S9_a <- map(outcomes, ~map(paires_explicatives, fct_table_S9_a, outcome = .x, data = bdd_hetero))
+prep_table_S9_a <- map(outcomes, ~map(var_to_test_ter, fct_table_S9_a, outcome = .x, data = bdd_hetero))
 prep_table_S9_a <- set_names(prep_table_S9_a, outcomes)
 
 table_S9_a <- tbl_stack(
@@ -1377,12 +1374,12 @@ table_S9_a <- tbl_stack(
       tbls = lapply(prep_table_S9_a, function(i) i[[j]]),
       tab_spanner = spanner_names)}))
 
-rm(prep_table_S9_a, paires_explicatives, fct_table_S9_a)
+rm(prep_table_S9_a, fct_table_S9_a)
 
 
 ### Test de tendance ----
-# ici on met les variables prédicteurs en variable continues à 3 valeurs correspodant aux médianes spécifiques des tertiles)
-# on fait des régressions linéaires et on regarde les p globales du modèle entier
+# ici on met les variables prédicteurs en variable continues à 3 valeurs correspodant aux médianes spécifiques des tertiles
+# on fait des régressions linéaires et on regarde les p de la variable microbiote
 fct_table_S9_b <- function(outcome, explicative, data) {
   formule <- as.formula(paste(outcome, "~", explicative, 
                               "+ po_w_kg_3cat + 
@@ -1411,8 +1408,7 @@ fct_table_S9_b <- function(outcome, explicative, data) {
     pvalue_fun = custom_pvalue_fun,
     exponentiate = FALSE) %>%
     bold_p() %>%
-    bold_labels() %>%
-    add_glance_table(include = "p.value")
+    bold_labels() 
 }
 
 prep_table_S9_b <- map(outcomes, ~map(var_to_test_ter_num, fct_table_S9_b, outcome = .x, data = bdd_hetero))
