@@ -329,7 +329,7 @@ table_multi <- table_multi %>%
                 Outcome %in% c("Verbal comprehension WPPSI sub-score at 3 years",
                                "Visuospatial WPPSI sub-score at 3 years", 
                                "Work memory WPPSI sub-score at 3 years", 
-                               "Total WPPSI score at 3 years") & Beta<0 ~ "Altered neurodevelopmental outcome", 
+                               "Total WPPSI score at 3 years") & Beta<0 ~ "Impaired neurodevelopmental outcome", 
                 Outcome %in% c("Internalizing CBCL sub-score at 2 years", 
                                "Externalizing CBCL sub-score at 2 years", 
                                "Total SRS score at 3 years", 
@@ -337,7 +337,7 @@ table_multi <- table_multi %>%
                                "Shift BRIEF-P sub-score at 3 years", 
                                "Emotional control BRIEF-P sub-score at 3 years", 
                                "Work memory BRIEF-P sub-score at 3 years", 
-                               "Plan and organization BRIEF-P sub-score at 3 years") & Beta>0 ~ "Altered neurodevelopmental outcome",
+                               "Plan and organization BRIEF-P sub-score at 3 years") & Beta>0 ~ "Impaired neurodevelopmental outcome",
                 Outcome %in% c("Internalizing CBCL sub-score at 2 years", 
                                "Externalizing CBCL sub-score at 2 years", 
                                "Total SRS score at 3 years", 
@@ -518,7 +518,7 @@ figure_2 <- table_multi  %>%
        y = "Genera", 
        shape = "") +
   geom_text(aes(label = ifelse(`p-value` < 0.025, as.character(Outcome_rec), "")), hjust = -0.05, vjust = -0.3, angle = 35, size = 3.5) +
-  scale_shape_manual(values = c("Altered neurodevelopmental outcome" = 15, "Improved neurodevelopmental outcome" = 17)) +# 15: carré plein, 17: triangle plein
+  scale_shape_manual(values = c("Impaired neurodevelopmental outcome" = 15, "Improved neurodevelopmental outcome" = 17)) +# 15: carré plein, 17: triangle plein
   scale_x_continuous(limits = c(-log10(1), -log10(0.0001))) +
   theme(
     legend.position = "bottom",
@@ -567,7 +567,11 @@ figure_3 <- table_multi %>%
                        "Clostridium XlVa", "Streptococcus", "Faecalibacterium", "Akkermansia",
                        "Escherichia and Shigella", "Blautia", "Bacteroides", "Bifidobacterium",
                        "Proteobacteria", "Bacteroidetes", "Actinobacteria", "Firmicutes",
-                       "Shannon diversity", "Specific richness")) %>%
+                       "Shannon diversity", "Specific richness"), 
+         Phyla_corres = fct_recode(Phyla_corres, "Candidatus Saccharibacteria" = "Candidatus_Saccharibacteria"), 
+         Phyla_corres = fct_relevel(Phyla_corres,
+                                    "Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria",
+                                    "Verrucomicrobia", "Candidatus Saccharibacteria")) %>%
   filter(`p-value`<0.05) %>% 
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
@@ -593,17 +597,16 @@ figure_3 <- table_multi %>%
              space = "free_y", 
              switch = "y", 
              # labeller = as_labeller(function(labels) {
-             #   labels <- gsub(" sub-score", "\nsub-score", labels)
+             #   labels <- gsub(" CBCL Y2", "\nsub-score", labels)
              #   labels <- gsub(" score", "\nscore", labels)
              #   return(labels)
              # })
              ) + 
-  labs(x = "", y = "") +
+  labs(x = "", y = "", color = "Corresponding phylum") +
   theme_lucid()  + 
   theme(axis.text.y = element_blank(), 
         strip.text.y.left = element_text(angle = 0, hjust = 1, size = 10), 
         panel.background = element_rect(color = "gray", fill = NULL))
-
 figure_3
 
 
