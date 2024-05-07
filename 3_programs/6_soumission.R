@@ -25,6 +25,7 @@ library(broom.mixed)
 library(mice)
 library(gt)
 library(GGally)
+library(ggrepel)
 theme_gtsummary_compact()
 
 # Data and functions loading ----
@@ -571,7 +572,10 @@ figure_3 <- table_multi %>%
          Phyla_corres = fct_recode(Phyla_corres, "Candidatus Saccharibacteria" = "Candidatus_Saccharibacteria"), 
          Phyla_corres = fct_relevel(Phyla_corres,
                                     "Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria",
-                                    "Verrucomicrobia", "Candidatus Saccharibacteria")) %>%
+                                    "Verrucomicrobia", "Candidatus Saccharibacteria"), 
+         `Gut microbiota parameters` = 
+           fct_recode(`Gut microbiota parameters`, 
+                      "Saccharibacteria" = "Saccharibacteria genera incertae sedis")) %>%
   filter(`p-value`<0.05) %>% 
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
@@ -583,30 +587,44 @@ figure_3 <- table_multi %>%
              y = Beta, 
              min = lower_CI, 
              ymax = upper_CI, 
-             color = Phyla_corres)) +
+             color = Phyla_corres, 
+             label = ifelse(`p-value` < 0.05, as.character(`Gut microbiota parameters`), ""))) +
   geom_hline(yintercept = 0, linetype="dashed") +
   geom_pointrange(
     size = 0.4,
     position = position_dodge(width = 1.2, preserve = "total")) +
-  geom_text(aes(label = ifelse(`p-value` < 0.05, as.character(`Gut microbiota parameters`), "")), 
-            fontface = "italic", hjust = 0.5, vjust = -0.5, angle = 0, size = 4, 
-            position = position_dodge(width = 1.2, preserve = "total")) +
+  geom_text_repel(
+    fontface = "italic", 
+    
+    nudge_x       = 0.3
+    # aes(label = ifelse(`p-value` < 0.05, as.character(`Gut microbiota parameters`), "")), 
+    #         fontface = "italic", 
+    #         hjust = 0.5, 
+    #         vjust = -0.5, 
+    #         angle = 0, 
+    #         size = 4, 
+    #         position = position_dodge(width = 1.2, preserve = "total")
+  ) +
   coord_flip()  +
   facet_grid(.~Outcome_rec, 
              scales = "free_y", 
              space = "free_y", 
              switch = "y", 
-             # labeller = as_labeller(function(labels) {
-             #   labels <- gsub(" CBCL Y2", "\nsub-score", labels)
-             #   labels <- gsub(" score", "\nscore", labels)
-             #   return(labels)
-             # })
-             ) + 
+             labeller = as_labeller(function(labels) {
+               labels <- gsub("Emotional control BRIEF-P Y3", "Emotional control\nBRIEF-P Y3", labels)
+               labels <- gsub("Work memory", "Work memory\n", labels)
+               labels <- gsub("Plan and organization BRIEF-P Y3", "Plan and organization\nBRIEF-P Y3", labels)
+               labels <- gsub("Verbal comprehension WPPSI Y3", "Verbal comprehension\nWPPSI Y3", labels)
+               return(labels)
+             })
+  ) + 
   labs(x = "", y = "", color = "Corresponding phylum") +
   theme_lucid()  + 
   theme(axis.text.y = element_blank(), 
         strip.text.y.left = element_text(angle = 0, hjust = 1, size = 10), 
-        panel.background = element_rect(color = "gray", fill = NULL))
+        panel.background = element_rect(color = "gray", fill = NULL), 
+        legend.position = "bottom", 
+        legend.title = element_text(face = "bold"))
 figure_3
 
 
@@ -615,8 +633,8 @@ ggsave("4_output/figures/Fig.3 forest_plot_genera.tiff",
        device = "tiff",
        units = "cm",
        dpi = 300,
-       height = 25, 
-       width = 22)
+       height = 20, 
+       width = 34)
 
 
 # Additional tables ----
@@ -1636,4 +1654,13 @@ table_multi %>%
   filter(`p-value` <0.05) %>% 
   filter(`Gut microbiota parameters` %in% c("Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>% 
   select(`Gut microbiota parameters`, Outcome, Beta, `95% CI`, lower_CI, upper_CI, `p-value`) %>% 
+  View()
+
+
+table_multi %>% 
+  filter(`p-value` <0.05) %>% 
+  filter(!`Gut microbiota parameters` %in% c("Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>% 
+  select(-sens_beta, -p_value_shape, -`q-value`, -q_value_shape, -Outcome, -`95% CI`, -lower_CI, -upper_CI) %>% 
+  select(Phyla_corres, Class_corres, Order_corres, Family_corres, `Gut microbiota parameters`, Exposure, everything()) %>% 
+  arrange(`p-value`) %>% 
   View()
