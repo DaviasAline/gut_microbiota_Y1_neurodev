@@ -1350,7 +1350,10 @@ rm(replace_with_median)
 
 ### Test d'hétérogénéité ----
 # ici on met les variables prédicteurs en tertiles avec ajustement sur les covariables
-# on fait des régressions linéaires et on regarde les p globales du test de Fisher (compare avec ou sans la variable tertile)
+# on fait des régressions linéaires et on regarde les p globales du test de Fisher 
+# le test de Fisher compare les modèles avec et sans la variable d'expo en tertile
+# la variable d'expo en tertile apporte quelque chose au modèle si p<0.05
+# pour le faire sans la fonction add_global_p(test = "F), utiliser le code : anova(test, test_2, test = "F") /!\ attention les n doivent être identiques
 fct_table_S9_a <- function(outcome, explicative, data) {
   formule <- as.formula(paste(outcome, "~", explicative,
                               "+ po_w_kg_3cat + 
@@ -1398,6 +1401,7 @@ rm(prep_table_S9_a, fct_table_S9_a)
 ### Test de tendance ----
 # ici on met les variables prédicteurs en variable continues à 3 valeurs correspodant aux médianes spécifiques des tertiles
 # on fait des régressions linéaires et on regarde les p de la variable microbiote
+# si la p du test d'hétérogénéité est significative, mais pas celle du test de tendance --> sugère une relation non monotome
 fct_table_S9_b <- function(outcome, explicative, data) {
   formule <- as.formula(paste(outcome, "~", explicative, 
                               "+ po_w_kg_3cat + 
