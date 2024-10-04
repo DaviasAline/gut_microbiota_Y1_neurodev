@@ -26,6 +26,8 @@ library(mice)
 library(gt)
 library(GGally)
 library(ggrepel)
+library(performance)
+library(effectsize)
 theme_gtsummary_compact()
 
 # Data and functions loading ----
@@ -498,7 +500,7 @@ ggsave("4_output/figures/Fig.1 forest_plot_phyla.tiff",
        width = 25)
 
 ## Fig.2: Mahatan plot genera ----
-figure_2 <- table_multi  %>%
+figure_2 <- table_multi %>%
   filter(!`Gut microbiota parameters` %in% c("Firmicutes",
                                              "Actinobacteria",
                                              "Bacteroidetes",
@@ -506,10 +508,20 @@ figure_2 <- table_multi  %>%
                                              "Shannon diversity",
                                              "Specific richness")) %>%
   mutate(
-    Outcome_rec = case_when(`Gut microbiota parameters` == "Subdoligranulum" & 
-                              Outcome_rec %in% c("Internalizing CBCL Y2", "Emotional control BRIEF-P Y3") ~ 
-                              "Internalizing CBCL Y2 and Emotional control BRIEF-P Y3", 
-                            .default = Outcome_rec)) %>%
+    `Gut microbiota parameters` = 
+      fct_relevel(`Gut microbiota parameters`, 
+                  "Saccharibacteria genera incertae sedis", "Peptoniphilus",
+                  "Granulicatella", "Anaerotruncus", "Lactococcus", "Terrisporobacter",
+                  "Oscillibacter", "Haemophilus", "Coprococcus", "Erysipelotrichaceae incertae sedis",
+                  "Butyricicoccus", "Dialister", "Subdoligranulum", "Intestinibacter",
+                  "Klebsiella", "Eisenbergiella", "Hungatella", "Dorea", "Eggerthella",
+                  "Romboutsia", "Clostridium IV", "Ruminococcus 2", "Flavonifractor",
+                  "Alistipes", "Collinsella", "Parabacteroides", "Fusicatenibacter",
+                  "Veillonella", "Roseburia", "Enterobacter", "Cellulosibacter",
+                  "Enterococcus", "Clostridium sensu stricto", "Clostridium XVIII",
+                  "Ruminococcus", "Gemmiger", "Anaerostipes", "Lachnospiracea incertae sedis",
+                  "Clostridium XlVa", "Streptococcus", "Faecalibacterium", "Akkermansia",
+                  "Escherichia and Shigella", "Blautia", "Bacteroides", "Bifidobacterium")) %>%
   ggplot(aes(x = -log10(`p-value`), y = `Gut microbiota parameters`)) +
   geom_point(aes(shape = improved_neuro), size = 2) +
   geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = "red") +
@@ -518,8 +530,18 @@ figure_2 <- table_multi  %>%
   labs(x = "-log10(P-value)", 
        y = "Genera", 
        shape = "") +
-  geom_text(aes(label = ifelse(`p-value` < 0.025, as.character(Outcome_rec), "")), hjust = -0.05, vjust = -0.3, angle = 35, size = 3.5) +
-  scale_shape_manual(values = c("Impaired neurodevelopmental outcome" = 15, "Improved neurodevelopmental outcome" = 17)) +# 15: carré plein, 17: triangle plein
+  geom_text_repel(aes(label = ifelse(`p-value` < 0.05, as.character(Outcome_rec), "")), 
+                  #segment.color = NA,   # supprimes les traits qui relient les points aux textes 
+                  direction = "y",      # argument pour faire les ajustements de position seulement dans le sens vertical
+                  #angle = 20, 
+                  seed = 42,            # seed pour obtenir toujours le même ajustement 
+                  #box.padding = 0.5,
+                  hjust = -0.05,        # place le texte un tout petit peu au dessus des points
+                  vjust = 0.5, 
+                  nudge_x = 0.005, 
+                  min.segment.length = 0.5  # ne met que les traits de plus de 0.5
+  ) +
+  scale_shape_manual(values = c("Altered neurodevelopmental outcome" = 15, "Improved neurodevelopmental outcome" = 17)) +# 15: carré plein, 17: triangle plein
   scale_x_continuous(limits = c(-log10(1), -log10(0.0001))) +
   theme(
     legend.position = "bottom",
@@ -595,8 +617,7 @@ figure_3 <- table_multi %>%
     position = position_dodge(width = 1.2, preserve = "total")) +
   geom_text_repel(
     fontface = "italic", 
-    
-    nudge_x       = 0.3
+    nudge_x  = 0.3
     # aes(label = ifelse(`p-value` < 0.05, as.character(`Gut microbiota parameters`), "")), 
     #         fontface = "italic", 
     #         hjust = 0.5, 
@@ -619,6 +640,13 @@ figure_3 <- table_multi %>%
              })
   ) + 
   labs(x = "", y = "", color = "Corresponding phylum") +
+  scale_color_manual(values = c(
+    "Firmicutes" = "black", 
+    "Actinobacteria" = "#1b1b8e", # dark blue
+    "Bacteroidetes" = "#1b8e1b", # dark green
+    "Proteobacteria" = "darkred", # dark red
+    "Verrucomicrobia" = "#6b1b8e", # dark purple
+    "Candidatus Saccharibacteria" = "#8e6b1b")) +   # dark brown
   theme_lucid()  + 
   theme(axis.text.y = element_blank(), 
         strip.text.y.left = element_text(angle = 0, hjust = 1, size = 10), 
@@ -1644,6 +1672,7 @@ ggsave("4_output/fig.1 forest_plot_alphadiv.tiff",
        height = 15, 
        width = 25)
 
+## Figure SX: Graphique modèle dose réponse ----
 
 # Vizualisation of the significant results ----
 table_multi %>% 
@@ -1663,8 +1692,25 @@ table_multi %>%
 
 table_multi %>% 
   filter(`p-value` <0.05) %>% 
+  filter(improved_neuro == "Improved neurodevelopmental outcome") %>%
   filter(!`Gut microbiota parameters` %in% c("Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>% 
   select(-sens_beta, -p_value_shape, -`q-value`, -q_value_shape, -Outcome, -`95% CI`, -lower_CI, -upper_CI) %>% 
   select(Phyla_corres, Class_corres, Order_corres, Family_corres, `Gut microbiota parameters`, Exposure, everything()) %>% 
   arrange(`p-value`) %>% 
   View()
+
+table_multi %>% 
+    filter(`p-value` <0.05) %>% 
+  filter(improved_neuro == "Altered neurodevelopmental outcome") %>%
+  filter(!`Gut microbiota parameters` %in% c("Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>% 
+  select(-sens_beta, -p_value_shape, -`q-value`, -q_value_shape, -Outcome, -`95% CI`, -lower_CI, -upper_CI) %>% 
+  select(Phyla_corres, Class_corres, Order_corres, Family_corres, `Gut microbiota parameters`, Exposure, everything()) %>% 
+  arrange(`p-value`) %>% 
+  View()
+
+
+# Exporter les résultats ----
+save.image("4_output/results_alpha_taxa_2024_04_28.RData")
+
+# Réimporter les résultats ----
+load("4_output/results_alpha_taxa_2024_04_28.RData")
