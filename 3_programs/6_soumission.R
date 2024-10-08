@@ -451,6 +451,8 @@ table_4 <- list(table_4_long = table_4_long,
                 table_4_large = table_4_large)
 rm(table_4_long, table_4_large)
 
+## Table 5 ----
+
 # Figures ----
 ## Fig.1: Forestplot phyla ----
 figure_1 <- table_multi %>% 
