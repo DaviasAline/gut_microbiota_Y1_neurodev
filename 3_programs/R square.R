@@ -759,12 +759,12 @@ table_5 <- list(tidy(model_complet_cbcl_int, conf.int = TRUE) %>% mutate(outcome
              tidy(model_complet_WPPSI_work_memory, conf.int = TRUE) %>% mutate(outcome = "ch_WPPSI_work_memory_cor_Y3"), 
              tidy(model_complet_WPPSI_total, conf.int = TRUE) %>% mutate(outcome = "ch_WPPSI_total_cor_Y3")) %>%
   bind_rows() %>%
-  filter(term %in% c("ch_feces_rel_g19_imp_log_std_Y1", 
+  filter(term %in% c("ch_feces_rel_g19_imp_log_std_Y1",   # ch_cbclintscore_y2
                      "ch_feces_rel_g21_imp_log_std_Y1", 
                      "ch_feces_rel_g36_imp_log_std_Y1", 
                      "ch_feces_rel_g45_imp_log_std_Y1", 
                      
-                     "ch_feces_rel_p4_std_Y1_10",      
+                     "ch_feces_rel_p4_std_Y1_10",        # ch_cbclextscore_y2
                      "ch_feces_rel_g1_imp_log_std_Y1", 
                      "ch_feces_rel_g13_imp_log_std_Y1",
                      "ch_feces_rel_g15_imp_log_std_Y1",
@@ -773,13 +773,13 @@ table_5 <- list(tidy(model_complet_cbcl_int, conf.int = TRUE) %>% mutate(outcome
                      "ch_feces_rel_g39_imp_log_std_Y1",
                      "ch_feces_rel_g43_imp_log_std_Y1",
                      
-                     "ch_feces_rel_p4_std_Y1_10", 
+                     "ch_feces_rel_p4_std_Y1_10",         # ch_SRStotal_y3
                      
-                     "ch_feces_rel_p4_std_Y1_10", 
+                     "ch_feces_rel_p4_std_Y1_10",         # ch_briefpinhibit_y3
                      
-                     "ch_feces_rel_g47_imp_log_std_Y1", 
+                     "ch_feces_rel_g47_imp_log_std_Y1",   # ch_briefpshift_y3
                      
-                     "ch_feces_rel_p4_std_Y1_10",   
+                     "ch_feces_rel_p4_std_Y1_10",        # ch_briefpemocontrol_y3
                      "ch_feces_rel_g2_imp_log_std_Y1",
                      "ch_feces_rel_g8_imp_log_std_Y1",
                      "ch_feces_rel_g36_imp_log_std_Y1", 
@@ -787,22 +787,22 @@ table_5 <- list(tidy(model_complet_cbcl_int, conf.int = TRUE) %>% mutate(outcome
                      "ch_feces_rel_g45_imp_log_std_Y1",
                      "ch_feces_rel_g47_imp_log_std_Y1",
                      
-                     "ch_feces_rel_p3_std_Y1_10",     
+                     "ch_feces_rel_p3_std_Y1_10",        # ch_briefpworkmemo_y3
                      "ch_feces_rel_g1_imp_log_std_Y1", 
                      "ch_feces_rel_g47_imp_log_std_Y1", 
                      "ch_feces_rel_g90_imp_log_std_Y1", 
                      
-                     "ch_feces_rel_p1_std_Y1_10", 
+                     "ch_feces_rel_p1_std_Y1_10",       # ch_briefpplan_y3
                      "ch_feces_rel_p3_std_Y1_10",      
                      "ch_feces_rel_g29_imp_log_std_Y1", 
                      
-                     "ch_feces_rel_g11_imp_log_std_Y1", 
+                     "ch_feces_rel_g11_imp_log_std_Y1",   # ch_WPPSI_verbal_comprehension_cor_Y3
                      "ch_feces_rel_g20_imp_log_std_Y1", 
                      
-                     "ch_feces_rel_g27_imp_log_std_Y1", 
+                     "ch_feces_rel_g27_imp_log_std_Y1",   # ch_WPPSI_work_memory_cor_Y3
                      "ch_feces_rel_g45_imp_log_std_Y1", 
                      
-                     "ch_feces_rel_g20_imp_log_std_Y1")) %>%
+                     "ch_feces_rel_g20_imp_log_std_Y1")) %>%  # ch_WPPSI_total_cor_Y3
   mutate(
     estimate = format(round(estimate, 2), digits = 2),
     conf.low = format(round(conf.low, 1), digits = 1),
@@ -840,4 +840,232 @@ rm(model_complet_cbcl_int, model_reduit_cbcl_int, R2_complet_cbcl_int, R2_reduit
    model_complet_WPPSI_verbal_comprehension, model_reduit_WPPSI_verbal_comprehension, R2_complet_WPPSI_verbal_comprehension, R2_reduit_WPPSI_verbal_comprehension,
    model_complet_WPPSI_work_memory, model_reduit_WPPSI_work_memory, R2_complet_WPPSI_work_memory, R2_reduit_WPPSI_work_memory,
    model_complet_WPPSI_total, model_reduit_WPPSI_total, R2_complet_WPPSI_total, R2_reduit_WPPSI_total)
+
+
+# Vérification des corrélations ----
+## ch_cbclintscore_y2
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_g19_imp_log_std_Y1", 
+         "ch_feces_rel_g21_imp_log_std_Y1", 
+         "ch_feces_rel_g36_imp_log_std_Y1", 
+         "ch_feces_rel_g45_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## ch_cbclextscore_y2
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_p4_std_Y1_10",      
+         "ch_feces_rel_g1_imp_log_std_Y1", 
+         "ch_feces_rel_g13_imp_log_std_Y1",
+         "ch_feces_rel_g15_imp_log_std_Y1",
+         "ch_feces_rel_g19_imp_log_std_Y1",
+         "ch_feces_rel_g34_imp_log_std_Y1",
+         "ch_feces_rel_g39_imp_log_std_Y1",
+         "ch_feces_rel_g43_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## ch_briefpemocontrol_y3
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_p4_std_Y1_10",        
+         "ch_feces_rel_g2_imp_log_std_Y1",
+         "ch_feces_rel_g8_imp_log_std_Y1",
+         "ch_feces_rel_g36_imp_log_std_Y1", 
+         "ch_feces_rel_g43_imp_log_std_Y1", 
+         "ch_feces_rel_g45_imp_log_std_Y1",
+         "ch_feces_rel_g47_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+
+## ch_briefpworkmemo_y3
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_p3_std_Y1_10",        
+         "ch_feces_rel_g1_imp_log_std_Y1", 
+         "ch_feces_rel_g47_imp_log_std_Y1", 
+         "ch_feces_rel_g90_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## ch_briefpplan_y3
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_p1_std_Y1_10",       
+         "ch_feces_rel_p3_std_Y1_10",      
+         "ch_feces_rel_g29_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## ch_WPPSI_verbal_comprehension_cor_Y3
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_g11_imp_log_std_Y1",   
+         "ch_feces_rel_g20_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## ch_WPPSI_work_memory_cor_Y3
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_g27_imp_log_std_Y1",   
+         "ch_feces_rel_g45_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+
+
+# Partie investifation effet confinement covid ----
+bdd <- bdd %>%
+  mutate(
+    confinement_SRS_BRIEF_P = 
+      ifelse((cy3hat1_date_creation >= as.Date("2020-03-17") & cy3hat1_date_creation <= as.Date("2020-07-11")) |  # dates du 1er confinement + jusqu'à 2 mois après
+               (cy3hat1_date_creation >= as.Date("2020-10-30") & cy3hat1_date_creation <= as.Date("2021-02-15"))|  # dates du 2eme confinement + jusqu'à 2 mois après 
+               (cy3hat1_date_creation >= as.Date("2021-04-03") & cy3hat1_date_creation <= as.Date("2021-07-03")), # dates du 3eme confinement + jusqu'à 2 mois après 
+             "Yes", "No"), 
+    confinement_CBCL = 
+      ifelse((cy2ebc1_date_creation >= as.Date("2020-03-17") & cy2ebc1_date_creation <= as.Date("2020-07-11")) |  # dates du 1er confinement + jusqu'à 2 mois après
+               (cy2ebc1_date_creation >= as.Date("2020-10-30") & cy2ebc1_date_creation <= as.Date("2021-02-15"))|  # dates du 2eme confinement + jusqu'à 2 mois après 
+               (cy3hat1_date_creation >= as.Date("2021-04-03") & cy3hat1_date_creation <= as.Date("2021-07-03")), # dates du 3eme confinement + jusqu'à 2 mois après 
+             "Yes", "No"))
+
+bdd %>% select(confinement_CBCL, cy2ebc1_date_creation) %>% arrange(cy2ebc1_date_creation) %>% View()
+bdd %>% select(confinement_SRS_BRIEF_P, cy3hat1_date_creation) %>% arrange(cy3hat1_date_creation)%>% View()
+
+bdd %>% 
+  filter(!is.na(ch_feces_rel_ASV1035_Y1)) %>%
+  select(confinement_CBCL, confinement_SRS_BRIEF_P) %>% 
+  tbl_summary(
+    type = list(confinement_CBCL ~ "categorical", 
+                confinement_SRS_BRIEF_P ~ "categorical"))
+
+bdd_filtered <- bdd %>% filter(!is.na(ch_feces_rel_ASV1035_Y1)) 
+
+tbl_merge(
+  tbls = list(
+    lm(ch_SRStotal_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical"),
+    lm(ch_briefpinhibit_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical"), 
+    lm(ch_briefpshift_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical"), 
+    lm(ch_briefpemocontrol_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical"), 
+    lm(ch_briefpworkmemo_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical"), 
+    lm(ch_briefpplan_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical")), 
+  tab_spanner = c("ch_SRStotal_y3",
+                  "ch_briefpinhibit_y3",
+                  "ch_briefpshift_y3",
+                  "ch_briefpemocontrol_y3",
+                  "ch_briefpworkmemo_y3",
+                  "ch_briefpplan_y3"))
+
+
+summary(test)
+bdd %>% 
+  filter(!is.na(ch_feces_rel_ASV1035_Y1)) %>%
+  select(confinement_CBCL, confinement_SRS_BRIEF_P) %>% 
+  tbl_regression(
+    lm(ch_SRStotal_y3 ~ confinement_SRS_BRIEF_P, data = bdd), 
+    type = list(confinement_CBCL ~ "categorical", 
+                confinement_SRS_BRIEF_P ~ "categorical"))
+
+
 
