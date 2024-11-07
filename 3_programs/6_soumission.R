@@ -461,19 +461,21 @@ figure_1 <- table_multi %>%
                                             "Bacteroidetes", 
                                             "Proteobacteria")) %>%
   mutate(Beta = as.numeric(Beta), 
+         Outcome_rec = gsub("WPPSI", "WPPSI-IV", Outcome_rec), 
+         Outcome_rec = gsub("SRS", "SRS-II", Outcome_rec), 
          Outcome_rec =
            fct_relevel(Outcome_rec,
-                       "Total WPPSI Y3", "Work memory WPPSI Y3",
-                       "Visuospatial WPPSI Y3","Verbal comprehension WPPSI Y3",
+                       "Total WPPSI-IV Y3", "Work memory WPPSI-IV Y3",
+                       "Visuospatial WPPSI-IV Y3","Verbal comprehension WPPSI-IV Y3",
                        "Plan and organization BRIEF-P Y3", "Work memory BRIEF-P Y3",
                        "Emotional control BRIEF-P Y3","Shift BRIEF-P Y3",
-                       "Inhibition BRIEF-P Y3", "Total SRS Y3",
+                       "Inhibition BRIEF-P Y3", "Total SRS-II Y3",
                        "Externalizing CBCL Y2", "Internalizing CBCL Y2"),
-         Outcome_rec = fct_rev(Outcome_rec),
+        # Outcome_rec = fct_rev(Outcome_rec),
          `Gut microbiota parameters` =
            fct_relevel(`Gut microbiota parameters`, 
                        "Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>%
-  ggplot(aes(x = `Gut microbiota parameters`, 
+  ggplot(aes(x = Outcome_rec, 
              y = Beta, 
              min = lower_CI, 
              ymax = upper_CI, 
@@ -485,7 +487,7 @@ figure_1 <- table_multi %>%
   labs(x = "Neurodevelopement", y = "", color = "p-value") +
   theme_lucid() +
   coord_flip()  +
-  facet_wrap(Outcome_rec~.,  ncol = 4) +
+  facet_wrap(`Gut microbiota parameters`~.,  ncol = 4) +
   theme(
     legend.position = "right",
     legend.box = "vertical", 
@@ -523,7 +525,9 @@ figure_2 <- table_multi %>%
                   "Enterococcus", "Clostridium sensu stricto", "Clostridium XVIII",
                   "Ruminococcus", "Gemmiger", "Anaerostipes", "Lachnospiracea incertae sedis",
                   "Clostridium XlVa", "Streptococcus", "Faecalibacterium", "Akkermansia",
-                  "Escherichia and Shigella", "Blautia", "Bacteroides", "Bifidobacterium")) %>%
+                  "Escherichia and Shigella", "Blautia", "Bacteroides", "Bifidobacterium"), 
+    Outcome_rec = gsub("WPPSI", "WPPSI-IV", Outcome_rec), 
+    Outcome_rec = gsub("SRS", "SRS-II", Outcome_rec)) %>%
   ggplot(aes(x = -log10(`p-value`), y = `Gut microbiota parameters`)) +
   geom_point(aes(shape = improved_neuro), size = 2) +
   geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = "red") +
@@ -563,20 +567,22 @@ ggsave("4_output/figures/Fig.2 manhattan_plot_genera.tiff",
 ## Fig.3: Forestplot final genera ----
 figure_3 <- table_multi %>% 
   mutate(Beta = as.numeric(Beta), 
+         Outcome_rec = gsub("WPPSI", "WPPSI-IV", Outcome_rec), 
+         Outcome_rec = gsub("SRS", "SRS-II", Outcome_rec), 
          Outcome_rec = 
            fct_relevel(Outcome_rec,
                        "Internalizing CBCL Y2", 
                        "Externalizing CBCL Y2",
-                       "Total SRS Y3", 
+                       "Total SRS-II Y3", 
                        "Inhibition BRIEF-P Y3", 
                        "Shift BRIEF-P Y3",
                        "Emotional control BRIEF-P Y3",
                        "Work memory BRIEF-P Y3",
                        "Plan and organization BRIEF-P Y3", 
-                       "Verbal comprehension WPPSI Y3", 
-                       "Visuospatial WPPSI Y3",
-                       "Work memory WPPSI Y3", 
-                       "Total WPPSI Y3"), 
+                       "Verbal comprehension WPPSI-IV Y3", 
+                       "Visuospatial WPPSI-IV Y3",
+                       "Work memory WPPSI-IV Y3", 
+                       "Total WPPSI-IV Y3"), 
          `Gut microbiota parameters` = 
            fct_relevel(`Gut microbiota parameters`, 
                        "Saccharibacteria genera incertae sedis", "Peptoniphilus",
@@ -619,8 +625,8 @@ figure_3 <- table_multi %>%
     position = position_dodge(width = 1.2, preserve = "total")) +
   geom_text_repel(
     fontface = "italic", 
-    nudge_x  = 0.3
-    # aes(label = ifelse(`p-value` < 0.05, as.character(`Gut microbiota parameters`), "")), 
+    nudge_x  = 0.3,
+    aes(label = ifelse(`p-value` < 0.05, as.character(`Gut microbiota parameters`), "")) 
     #         fontface = "italic", 
     #         hjust = 0.5, 
     #         vjust = -0.5, 
@@ -637,7 +643,7 @@ figure_3 <- table_multi %>%
                labels <- gsub("Emotional control BRIEF-P Y3", "Emotional control\nBRIEF-P Y3", labels)
                labels <- gsub("Work memory", "Work memory\n", labels)
                labels <- gsub("Plan and organization BRIEF-P Y3", "Plan and organization\nBRIEF-P Y3", labels)
-               labels <- gsub("Verbal comprehension WPPSI Y3", "Verbal comprehension\nWPPSI Y3", labels)
+               labels <- gsub("Verbal comprehension WPPSI-IV Y3", "Verbal comprehension\nWPPSI-IV Y3", labels)
                return(labels)
              })
   ) + 
