@@ -1582,6 +1582,9 @@ figure_1 <- table_multi %>%
     legend.box = "vertical", 
     legend.justification = "right")  +
   scale_color_manual(values = c("p-value<0.05" = "red", "p-value≥0.05" = "black"))
+figure_1 <- ggdraw(figure_1) +
+  draw_label("All the p-values\nwere above the\nmultiple testing-\ncorrected threshold", 
+           x = 0.865, y = 0.4, hjust = 0, size = 10, fontfamily = "sans", color = "gray30")
 
 figure_1
 ggsave("4_output/figures/Fig.1 forest_plot_phyla.tiff", 
@@ -1642,7 +1645,12 @@ figure_2 <- table_multi %>%
     legend.position = "bottom",
     legend.box = "vertical", 
     legend.justification = "center", 
-    axis.text.y = element_text(face = "italic"))
+    axis.text.y = element_text(face = "italic")) + 
+  annotate("text", 
+           x = -log10(0.05/(33*7)), y = 0,
+           label = "Multiple testing-\ncorrected threshold", 
+           color = "blue", angle = 0, size = 3.5, hjust = 0.5, vjust = 1.5) +
+  coord_cartesian(ylim = c(0, 46), clip = "off")
 
 figure_2
 ggsave("4_output/figures/Fig.2 manhattan_plot_genera.tiff", 
