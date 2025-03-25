@@ -451,7 +451,1096 @@ table_4 <- list(table_4_long = table_4_long,
                 table_4_large = table_4_large)
 rm(table_4_long, table_4_large)
 
+
+
 ## Table 5 ----
+## ch_cbclintscore_y2 
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_cbclintscore_y2")%>% select(term)
+model_reduit_cbcl_int <- lm(
+  ch_cbclintscore_y2 ~
+    ch_age_CBCL_Y2 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_cbcl_int <- lm(
+  ch_cbclintscore_y2 ~
+    ch_feces_rel_g19_imp_log_std_Y1 +
+    ch_feces_rel_g21_imp_log_std_Y1 +
+    ch_feces_rel_g36_imp_log_std_Y1 +
+    ch_feces_rel_g45_imp_log_std_Y1 +
+    ch_age_CBCL_Y2 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+## ch_cbclextscore_y2 
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_cbclextscore_y2") %>% select(term)
+
+model_reduit_cbcl_ext <- lm(
+  ch_cbclextscore_y2 ~
+    ch_age_CBCL_Y2 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_cbcl_ext <- lm(
+  ch_cbclextscore_y2 ~
+    ch_feces_rel_p4_std_Y1_10 +
+    ch_feces_rel_g1_imp_log_std_Y1 +
+    ch_feces_rel_g13_imp_log_std_Y1 +
+    ch_feces_rel_g15_imp_log_std_Y1 +
+    ch_feces_rel_g19_imp_log_std_Y1 +
+    ch_feces_rel_g34_imp_log_std_Y1 +
+    ch_feces_rel_g39_imp_log_std_Y1 +
+    ch_feces_rel_g43_imp_log_std_Y1 +
+    ch_age_CBCL_Y2 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+
+
+## ch_SRStotal_y3
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_SRStotal_y3") %>% select(term)
+
+model_reduit_srs <- lm(
+  ch_SRStotal_y3 ~
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_srs <- lm(
+  ch_SRStotal_y3 ~
+    ch_feces_rel_p4_std_Y1_10 +
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+## ch_briefpinhibit_y3
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_briefpinhibit_y3") %>% select(term)
+
+model_reduit_briefpinhibit <- lm(
+  ch_briefpinhibit_y3 ~
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_briefpinhibit <- lm(
+  ch_briefpinhibit_y3 ~
+    ch_feces_rel_p4_std_Y1_10 +
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+## ch_briefpshift_y3 
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_briefpshift_y3") %>% select(term)
+
+model_reduit_briefpshift <- lm(
+  ch_briefpshift_y3 ~
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_briefpshift <- lm(
+  ch_briefpshift_y3 ~
+    ch_feces_rel_g47_imp_log_std_Y1 +
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+## ch_briefpemocontrol_y3 
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_briefpemocontrol_y3") %>% select(term)
+
+model_reduit_briefpemocontrol <- lm(
+  ch_briefpemocontrol_y3 ~
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_briefpemocontrol <- lm(
+  ch_briefpemocontrol_y3 ~
+    ch_feces_rel_p4_std_Y1_10 +    
+    ch_feces_rel_g2_imp_log_std_Y1 + 
+    ch_feces_rel_g8_imp_log_std_Y1 +
+    ch_feces_rel_g36_imp_log_std_Y1 +
+    ch_feces_rel_g43_imp_log_std_Y1 +
+    ch_feces_rel_g45_imp_log_std_Y1 +
+    ch_feces_rel_g47_imp_log_std_Y1 +
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+
+## ch_briefpworkmemo_y3
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_briefpworkmemo_y3") %>% select(term)
+
+model_reduit_briefpworkmemo <- lm(
+  ch_briefpworkmemo_y3 ~
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_briefpworkmemo <- lm(
+  ch_briefpworkmemo_y3 ~
+    ch_feces_rel_p3_std_Y1_10 +     
+    ch_feces_rel_g1_imp_log_std_Y1 + 
+    ch_feces_rel_g47_imp_log_std_Y1 +
+    ch_feces_rel_g90_imp_log_std_Y1 +
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+## ch_briefpplan_y3
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_briefpplan_y3") %>% select(term)
+
+model_reduit_briefpplan <- lm(
+  ch_briefpplan_y3 ~
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_briefpplan <- lm(
+  ch_briefpplan_y3 ~
+    ch_feces_rel_p1_std_Y1_10 +      
+    ch_feces_rel_p3_std_Y1_10 +     
+    ch_feces_rel_g29_imp_log_std_Y1 +
+    ch_age_SRS_BRIEFP_Y3 + 
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+## ch_WPPSI_verbal_comprehension_cor_Y3 
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_WPPSI_verbal_comprehension_cor_Y3") %>% select(term)
+
+model_reduit_WPPSI_verbal_comprehension <- lm(
+  ch_WPPSI_verbal_comprehension_cor_Y3 ~
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_WPPSI_verbal_comprehension <- lm(
+  ch_WPPSI_verbal_comprehension_cor_Y3 ~
+    ch_feces_rel_g11_imp_log_std_Y1 +
+    ch_feces_rel_g20_imp_log_std_Y1 +
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+## ch_WPPSI_visuospatiale_cor_Y3 
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_WPPSI_visuospatiale_cor_Y3") %>% select(term)
+
+## ch_WPPSI_work_memory_cor_Y3 
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_WPPSI_work_memory_cor_Y3") %>% select(term)
+
+model_reduit_WPPSI_work_memory <- lm(
+  ch_WPPSI_work_memory_cor_Y3 ~
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_WPPSI_work_memory <- lm(
+  ch_WPPSI_work_memory_cor_Y3 ~
+    ch_feces_rel_g27_imp_log_std_Y1 +
+    ch_feces_rel_g45_imp_log_std_Y1 +
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+## ch_WPPSI_total_cor_Y3 
+results %>% filter(p.value<0.05) %>% filter(outcome == "ch_WPPSI_total_cor_Y3") %>% select(term)
+
+model_reduit_WPPSI_total <- lm(
+  ch_WPPSI_total_cor_Y3 ~
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+model_complet_WPPSI_total <- lm(
+  ch_WPPSI_total_cor_Y3 ~
+    ch_feces_rel_g20_imp_log_std_Y1 +
+    po_w_kg_3cat + 
+    po_he_3cat + 
+    mo_dipl_2cat + 
+    mo_age + 
+    mo_bmi_bepr_3cat + 
+    ch_sex + 
+    mo_par_2cat +
+    ch_bf_duration_till48w_4cat + 
+    po_gd + 
+    po_delmod +
+    ch_food_intro_Y1_3cat + 
+    mo_pets + 
+    ch_antibio_Y1_2cat + 
+    home_total_y3 + 
+    mo_hadtotscore_grt3_imp + 
+    mo_tob_gr_anyt_yn_n2 +
+    ch_tabacco_passive_up_to_Y1 + 
+    ch_care_main_12m_opt2_2c,
+  data = bdd_final_imp_1)
+
+### Assemblage ----
+R2_complet_cbcl_int <- summary(model_complet_cbcl_int)$r.squared
+R2_reduit_cbcl_int <- summary(model_reduit_cbcl_int)$r.squared
+
+R2_complet_cbcl_ext <- summary(model_complet_cbcl_ext)$r.squared
+R2_reduit_cbcl_ext <- summary(model_reduit_cbcl_ext)$r.squared
+
+R2_complet_srs <- summary(model_complet_srs)$r.squared
+R2_reduit_srs <- summary(model_reduit_srs)$r.squared
+
+R2_complet_briefpinhibit <- summary(model_complet_briefpinhibit)$r.squared
+R2_reduit_briefpinhibit <- summary(model_reduit_briefpinhibit)$r.squared
+
+R2_complet_briefpshift <- summary(model_complet_briefpshift)$r.squared
+R2_reduit_briefpshift <- summary(model_reduit_briefpshift)$r.squared
+
+R2_complet_briefpemocontrol <- summary(model_complet_briefpemocontrol)$r.squared
+R2_reduit_briefpemocontrol <- summary(model_reduit_briefpemocontrol)$r.squared
+
+R2_complet_briefpworkmemo <- summary(model_complet_briefpworkmemo)$r.squared
+R2_reduit_briefpworkmemo <- summary(model_reduit_briefpworkmemo)$r.squared
+
+R2_complet_briefpplan <- summary(model_complet_briefpplan)$r.squared
+R2_reduit_briefpplan <- summary(model_reduit_briefpplan)$r.squared
+
+R2_complet_WPPSI_verbal_comprehension <- summary(model_complet_WPPSI_verbal_comprehension)$r.squared
+R2_reduit_WPPSI_verbal_comprehension <- summary(model_reduit_WPPSI_verbal_comprehension)$r.squared
+
+R2_complet_WPPSI_work_memory <- summary(model_complet_WPPSI_work_memory)$r.squared
+R2_reduit_WPPSI_work_memory <- summary(model_reduit_WPPSI_work_memory)$r.squared
+
+R2_complet_WPPSI_total <- summary(model_complet_WPPSI_total)$r.squared
+R2_reduit_WPPSI_total <- summary(model_reduit_WPPSI_total)$r.squared
+
+table_f2_Cohen <-
+  list(
+    ch_cbclintscore_y2 = (R2_complet_cbcl_int - R2_reduit_cbcl_int) / (1 - R2_complet_cbcl_int),
+    ch_cbclextscore_y2 = (R2_complet_cbcl_ext - R2_reduit_cbcl_ext) / (1 - R2_complet_cbcl_ext),
+    ch_SRStotal_y3 = (R2_complet_srs - R2_reduit_srs) / (1 - R2_complet_srs),
+    ch_briefpinhibit_y3 = (R2_complet_briefpinhibit - R2_reduit_briefpinhibit) / (1 - R2_complet_briefpinhibit),
+    ch_briefpshift_y3 = (R2_complet_briefpshift - R2_reduit_briefpshift) / (1 - R2_complet_briefpshift),
+    ch_briefpemocontrol_y3 = (R2_complet_briefpemocontrol - R2_reduit_briefpemocontrol) / (1 - R2_complet_briefpemocontrol),
+    ch_briefpworkmemo_y3 = (R2_complet_briefpworkmemo - R2_reduit_briefpworkmemo) / (1 - R2_complet_briefpworkmemo),
+    ch_briefpplan_y3 = (R2_complet_briefpplan - R2_reduit_briefpplan) / (1 - R2_complet_briefpplan),
+    ch_WPPSI_verbal_comprehension_cor_Y3 = (R2_complet_WPPSI_verbal_comprehension - R2_reduit_WPPSI_verbal_comprehension) / (1 - R2_complet_WPPSI_verbal_comprehension),
+    ch_WPPSI_work_memory_cor_Y3 = (R2_complet_WPPSI_work_memory - R2_reduit_WPPSI_work_memory) / (1 - R2_complet_WPPSI_work_memory),
+    ch_WPPSI_total_cor_Y3 = (R2_complet_WPPSI_total - R2_reduit_WPPSI_total) / (1 - R2_complet_WPPSI_total)) %>%
+  unlist() %>%
+  as.data.frame() %>%
+  rownames_to_column(var = "outcome") %>%
+  rename("f2_Cohen" = ".") %>%
+  mutate(f2_Cohen = format(round(f2_Cohen, 2), digits = 2))
+
+table_5 <- list(tidy(model_complet_cbcl_int, conf.int = TRUE) %>% mutate(outcome = "ch_cbclintscore_y2"), 
+                tidy(model_complet_cbcl_ext, conf.int = TRUE) %>% mutate(outcome = "ch_cbclextscore_y2"), 
+                tidy(model_complet_srs, conf.int = TRUE) %>% mutate(outcome = "ch_SRStotal_y3"), 
+                tidy(model_complet_briefpinhibit, conf.int = TRUE) %>% mutate(outcome = "ch_briefpinhibit_y3"),  
+                tidy(model_complet_briefpshift, conf.int = TRUE) %>% mutate(outcome = "ch_briefpshift_y3"), 
+                tidy(model_complet_briefpemocontrol, conf.int = TRUE) %>% mutate(outcome = "ch_briefpemocontrol_y3"), 
+                tidy(model_complet_briefpworkmemo, conf.int = TRUE) %>% mutate(outcome = "ch_briefpworkmemo_y3"), 
+                tidy(model_complet_briefpplan, conf.int = TRUE) %>% mutate(outcome = "ch_briefpplan_y3"), 
+                tidy(model_complet_WPPSI_verbal_comprehension, conf.int = TRUE) %>% mutate(outcome = "ch_WPPSI_verbal_comprehension_cor_Y3"), 
+                tidy(model_complet_WPPSI_work_memory, conf.int = TRUE) %>% mutate(outcome = "ch_WPPSI_work_memory_cor_Y3"), 
+                tidy(model_complet_WPPSI_total, conf.int = TRUE) %>% mutate(outcome = "ch_WPPSI_total_cor_Y3")) %>%
+  bind_rows() %>%
+  filter(term %in% c("ch_feces_rel_g19_imp_log_std_Y1",   # ch_cbclintscore_y2
+                     "ch_feces_rel_g21_imp_log_std_Y1", 
+                     "ch_feces_rel_g36_imp_log_std_Y1", 
+                     "ch_feces_rel_g45_imp_log_std_Y1", 
+                     
+                     "ch_feces_rel_p4_std_Y1_10",        # ch_cbclextscore_y2
+                     "ch_feces_rel_g1_imp_log_std_Y1", 
+                     "ch_feces_rel_g13_imp_log_std_Y1",
+                     "ch_feces_rel_g15_imp_log_std_Y1",
+                     "ch_feces_rel_g19_imp_log_std_Y1",
+                     "ch_feces_rel_g34_imp_log_std_Y1",
+                     "ch_feces_rel_g39_imp_log_std_Y1",
+                     "ch_feces_rel_g43_imp_log_std_Y1",
+                     
+                     "ch_feces_rel_p4_std_Y1_10",         # ch_SRStotal_y3
+                     
+                     "ch_feces_rel_p4_std_Y1_10",         # ch_briefpinhibit_y3
+                     
+                     "ch_feces_rel_g47_imp_log_std_Y1",   # ch_briefpshift_y3
+                     
+                     "ch_feces_rel_p4_std_Y1_10",        # ch_briefpemocontrol_y3
+                     "ch_feces_rel_g2_imp_log_std_Y1",
+                     "ch_feces_rel_g8_imp_log_std_Y1",
+                     "ch_feces_rel_g36_imp_log_std_Y1", 
+                     "ch_feces_rel_g43_imp_log_std_Y1", 
+                     "ch_feces_rel_g45_imp_log_std_Y1",
+                     "ch_feces_rel_g47_imp_log_std_Y1",
+                     
+                     "ch_feces_rel_p3_std_Y1_10",        # ch_briefpworkmemo_y3
+                     "ch_feces_rel_g1_imp_log_std_Y1", 
+                     "ch_feces_rel_g47_imp_log_std_Y1", 
+                     "ch_feces_rel_g90_imp_log_std_Y1", 
+                     
+                     "ch_feces_rel_p1_std_Y1_10",       # ch_briefpplan_y3
+                     "ch_feces_rel_p3_std_Y1_10",      
+                     "ch_feces_rel_g29_imp_log_std_Y1", 
+                     
+                     "ch_feces_rel_g11_imp_log_std_Y1",   # ch_WPPSI_verbal_comprehension_cor_Y3
+                     "ch_feces_rel_g20_imp_log_std_Y1", 
+                     
+                     "ch_feces_rel_g27_imp_log_std_Y1",   # ch_WPPSI_work_memory_cor_Y3
+                     "ch_feces_rel_g45_imp_log_std_Y1", 
+                     
+                     "ch_feces_rel_g20_imp_log_std_Y1")) %>%  # ch_WPPSI_total_cor_Y3
+  mutate(
+    estimate = format(round(estimate, 2), digits = 2),
+    conf.low = format(round(conf.low, 1), digits = 1),
+    conf.high = format(round(conf.high, 1), digits = 1),
+    "95% CI" = paste(conf.low, conf.high, sep = ","), 
+    p.value = case_when(p.value < 0.001 ~ format(round(p.value, 4), nsmall = 4),
+                        p.value < 0.01 ~ format(round(p.value, 3), nsmall = 3),
+                        p.value > 0.01 ~ format(round(p.value, 2), nsmall = 2))) %>%
+  select(outcome, explanatory = term, Beta = estimate, "95% CI", "p.value")
+
+table_5 <- left_join(table_5, table_f2_Cohen, by = "outcome")
+
+corres <- data.frame(Nom = genera_var_labels, Explanatory = genera_var_names, stringsAsFactors = FALSE)
+
+table_5 <- left_join(table_5, corres, by = "explanatory")
+table_5 <- table_5 %>%
+  mutate(
+    Nom = case_when(explanatory == "ch_feces_rel_p1_std_Y1_10" ~ "Firmicutes", 
+                    explanatory == "ch_feces_rel_p3_std_Y1_10" ~ "Bacteroidetes", 
+                    explanatory == "ch_feces_rel_p4_std_Y1_10" ~ "Proteobacteria", 
+                    .default = Nom)) %>%
+  select(outcome, explanatory, Nom, Beta, "95% CI", "p.value", f2_Cohen)
+
+write.xlsx(table_5, file = "4_output/table_5.xlsx")
+
+
+rm(model_complet_cbcl_int, model_reduit_cbcl_int, R2_complet_cbcl_int, R2_reduit_cbcl_int,
+   model_complet_cbcl_ext, model_reduit_cbcl_ext, R2_complet_cbcl_ext, R2_reduit_cbcl_ext,
+   model_complet_srs, model_reduit_srs, R2_complet_srs, R2_reduit_srs,
+   model_complet_briefpinhibit, model_reduit_briefpinhibit, R2_complet_briefpinhibit, R2_reduit_briefpinhibit,
+   model_complet_briefpshift, model_reduit_briefpshift, R2_complet_briefpshift, R2_reduit_briefpshift,
+   model_complet_briefpemocontrol, model_reduit_briefpemocontrol, R2_complet_briefpemocontrol, R2_reduit_briefpemocontrol,
+   model_complet_briefpworkmemo, model_reduit_briefpworkmemo, R2_complet_briefpworkmemo, R2_reduit_briefpworkmemo,
+   model_complet_briefpplan, model_reduit_briefpplan, R2_complet_briefpplan, R2_reduit_briefpplan,
+   model_complet_WPPSI_verbal_comprehension, model_reduit_WPPSI_verbal_comprehension, R2_complet_WPPSI_verbal_comprehension, R2_reduit_WPPSI_verbal_comprehension,
+   model_complet_WPPSI_work_memory, model_reduit_WPPSI_work_memory, R2_complet_WPPSI_work_memory, R2_reduit_WPPSI_work_memory,
+   model_complet_WPPSI_total, model_reduit_WPPSI_total, R2_complet_WPPSI_total, R2_reduit_WPPSI_total)
+
+## Table 5 bis ----
+corres <- results %>% 
+  filter(p.value<0.05) %>% 
+  select(term, term_2) %>% 
+  unique() %>%
+  mutate(
+    term = factor(term,
+                  levels = c(
+                    "ch_feces_rel_p1_std_Y1_10", "ch_feces_rel_p3_std_Y1_10", "ch_feces_rel_p4_std_Y1_10",
+                    "ch_feces_rel_g1_imp_log_std_Y1", "ch_feces_rel_g2_imp_log_std_Y1",
+                    "ch_feces_rel_g8_imp_log_std_Y1", "ch_feces_rel_g11_imp_log_std_Y1",
+                    "ch_feces_rel_g13_imp_log_std_Y1", "ch_feces_rel_g15_imp_log_std_Y1",
+                    "ch_feces_rel_g19_imp_log_std_Y1", "ch_feces_rel_g20_imp_log_std_Y1",
+                    "ch_feces_rel_g21_imp_log_std_Y1", "ch_feces_rel_g27_imp_log_std_Y1",
+                    "ch_feces_rel_g29_imp_log_std_Y1", "ch_feces_rel_g34_imp_log_std_Y1",
+                    "ch_feces_rel_g36_imp_log_std_Y1", "ch_feces_rel_g39_imp_log_std_Y1",
+                    "ch_feces_rel_g43_imp_log_std_Y1", "ch_feces_rel_g45_imp_log_std_Y1",
+                    "ch_feces_rel_g47_imp_log_std_Y1", "ch_feces_rel_g90_imp_log_std_Y1"))) %>%
+  arrange(term)
+
+## Visu des corrélations 
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_p1_std_Y1_10", "ch_feces_rel_p3_std_Y1_10", "ch_feces_rel_p4_std_Y1_10",
+         "ch_feces_rel_g1_imp_log_std_Y1", "ch_feces_rel_g2_imp_log_std_Y1",
+         "ch_feces_rel_g8_imp_log_std_Y1", "ch_feces_rel_g11_imp_log_std_Y1",
+         "ch_feces_rel_g13_imp_log_std_Y1", "ch_feces_rel_g15_imp_log_std_Y1",
+         "ch_feces_rel_g19_imp_log_std_Y1", "ch_feces_rel_g20_imp_log_std_Y1",
+         "ch_feces_rel_g21_imp_log_std_Y1", "ch_feces_rel_g27_imp_log_std_Y1",
+         "ch_feces_rel_g29_imp_log_std_Y1", "ch_feces_rel_g34_imp_log_std_Y1",
+         "ch_feces_rel_g36_imp_log_std_Y1", "ch_feces_rel_g39_imp_log_std_Y1",
+         "ch_feces_rel_g43_imp_log_std_Y1", "ch_feces_rel_g45_imp_log_std_Y1",
+         "ch_feces_rel_g47_imp_log_std_Y1", "ch_feces_rel_g90_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## Regressions linaires 
+gm_interest <- 
+  c("ch_feces_rel_p1_std_Y1_10", "ch_feces_rel_p3_std_Y1_10", "ch_feces_rel_p4_std_Y1_10",
+    "ch_feces_rel_g1_imp_log_std_Y1", "ch_feces_rel_g2_imp_log_std_Y1",
+    "ch_feces_rel_g8_imp_log_std_Y1", "ch_feces_rel_g11_imp_log_std_Y1",
+    "ch_feces_rel_g13_imp_log_std_Y1", "ch_feces_rel_g15_imp_log_std_Y1",
+    "ch_feces_rel_g19_imp_log_std_Y1", "ch_feces_rel_g20_imp_log_std_Y1",
+    "ch_feces_rel_g21_imp_log_std_Y1", "ch_feces_rel_g27_imp_log_std_Y1",
+    "ch_feces_rel_g29_imp_log_std_Y1", "ch_feces_rel_g34_imp_log_std_Y1",
+    "ch_feces_rel_g36_imp_log_std_Y1", "ch_feces_rel_g39_imp_log_std_Y1",
+    "ch_feces_rel_g43_imp_log_std_Y1", "ch_feces_rel_g45_imp_log_std_Y1",
+    "ch_feces_rel_g47_imp_log_std_Y1", "ch_feces_rel_g90_imp_log_std_Y1")
+
+
+
+Table_5_bis <- data.frame()
+
+for (outcome in outcomes) {
+  
+  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
+    
+    formule <- as.formula(paste(outcome, "~", paste(c(gm_interest, "ch_age_CBCL_Y2", covariates), collapse = " + ")))
+  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", 
+                            "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", 
+                            "ch_briefpplan_y3")) {
+    formule <- as.formula(paste(outcome, "~", paste(c(gm_interest, "ch_age_SRS_BRIEFP_Y3", covariates), collapse = " + ")))
+  } else {
+    formule <- as.formula(paste(outcome, "~", paste(c(gm_interest, covariates), collapse = " + ")))
+  }
+  
+  model_full <- lm(formule, data = bdd_final_imp_1)  
+  
+  coeffs <- summary(model_full)$coefficients[gm_interest, ]
+  
+  beta <- coeffs[, "Estimate"]
+  p_values <- coeffs[, "Pr(>|t|)"]
+  confint <- confint(model_full, level = 0.95)[gm_interest, ]
+  r_squared <- summary(model_full)$r.squared
+  
+  results <- data.frame(
+    Outcome = outcome,
+    Explanatory = rownames(coeffs),
+    Beta = beta,
+    conf.low = confint[, 1],
+    conf.high = confint[, 2],
+    p.value = p_values, 
+    R2.full = r_squared  
+  )
+  
+  Table_5_bis <- rbind(Table_5_bis, results) %>% as.data.frame()
+}
+
+
+# Dataframe pour stocker les résultats
+Table_5_bis_reduced <- data.frame(
+  Outcome = character(),
+  Explanatory = character(),
+  Beta = numeric(),
+  conf.low = numeric(),
+  conf.high = numeric(),
+  p.value = numeric(),
+  R2.red = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Régression pour les outcomes spécifiques
+for (outcome in outcomes) {
+  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
+    formula <- as.formula(paste(outcome, "~", paste(c("ch_age_CBCL_Y2", covariates), collapse = "+")))
+  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", 
+                            "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", 
+                            "ch_briefpplan_y3")) {
+    formula <- as.formula(paste(outcome, "~", paste(c("ch_age_SRS_BRIEFP_Y3", covariates), collapse = "+")))
+  } else {
+    formula <- as.formula(paste(outcome, "~", paste(covariates, collapse = "+")))
+  }
+  
+  # Ajustement du modèle
+  model <- lm(formula, data = bdd_final_imp_1)
+  
+  # R² du modèle
+  r_squared <- summary(model)$r.squared
+  
+  # Extraire les coefficients et p-values
+  coefs <- summary(model)$coefficients
+  for (var in rownames(coefs)) {
+    beta <- coefs[var, "Estimate"]
+    p_value <- coefs[var, "Pr(>|t|)"]
+    ci <- confint(model)[var, ]
+    
+    # Ajouter les résultats au dataframe
+    Table_5_bis_reduced <- rbind(Table_5_bis_reduced, data.frame(Outcome = outcome,
+                                                                 Explanatory = var,
+                                                                 Beta = beta,
+                                                                 conf.low = ci[1],
+                                                                 conf.high = ci[2],
+                                                                 p.value = p_value,
+                                                                 R2.red = r_squared,
+                                                                 stringsAsFactors = FALSE))
+  }
+}
+
+Table_5_bis <- Table_5_bis_reduced %>%
+  select(Outcome, R2.red) %>%
+  unique() %>%
+  right_join(Table_5_bis, by = "Outcome")
+
+
+Table_5_bis <- Table_5_bis %>%
+  mutate(
+    Beta = format(round(Beta, 2), digits = 2),
+    conf.low = format(round(conf.low, 1), digits = 1),
+    conf.high = format(round(conf.high, 1), digits = 1),
+    "95% CI" = paste(conf.low, conf.high, sep = ","), 
+    p.value = case_when(p.value < 0.001 ~ format(round(p.value, 4), nsmall = 4),
+                        p.value < 0.01 ~ format(round(p.value, 3), nsmall = 3),
+                        p.value > 0.01 ~ format(round(p.value, 2), nsmall = 2)), 
+    Cohens_f2 = (R2.full - R2.red) / (1 - R2.full),
+    R2.full = format(round(R2.full, 2), digits = 2),
+    R2.red = format(round(R2.red, 2), digits = 2), 
+    Cohens_f2 = format(round(Cohens_f2, 2), digits = 2)) %>%
+  select(Outcome, Explanatory, Beta, "95% CI", "p.value", R2.full, R2.red, Cohens_f2)
+
+
+Table_5_bis <- Table_5_bis %>%
+  left_join(corres, by = "Explanatory") %>%
+  mutate(
+    Nom = case_when(Explanatory == "ch_feces_rel_p1_std_Y1_10" ~ "Firmicutes", 
+                    Explanatory == "ch_feces_rel_p3_std_Y1_10" ~ "Bacteroidetes", 
+                    Explanatory == "ch_feces_rel_p4_std_Y1_10" ~ "Proteobacteria", 
+                    .default = Nom), 
+    Nom = fct_recode(Nom,
+                     "Clostridium IV" = "Clostridium_IV",
+                     "Clostridium XlVa" = "Clostridium_XlVa",
+                     "Clostridium XVIII" = "Clostridium_XVIII",
+                     "Saccharibacteria genera incertae sedis" = "Saccharibacteria_genera_incertae_sedis")) %>%
+  select(Outcome, Explanatory, Nom, everything())
+
+
+
+write.xlsx(Table_5_bis, file = "4_output/table_5_bis.xlsx")
+
+
+
+
+### Vérification des corrélations ----
+## ch_cbclintscore_y2
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_g19_imp_log_std_Y1", 
+         "ch_feces_rel_g21_imp_log_std_Y1", 
+         "ch_feces_rel_g36_imp_log_std_Y1", 
+         "ch_feces_rel_g45_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## ch_cbclextscore_y2
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_p4_std_Y1_10",      
+         "ch_feces_rel_g1_imp_log_std_Y1", 
+         "ch_feces_rel_g13_imp_log_std_Y1",
+         "ch_feces_rel_g15_imp_log_std_Y1",
+         "ch_feces_rel_g19_imp_log_std_Y1",
+         "ch_feces_rel_g34_imp_log_std_Y1",
+         "ch_feces_rel_g39_imp_log_std_Y1",
+         "ch_feces_rel_g43_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## ch_briefpemocontrol_y3
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_p4_std_Y1_10",        
+         "ch_feces_rel_g2_imp_log_std_Y1",
+         "ch_feces_rel_g8_imp_log_std_Y1",
+         "ch_feces_rel_g36_imp_log_std_Y1", 
+         "ch_feces_rel_g43_imp_log_std_Y1", 
+         "ch_feces_rel_g45_imp_log_std_Y1",
+         "ch_feces_rel_g47_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+
+## ch_briefpworkmemo_y3
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_p3_std_Y1_10",        
+         "ch_feces_rel_g1_imp_log_std_Y1", 
+         "ch_feces_rel_g47_imp_log_std_Y1", 
+         "ch_feces_rel_g90_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## ch_briefpplan_y3
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_p1_std_Y1_10",       
+         "ch_feces_rel_p3_std_Y1_10",      
+         "ch_feces_rel_g29_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## ch_WPPSI_verbal_comprehension_cor_Y3
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_g11_imp_log_std_Y1",   
+         "ch_feces_rel_g20_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+## ch_WPPSI_work_memory_cor_Y3
+figure_SX <- bdd_final_imp_1 %>% 
+  select("ch_feces_rel_g27_imp_log_std_Y1",   
+         "ch_feces_rel_g45_imp_log_std_Y1") 
+
+figure_SX <- cor(figure_SX, 
+                 use = "pairwise.complete.obs", 
+                 method = "pearson")
+
+plot.new()
+corrplot(figure_SX, 
+         method = 'color', 
+         type = "lower", 
+         tl.col = 'black', 
+         tl.srt = 45, 
+         addCoef.col = "black",
+         # number.cex = 0.5,
+         # number.digits = 1,
+         tl.cex = 0.5,
+         col = rev(COL2(diverging = "RdYlBu")))
+dev.off()
+
+
 
 # Figures ----
 ## Fig.1: Forestplot phyla ----
@@ -1482,6 +2571,179 @@ rm(prep_table_S9_b, var_to_test, var_to_test_ter, var_to_test_ter_num, fct_table
 
 table_S9 <- tbl_stack(tbls = list(table_S9_a, table_S9_b))
 
+## Ajout des colonnes Cohen's f pour les tableaux 2, 4 et S4 ----
+explanatory_names <- c("Specific richness", "Shannon diversity", 
+                       "Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria", 
+                       genera_var_labels)
+
+results <- data.frame()
+
+for (outcome in outcomes) {
+  
+  if (outcome %in% c("ch_cbclintscore_y2", "ch_cbclextscore_y2")) {
+    covariate_specific <- covariates_CBCL
+  } else if (outcome %in% c("ch_SRStotal_y3", "ch_briefpinhibit_y3", "ch_briefpshift_y3", "ch_briefpemocontrol_y3", "ch_briefpworkmemo_y3", "ch_briefpplan_y3")) {
+    covariate_specific <- covariates_SRS_BRIEF
+  } else {
+    covariate_specific <- covariates_IQ
+  }
+  
+  for (i in seq_along(explanatory)) {
+    
+    explanatory_var <- explanatory[i]
+    explanatory_name <- explanatory_names[i]
+    
+    formula_complet <- as.formula(paste(outcome, "~", explanatory_var, "+", paste(covariate_specific, collapse = " + ")))
+    formula_reduit <- as.formula(paste(outcome, "~", paste(covariate_specific, collapse = " + ")))
+    
+    model_complet <- lm(formula_complet, data = bdd_final_imp_1)
+    model_reduit <- lm(formula_reduit, data = bdd_final_imp_1)
+    
+    model_summary <- tidy(model_complet, conf.int = TRUE)
+    
+    model_summary_exp <- model_summary %>%
+      filter(term == explanatory_var) %>%
+      select(term, estimate, conf.low, conf.high, p.value) %>%
+      mutate(outcome = outcome)
+    
+    R2_complet <- summary(model_complet)$r.squared
+    R2_reduit <- summary(model_reduit)$r.squared
+    
+    Cohens_f2 <-  (R2_complet - R2_reduit) / (1 - R2_complet)
+    
+    model_summary_exp <- model_summary_exp %>%
+      mutate(Cohens_f2, term_2 = explanatory_name)
+    
+    results <- rbind(results, model_summary_exp)
+  }
+}
+rm(outcome, covariate_specific, explanatory_var, explanatory_name, model_complet, model_reduit, model_summary, model_summary_exp, i)
+
+results <- results %>%
+  mutate(
+    Beta = format(round(estimate, 2), digits = 2),
+    conf.low = format(round(conf.low, 2), digits = 2),
+    conf.high = format(round(conf.high, 2), digits = 2),
+    "95% CI" = paste(conf.low, conf.high, sep = ","), 
+    p.value = case_when(p.value < 0.001 ~ format(round(p.value, 4), nsmall = 4),
+                        p.value < 0.01 ~ format(round(p.value, 3), nsmall = 3),
+                        p.value > 0.01 ~ format(round(p.value, 2), nsmall = 2)), 
+    Cohens_f2 = case_when(Cohens_f2 <0 ~ "<0",
+                          Cohens_f2> 0 & Cohens_f2 < 0.001 ~ "<0.001",
+                          Cohens_f2> 0 & Cohens_f2 < 0.01 ~ format(round(Cohens_f2, 3), nsmall = 3),
+                          Cohens_f2> 0 & Cohens_f2 > 0.01 ~ format(round(Cohens_f2, 2), nsmall = 2), 
+                          .default = as.character(Cohens_f2))) %>%
+  select(outcome, term, term_2, Beta, `95% CI`, `p.value`, Cohens_f2)
+
+table_2_bis <- results %>%
+  filter(term_2 %in% c("Specific richness", "Shannon diversity")) %>%
+  rename(Explanatory = term_2) %>%
+  select(-term)
+
+table_4_bis <- results %>%
+  filter(term_2 %in% c("Firmicutes", "Actinobacteria", "Bacteroidetes", "Proteobacteria")) %>%
+  rename(Explanatory = term_2) %>%
+  select(-term)
+
+table_S4_bis <- results %>%
+  filter(!term_2 %in% c("Specific richness", "Shannon diversity", 
+                        "Firmicutes", "Actinobacteria", 
+                        "Bacteroidetes", "Proteobacteria")) %>%
+  select(-term) %>%
+  pivot_wider(names_from = outcome, 
+              values_from = c("Beta", "95% CI", "p.value", "Cohens_f2")) %>%
+  mutate(
+    term_2 = fct_recode(term_2, 
+                        "Clostridium IV" = "Clostridium_IV",
+                        "Clostridium sensu stricto" = "Clostridium_sensu_stricto",
+                        "Clostridium XlVa" = "Clostridium_XlVa",
+                        "Clostridium XVIII" = "Clostridium_XVIII",
+                        "Erysipelotrichaceae incertae sedis" = "Erysipelotrichaceae_incertae_sedis",
+                        "Escherichia and Shigella" = "Escherichia_Shigella",
+                        "Lachnospiracea incertae sedis" = "Lachnospiracea_incertae_sedis",
+                        "Ruminococcus 2" = "Ruminococcus2",
+                        "Saccharibacteria genera incertae sedis" = "Saccharibacteria_genera_incertae_sedis"))%>%
+  select("Gut microbiota parameters" = term_2, 
+         contains("ch_cbclintscore_y2"), 
+         contains("ch_cbclextscore_y2"),
+         contains("ch_SRStotal_y3"), 
+         contains("ch_briefpinhibit_y3"),
+         contains("ch_briefpshift_y3"), 
+         contains("ch_briefpemocontrol_y3"), 
+         contains("ch_briefpworkmemo_y3"), 
+         contains("ch_briefpplan_y3"), 
+         contains("ch_WPPSI_verbal_comprehension_cor_Y3"), 
+         contains("ch_WPPSI_visuospatiale_cor_Y3"), 
+         contains("ch_WPPSI_work_memory_cor_Y3"), 
+         contains("ch_WPPSI_total_cor_Y3"))
+
+write.xlsx(table_2_bis, file = "4_output/table_2_bis.xlsx")
+write.xlsx(table_4_bis, file = "4_output/table_4_bis.xlsx")
+write.xlsx(table_S4_bis, file = "4_output/table_S4_bis.xlsx")
+
+
+table_2_bis %>% filter(p.value<0.05 & Cohens_f2>0.02)
+table_4_bis %>% filter(p.value<0.05 & Cohens_f2>0.02)
+table_S4_bis %>% filter(p.value<0.05 & Cohens_f2>0.02)
+results %>% filter(p.value<0.05 & Cohens_f2>0.019) %>% View()
+results %>% filter(p.value<0.05 & Cohens_f2>0.12) %>% View()
+
+
+
+
+# Investifation effet confinement covid ----
+bdd <- bdd %>%
+  mutate(
+    confinement_SRS_BRIEF_P = 
+      ifelse((cy3hat1_date_creation >= as.Date("2020-03-17") & cy3hat1_date_creation <= as.Date("2020-07-11")) |  # dates du 1er confinement + jusqu'à 2 mois après
+               (cy3hat1_date_creation >= as.Date("2020-10-30") & cy3hat1_date_creation <= as.Date("2021-02-15"))|  # dates du 2eme confinement + jusqu'à 2 mois après 
+               (cy3hat1_date_creation >= as.Date("2021-04-03") & cy3hat1_date_creation <= as.Date("2021-07-03")), # dates du 3eme confinement + jusqu'à 2 mois après 
+             "Yes", "No"), 
+    confinement_CBCL = 
+      ifelse((cy2ebc1_date_creation >= as.Date("2020-03-17") & cy2ebc1_date_creation <= as.Date("2020-07-11")) |  # dates du 1er confinement + jusqu'à 2 mois après
+               (cy2ebc1_date_creation >= as.Date("2020-10-30") & cy2ebc1_date_creation <= as.Date("2021-02-15"))|  # dates du 2eme confinement + jusqu'à 2 mois après 
+               (cy3hat1_date_creation >= as.Date("2021-04-03") & cy3hat1_date_creation <= as.Date("2021-07-03")), # dates du 3eme confinement + jusqu'à 2 mois après 
+             "Yes", "No"))
+
+bdd %>% select(confinement_CBCL, cy2ebc1_date_creation) %>% arrange(cy2ebc1_date_creation) %>% View()
+bdd %>% select(confinement_SRS_BRIEF_P, cy3hat1_date_creation) %>% arrange(cy3hat1_date_creation)%>% View()
+
+bdd %>% 
+  filter(!is.na(ch_feces_rel_ASV1035_Y1)) %>%
+  select(confinement_CBCL, confinement_SRS_BRIEF_P) %>% 
+  tbl_summary(
+    type = list(confinement_CBCL ~ "categorical", 
+                confinement_SRS_BRIEF_P ~ "categorical"))
+
+bdd_filtered <- bdd %>% filter(!is.na(ch_feces_rel_ASV1035_Y1)) 
+
+tbl_merge(
+  tbls = list(
+    lm(ch_SRStotal_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical"),
+    lm(ch_briefpinhibit_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical"), 
+    lm(ch_briefpshift_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical"), 
+    lm(ch_briefpemocontrol_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical"), 
+    lm(ch_briefpworkmemo_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical"), 
+    lm(ch_briefpplan_y3 ~ confinement_SRS_BRIEF_P, data = bdd_filtered) %>% tbl_regression(type = confinement_SRS_BRIEF_P ~ "categorical")), 
+  tab_spanner = c("ch_SRStotal_y3",
+                  "ch_briefpinhibit_y3",
+                  "ch_briefpshift_y3",
+                  "ch_briefpemocontrol_y3",
+                  "ch_briefpworkmemo_y3",
+                  "ch_briefpplan_y3"))
+
+
+summary(test)
+bdd %>% 
+  filter(!is.na(ch_feces_rel_ASV1035_Y1)) %>%
+  select(confinement_CBCL, confinement_SRS_BRIEF_P) %>% 
+  tbl_regression(
+    lm(ch_SRStotal_y3 ~ confinement_SRS_BRIEF_P, data = bdd), 
+    type = list(confinement_CBCL ~ "categorical", 
+                confinement_SRS_BRIEF_P ~ "categorical"))
+
+
+
 
 
 # Additional figures ----
@@ -1499,6 +2761,8 @@ names(figure_S2) <- gsub(" sub-score at 2 years", " Y2", names(figure_S2))
 names(figure_S2) <- gsub(" sub-score at 3 years", " Y3", names(figure_S2))
 names(figure_S2) <- gsub(" score at 2 years", " Y2", names(figure_S2))
 names(figure_S2) <- gsub(" score at 3 years", " Y3", names(figure_S2))
+names(figure_S2) <- gsub("SRS", "SRS-II", names(figure_S2))
+names(figure_S2) <- gsub("WPPSI", "WPPSI-IV", names(figure_S2))
 
 # permet de savoir les pairwise.complete.obs 
 apply(combn(names(figure_S2), 2), 2, function(x) sum(!is.na(figure_S2[[x[1]]]) & !is.na(figure_S2[[x[2]]])))
